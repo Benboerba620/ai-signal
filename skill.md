@@ -4,18 +4,18 @@ AI-powered daily digest of top builders, analysts, and executives across AI, ene
 
 ## Trigger
 
-When the user says any of: "daily digest", "set up daily digest", "run digest", "show my digest", "configure digest", or runs `/daily-digest`.
+When the user says any of: "daily digest", "set up daily digest", "run digest", "show my digest", "configure digest", or runs `/ai-signal`.
 
 ## Setup flow
 
-If `~/.daily-digest/config.json` doesn't exist, guide the user through setup:
+If `~/.ai-signal/config.json` doesn't exist, guide the user through setup:
 
 1. Ask their **language** preference: English, Chinese, or bilingual
 2. Ask their **granularity**: highlights (2-3 bullets per item), summary (paragraph per item), or full (detailed analysis with quotes)
 3. Ask their **domains**: AI, energy, investing — pick any combination
 4. Ask their **delivery method**: Telegram (need bot token + chat ID), Feishu (need webhook URL), email (need Resend API key + address), or just show in chat
-5. Save config to `~/.daily-digest/config.json`
-6. Store any API keys in `~/.daily-digest/.env`
+5. Save config to `~/.ai-signal/config.json`
+6. Store any API keys in `~/.ai-signal/.env`
 
 ## Running the digest
 
@@ -67,9 +67,9 @@ Users can change settings conversationally:
 ## Customizing prompts
 
 Users can customize how content is summarized:
-- "Make summaries more concise" → update `~/.daily-digest/prompts/summarize-podcast.md`
+- "Make summaries more concise" → update `~/.ai-signal/prompts/summarize-podcast.md`
 - "Focus on actionable insights" → update prompts
-- "Use a more casual tone" → update `~/.daily-digest/prompts/digest-intro.md`
+- "Use a more casual tone" → update `~/.ai-signal/prompts/digest-intro.md`
 
 ## Content sources
 

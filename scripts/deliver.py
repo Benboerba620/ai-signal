@@ -1,7 +1,7 @@
 """Subscriber-side: deliver digest text via Telegram / Feishu / email.
 
-Reads delivery config from ~/.daily-digest/config.json and API keys from
-~/.daily-digest/.env
+Reads delivery config from ~/.ai-signal/config.json and API keys from
+~/.ai-signal/.env
 
 Usage:
     echo "digest text" | python scripts/deliver.py
@@ -17,7 +17,7 @@ from pathlib import Path
 
 import httpx
 
-USER_DIR = Path.home() / ".daily-digest"
+USER_DIR = Path.home() / ".ai-signal"
 CONFIG_PATH = USER_DIR / "config.json"
 ENV_PATH = USER_DIR / ".env"
 
@@ -127,7 +127,7 @@ def main():
         token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
         chat_id = delivery.get("chat_id", "")
         if not token or not chat_id:
-            log("❌ Set TELEGRAM_BOT_TOKEN in ~/.daily-digest/.env and chat_id in config.json")
+            log("❌ Set TELEGRAM_BOT_TOKEN in ~/.ai-signal/.env and chat_id in config.json")
             sys.exit(1)
         ok = send_telegram(text, token, chat_id)
         log("✅ Sent to Telegram" if ok else "❌ Telegram failed")

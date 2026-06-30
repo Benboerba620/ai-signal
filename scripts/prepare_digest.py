@@ -20,17 +20,17 @@ import httpx
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
 
-FEED_X_URL = "https://raw.githubusercontent.com/Benboerba620/daily-digest/main/feeds/feed-x.json"
-FEED_PODCASTS_URL = "https://raw.githubusercontent.com/Benboerba620/daily-digest/main/feeds/feed-podcasts.json"
+FEED_X_URL = "https://raw.githubusercontent.com/Benboerba620/ai-signal/main/feeds/feed-x.json"
+FEED_PODCASTS_URL = "https://raw.githubusercontent.com/Benboerba620/ai-signal/main/feeds/feed-podcasts.json"
 
-PROMPTS_BASE = "https://raw.githubusercontent.com/Benboerba620/daily-digest/main/prompts"
+PROMPTS_BASE = "https://raw.githubusercontent.com/Benboerba620/ai-signal/main/prompts"
 PROMPT_FILES = [
     "summarize-podcast.md",
     "summarize-tweets.md",
     "digest-intro.md",
 ]
 
-USER_DIR = Path.home() / ".daily-digest"
+USER_DIR = Path.home() / ".ai-signal"
 CONFIG_PATH = USER_DIR / "config.json"
 
 

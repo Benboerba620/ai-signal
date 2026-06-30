@@ -1,124 +1,116 @@
-# Daily Digest
+# AI Signal
 
-Track the builders shaping AI, energy, and investing — not the influencers.
+追踪 AI 一线的声音——做事的人、写代码的人、下注的人，不是二手转述。
 
-A centralized feed aggregates raw content from 15+ top podcasts and 20+ curated Twitter/X accounts daily. Your AI agent (Claude Code) pulls the feed and generates a personalized digest based on your preferences.
+这是一份精心筛选的信息源清单。每天自动抓取这些人的播客和推文原文，你的 AI 帮你按自己的口味生成摘要。
 
-**No API keys needed for content** — all feeds are fetched centrally and committed to this repo.
+**这份清单本身就是产品。**
 
-## What You Get
+---
 
-A daily digest pushed to Telegram, Feishu, email, or displayed in your chat:
+## 你会得到什么
 
-- Podcast episode summaries with key insights and quotes
-- Twitter/X highlights from builders, researchers, and executives
-- Filtered by your interests (AI, energy, investing)
-- In your language (English, Chinese, or bilingual)
-- At your preferred depth (highlights, summary, or full analysis)
+每天一份推送（Telegram / 飞书 / 邮件 / 直接在聊天里看），包含：
 
-## Quick Start
+- 一线播客的最新内容（含全文字幕，不是摘要的摘要）
+- 精选推特账号的当日观点
+- 按你的偏好定制：中文 / 英文 / 双语，精华 / 标准 / 完整
+- 不需要任何 API key——所有内容由中央服务统一抓取
 
-### Claude Code
+## 信息源
 
-```bash
-git clone https://github.com/Benboerba620/daily-digest.git ~/.claude/skills/daily-digest
-cd ~/.claude/skills/daily-digest/scripts && pip install -r ../requirements.txt
-```
+### 播客（12 个频道）
 
-Then tell Claude: **"set up daily digest"** — it will walk you through configuration.
+| 频道 | 为什么选 |
+|------|----------|
+| [Dwarkesh Patel](https://www.dwarkesh.com) | 最深度的 AI 一对一访谈，嘉宾全是一线研究者 |
+| [Lex Fridman](https://lexfridman.com/podcast/) | 覆盖面最广的 AI 长对话 |
+| [Latent Space](https://www.latent.space) | AI 工程师生态的脉搏，Swyx 主理 |
+| [All-In Podcast](https://www.allinpodcast.co) | 四个顶级 VC 的周度辩论，AI + 宏观 |
+| [a16z](https://a16z.com/podcasts/) | 硅谷最大 VC 的一手投资视角 |
+| [No Priors](https://www.youtube.com/@NoPriorsPodcast) | Sarah Guo + Elad Gil，AI infra 创始人密度最高 |
+| [Google DeepMind](https://deepmind.com/podcast) | DeepMind 官方，前沿研究视角 |
+| [Lightcone (YC)](https://www.youtube.com/@ycombinator) | YC 合伙人看 AI 创业生态 |
+| [Lenny's Podcast](https://www.lennysnewsletter.com/) | AI 产品落地的一线反馈 |
+| [Invest Like the Best](https://www.joincolossus.com/episodes) | 顶级投资人的思维框架 |
+| [Capital Allocators](https://capitalallocators.com/podcast/) | 机构投资者视角 |
+| [The Acquirers Podcast](https://acquirersmultiple.com/podcast/) | 价值投资方法论 |
 
-### Manual Run
+### Twitter/X（14 个账号）
 
-```bash
-# Fetch latest feeds and generate your digest
-python scripts/prepare_digest.py | your-llm-of-choice
-```
+**分析师/研究者**：[@karpathy](https://x.com/karpathy)、[@swyx](https://x.com/swyx)、[@dylanpatel_](https://x.com/dylanpatel_)（SemiAnalysis）、[@leopoldaob](https://x.com/leopoldaob)、[@jimkeller_](https://x.com/jimkeller_)
 
-## Customization
+**决策者**：[@sama](https://x.com/sama)、[@DarioAmodei](https://x.com/DarioAmodei)
 
-Everything is customizable through conversation with your agent:
+**建造者**：[@AmandaAskell](https://x.com/AmandaAskell)、[@bcherny](https://x.com/bcherny)（Claude Code）、[@_catwu](https://x.com/_catwu)、[@alexalbert__](https://x.com/alexalbert__)、[@rauchg](https://x.com/rauchg)（Vercel）、[@amasad](https://x.com/amasad)（Replit）、[@joshwoodward](https://x.com/joshwoodward)（Google Labs）
 
-| Setting | Options | Example |
-|---------|---------|---------|
-| Language | `en`, `zh`, `bilingual` | "Switch to Chinese" |
-| Depth | `highlights`, `summary`, `full` | "Make it more detailed" |
-| Domains | `ai`, `energy`, `invest` | "Only show AI" |
-| Delivery | Telegram, Feishu, email, chat | "Push to Telegram" |
+> 选人标准：在一线做事 / 有独立判断 / 用真金白银下注。不选搬运号、评论员、流量账号。
 
-### Custom Prompts
+## 快速开始
 
-Control how content is summarized by editing files in `~/.daily-digest/prompts/`:
-
-- `summarize-podcast.md` — how podcast episodes are summarized
-- `summarize-tweets.md` — how tweets are distilled
-- `digest-intro.md` — overall digest tone and format
-
-These are plain text instructions, not code. Changes take effect on the next run.
-
-## Sources
-
-### Podcasts (15 channels)
-
-| Channel | Domain |
-|---------|--------|
-| [Dwarkesh Patel](https://www.dwarkesh.com) | AI |
-| [Lex Fridman](https://lexfridman.com/podcast/) | AI |
-| [Latent Space](https://www.latent.space) | AI |
-| [All-In Podcast](https://www.allinpodcast.co) | AI |
-| [a16z](https://a16z.com/podcasts/) | AI |
-| [No Priors](https://www.youtube.com/@NoPriorsPodcast) | AI |
-| [Google DeepMind Podcast](https://deepmind.com/podcast) | AI |
-| [Lightcone (YC)](https://www.youtube.com/@ycombinator) | AI |
-| [Lenny's Podcast](https://www.lennysnewsletter.com/) | AI |
-| [Macro Voices](https://www.macrovoices.com) | Energy |
-| [Super-Spiked](https://arjunmurti.substack.com) | Energy |
-| [Columbia Energy Exchange](https://www.energypolicy.columbia.edu/podcast) | Energy |
-| [Invest Like the Best](https://www.joincolossus.com/episodes) | Invest |
-| [Capital Allocators](https://capitalallocators.com/podcast/) | Invest |
-| [The Acquirers Podcast](https://acquirersmultiple.com/podcast/) | Invest |
-
-### Twitter/X (20 accounts)
-
-**AI Analysts**: [@karpathy](https://x.com/karpathy), [@swyx](https://x.com/swyx), [@dylanpatel_](https://x.com/dylanpatel_), [@leopoldaob](https://x.com/leopoldaob), [@jimkeller_](https://x.com/jimkeller_)
-
-**AI Executives**: [@sama](https://x.com/sama), [@DarioAmodei](https://x.com/DarioAmodei), Demis Hassabis, Jensen Huang, Satya Nadella
-
-**AI Builders**: [@AmandaAskell](https://x.com/AmandaAskell), [@bcherny](https://x.com/bcherny), [@_catwu](https://x.com/_catwu), [@alexalbert__](https://x.com/alexalbert__), [@rauchg](https://x.com/rauchg), [@amasad](https://x.com/amasad), [@joshwoodward](https://x.com/joshwoodward)
-
-**Energy**: [@ArjunMurti](https://x.com/ArjunMurti), [@DoombergT](https://x.com/DoombergT), [@JavierBlas](https://x.com/JavierBlas)
-
-## How It Works
-
-```
-Central (this repo, GitHub Actions daily)
-  └── generate_feed.py → raw tweets + podcast transcripts
-      → feed-x.json, feed-podcasts.json (committed to repo)
-
-Your machine (Claude Code skill)
-  └── prepare_digest.py → pulls feeds from this repo
-      → your LLM summarizes per your preferences
-      → deliver.py → push to your Telegram / Feishu / email
-```
-
-## For Developers
-
-### Run the central feed generator locally
+### 安装（Claude Code）
 
 ```bash
-pip install -r requirements.txt
-export TWITTER_COOKIES="..."  # from browser F12
-python scripts/generate_feed.py
+git clone https://github.com/Benboerba620/ai-signal.git ~/.claude/skills/ai-signal
+cd ~/.claude/skills/ai-signal/scripts && pip install -r ../requirements.txt
 ```
 
-### Add sources
+然后告诉 Claude：**"set up ai signal"**——它会引导你设置语言、详细程度和推送方式。
 
-Edit `config/sources.json` to add Twitter accounts or podcast RSS feeds. PRs welcome.
+### 手动运行
 
-## Privacy
+```bash
+python scripts/prepare_digest.py  # 拉最新 feed，输出给 LLM 处理
+```
 
-- No API keys needed for content access
-- Your config and preferences stay on your machine (`~/.daily-digest/`)
-- Only public content is aggregated (public tweets, public podcasts)
+## 定制
+
+所有偏好都可以用对话修改：
+
+| 设置 | 选项 | 对话示例 |
+|------|------|----------|
+| 语言 | 中文 / 英文 / 双语 | "切换成中文" |
+| 详细程度 | 精华 / 标准 / 完整 | "我要更详细的" |
+| 领域 | AI / 投资 | "只看 AI 的" |
+| 推送 | Telegram / 飞书 / 邮件 / 聊天 | "推到 Telegram" |
+
+### 自定义摘要风格
+
+编辑 `~/.ai-signal/prompts/` 下的文件：
+
+- `summarize-podcast.md` — 播客怎么总结
+- `summarize-tweets.md` — 推文怎么提炼
+- `digest-intro.md` — 整体语气和格式
+
+纯文本指令，不是代码。改完下次推送生效。
+
+## 工作原理
+
+```
+中央服务（本 repo，GitHub Actions 每天自动跑）
+  └── generate_feed.py
+      → 抓推文原文 + 播客 RSS + YouTube 全文字幕
+      → feed-x.json、feed-podcasts.json（commit 到 repo）
+
+你的机器（Claude Code skill）
+  └── prepare_digest.py → 从本 repo 拉 feed
+      → 你的 Claude 按你的偏好生成摘要
+      → deliver.py → 推送到你的 Telegram / 飞书 / 邮件
+```
+
+**你不需要任何 API key。** 内容抓取在中央完成，摘要由你自己的 Claude 生成。
+
+## 隐私
+
+- 不采集任何用户数据
+- 你的配置和偏好只存在你自己的机器上（`~/.ai-signal/`）
+- 只聚合公开内容（公开推文、公开播客）
+
+## 关于
+
+这份清单来自一个二级市场研究员的日常信息源。筛选标准只有一个：**这个人说的话，值不值得我每天花时间看。**
+
+公众号「奔波儿r」· [GitHub](https://github.com/Benboerba620)
 
 ## License
 
