@@ -202,7 +202,8 @@ Rules:
   Do not say the tracked account "announced" or "launched" something unless
   the original post itself makes that attribution clear.
 - Do not infer resharing/retweeting behavior from metadata. In the summary body,
-  prefer neutral wording such as "This post says..." / "这条内容介绍...".
+  translate or explain the content directly. Avoid meta phrases like
+  "This post says..." / "这条内容介绍...".
 
 Post metadata:
 - Tracked account: {item.get("name", "")} (@{item.get("handle", "")})
@@ -228,11 +229,15 @@ Rules:
 - Use only the supplied episode metadata and source text.
 - Do not invent facts, quotes, numbers, names, or links.
 - If the source text is incomplete or only a description, say so briefly.
+- Start directly with the substance. Do not begin with meta phrases such as
+  "本期节目是...", "本集节目采访了...", "这期内容介绍...", or "This episode discusses...".
+- Use simple, direct Chinese sentences. The first paragraph should be a few
+  natural sentences summarizing the actual topic.
 - Return Markdown only.
 - Always include the original link.
 
 Recommended structure:
-1. What this episode is about
+1. 简要总结
 2. Core takeaways
 3. Details worth expanding
 4. Implications for AI, investing, products, or research

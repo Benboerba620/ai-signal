@@ -58,6 +58,39 @@ def section_from_summary(text):
     return text.strip()
 
 
+def clean_meta_intro(text):
+    text = re.sub(r"(?m)^好的，这是.*?缓存研究简报。\s*", "", text)
+    text = re.sub(
+        r"本期节目是\s*(.*?)的深度对话，核心探讨了",
+        r"\1讨论了",
+        text,
+    )
+    text = re.sub(
+        r"本集节目采访了\s*(.*?)。节目核心讲述了他们",
+        r"\1讲述了他们",
+        text,
+    )
+    text = re.sub(
+        r"本期节目由\s*(.*?)主持，与(.*?)展开对话。核心议题是",
+        r"\1与\2讨论",
+        text,
+    )
+    replacements = [
+        (r"本期节目是\s*", ""),
+        (r"本期节目由\s*", ""),
+        (r"本集节目采访了\s*", ""),
+        (r"本集节目是\s*", ""),
+        (r"这期节目是\s*", ""),
+        (r"这期内容介绍[：，]?\s*", ""),
+        (r"这条内容介绍[：，]?\s*", ""),
+    ]
+    for pattern, replacement in replacements:
+        text = re.sub(pattern, replacement, text)
+    text = re.sub(r"节目核心讲述了", "他们讲述了", text)
+    text = re.sub(r"核心议题是", "他们讨论", text)
+    return text
+
+
 def short_text(text, limit):
     text = re.sub(r"\s+", " ", clean_text(text or "")).strip()
     if len(text) <= limit:
@@ -191,7 +224,7 @@ def render_podcasts(data, lines):
             if url:
                 lines.append(f"原文：{url}")
             summary = section_from_summary(item.get("summary_text", ""))
-            lines.append(summary or "中央摘要暂不可用。")
+            lines.append(clean_meta_intro(summary) if summary else "中央摘要暂不可用。")
             lines.append("")
         return
 
