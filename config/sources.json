@@ -92,6 +92,33 @@
   },
   "podcasts": {
     "lookback_hours": 72,
+    "transcription": {
+      "provider": "volc_asr_auc",
+      "enabled_by_default": true,
+      "default_limit": 2,
+      "poll_interval_seconds": 10,
+      "max_wait_seconds": 1800,
+      "relevance_keywords": [
+        "ai",
+        "artificial intelligence",
+        "agent",
+        "agents",
+        "llm",
+        "model",
+        "openai",
+        "anthropic",
+        "google deepmind",
+        "deepmind",
+        "nvidia",
+        "semiconductor",
+        "gpu",
+        "inference",
+        "data center",
+        "datacenter",
+        "robotics",
+        "automation"
+      ]
+    },
     "channels": [
       {
         "name": "Dwarkesh Patel",
@@ -106,13 +133,18 @@
       {
         "name": "Latent Space",
         "domain": "ai",
-        "rss_url": "https://api.substack.com/feed/podcast/1084089.rss"
+        "rss_url": "https://www.latent.space/feed",
+        "fallback_rss_urls": [
+          "https://api.substack.com/feed/podcast/1084089.rss"
+        ],
+        "transcribe_missing": true
       },
       {
         "name": "All-In Podcast",
         "domain": "ai",
         "rss_url": "https://rss.libsyn.com/shows/254861/destinations/1928300.xml",
-        "needs_filter": true
+        "needs_filter": true,
+        "transcribe_missing": "relevant"
       },
       {
         "name": "a16z",
@@ -132,7 +164,8 @@
       {
         "name": "SemiAnalysis",
         "domain": "ai",
-        "rss_url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCf_KhBXw5TIV0A7butjgFhg"
+        "rss_url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCf_KhBXw5TIV0A7butjgFhg",
+        "transcribe_missing": true
       },
       {
         "name": "Lightcone Podcast",
@@ -142,7 +175,11 @@
       {
         "name": "Lenny's Podcast",
         "domain": "ai",
-        "rss_url": "https://api.substack.com/feed/podcast/10845.rss"
+        "rss_url": "https://www.lennysnewsletter.com/feed",
+        "fallback_rss_urls": [
+          "https://api.substack.com/feed/podcast/10845.rss"
+        ],
+        "transcribe_missing": true
       },
       {
         "name": "Invest Like the Best",

@@ -25,6 +25,15 @@ on:
         options:
           - 'false'
           - 'true'
+      transcribe_missing:
+        description: 'Use Volc ASR to transcribe selected podcasts without public transcripts.'
+        required: false
+        default: 'config'
+        type: choice
+        options:
+          - 'config'
+          - 'false'
+          - 'true'
 
 permissions:
   contents: write
@@ -48,6 +57,12 @@ jobs:
         env:
           TWITTER_COOKIES: ${{ secrets.TWITTER_COOKIES }}
         run: python scripts/generate_feed.py
+
+      - name: Transcribe selected missing podcast transcripts
+        if: ${{ github.event_name == 'schedule' || inputs.transcribe_missing == 'true' || inputs.transcribe_missing == 'config' }}
+        env:
+          VOLC_ASR_API_KEY: ${{ secrets.VOLC_ASR_API_KEY }}
+        run: python scripts/transcribe_missing_podcasts.py
 
       - name: Generate central summaries
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.generate_summaries == 'true' }}

@@ -20,6 +20,7 @@ import json
 import os
 import re
 import sys
+import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
@@ -142,6 +143,32 @@ def fetch_text_url(url, timeout=30):
     resp = httpx.get(url, headers={"User-Agent": UA}, timeout=timeout, follow_redirects=True)
     resp.raise_for_status()
     return resp.text, str(resp.url), resp.headers.get("content-type", "")
+
+
+def rss_url_candidates(channel):
+    urls = []
+    for key in ("rss_url",):
+        if channel.get(key):
+            urls.append(channel[key])
+    for url in channel.get("fallback_rss_urls", []):
+        if url:
+            urls.append(url)
+    return list(dict.fromkeys(urls))
+
+
+def fetch_rss_with_fallback(channel, attempts=3):
+    errors = []
+    for url in rss_url_candidates(channel):
+        for attempt in range(1, attempts + 1):
+            try:
+                resp = httpx.get(url, headers={"User-Agent": UA}, timeout=45, follow_redirects=True)
+                resp.raise_for_status()
+                return resp.text, str(resp.url), None
+            except Exception as e:
+                errors.append(f"{url} attempt {attempt}/{attempts}: {e}")
+                if attempt < attempts:
+                    time.sleep(1.5 * attempt)
+    return None, None, " | ".join(errors[-5:]) or "No RSS URL configured"
 
 
 def extract_links(html, base_url=""):
@@ -487,6 +514,9 @@ def _youtube_video_id(link):
     parsed = urlparse(link)
     if "youtube.com" in parsed.netloc:
         m = re.search(r"[?&]v=([a-zA-Z0-9_-]{11})", link)
+        if m:
+            return m.group(1)
+        m = re.search(r"/(?:shorts|embed|live)/([a-zA-Z0-9_-]{11})", parsed.path)
         return m.group(1) if m else None
     if "youtu.be" in parsed.netloc:
         vid = parsed.path.strip("/")[:11]
@@ -637,17 +667,19 @@ def get_podcast_transcript(ep):
 
 def fetch_channel(channel, lookback_hours, transcript_cache):
     name = channel["name"]
-    rss_url = channel["rss_url"]
     since = datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
     log(f"📻 {name}...")
 
-    try:
-        resp = httpx.get(rss_url, headers={"User-Agent": UA}, timeout=30, follow_redirects=True)
-        resp.raise_for_status()
-        episodes = parse_rss(resp.text)
-    except Exception as e:
-        log(f"  ⚠️ RSS failed: {e}")
-        return [], str(e)
+    rss_text, final_url, rss_error = fetch_rss_with_fallback(channel)
+    if rss_error:
+        log(f"  ⚠️ RSS failed: {rss_error}")
+        return [], rss_error
+
+    episodes = parse_rss(rss_text)
+    if not episodes:
+        error = f"No episodes parsed from RSS: {final_url}"
+        log(f"  ⚠️ {error}")
+        return [], error
 
     results = []
     for ep in episodes:
