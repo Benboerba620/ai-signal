@@ -297,6 +297,7 @@ to stdout (a few KB — safe to read in any agent). The manifest contains:
 - `podcasts` — episode list with `transcript_file` paths and sizes
 - `x_accounts` — accounts that have new tweets
 - `seen_filter` — items already delivered before are filtered out automatically
+- `delivery_mark_file` — item IDs to mark after the digest is successfully delivered
 - `errors` — non-fatal issues (IGNORE these)
 
 Then read the actual content **from files, not stdout**:
@@ -307,9 +308,12 @@ Then read the actual content **from files, not stdout**:
    and for long transcripts it is fine to read enough to extract the core
    arguments rather than every line.
 
-Per-user dedup happens in this script via `~/.ai-signal/seen.json`: each run
-only returns items not delivered before. If the user asks to regenerate today's
-digest ("重新生成" / "再看一遍今天的"), run:
+Per-user dedup reads `~/.ai-signal/seen.json`, but `prepare_digest.py` does **not**
+mark items as seen by default. Only mark after the digest is actually shown or
+sent successfully. This prevents a failed generation/delivery from hiding items
+the user never saw.
+
+If the user asks to regenerate today's digest ("重新生成" / "再看一遍今天的"), run:
 
 ```bash
 cd ${SKILL_DIR}/scripts && python prepare_digest.py --include-seen 2>/dev/null
@@ -402,12 +406,19 @@ Read `config.delivery.method`:
 **If "telegram", "feishu", or "email":**
 ```bash
 echo '<digest text>' > /tmp/ai-signal-digest.txt
-cd ${SKILL_DIR}/scripts && python deliver.py --file /tmp/ai-signal-digest.txt 2>/dev/null
+cd ${SKILL_DIR}/scripts && python deliver.py --file /tmp/ai-signal-digest.txt --mark-delivered-file "<delivery_mark_file>" 2>/dev/null
 ```
 If delivery fails, show the digest in terminal as fallback.
 
 **If "stdout" (default):**
-Just output the digest directly.
+Output the digest directly. After the digest has been written to the user,
+confirm delivery state with:
+```bash
+cd ${SKILL_DIR}/scripts && python mark_delivered.py --file "<delivery_mark_file>" 2>/dev/null
+```
+
+Do not run `mark_delivered.py` if digest generation failed or the content was
+not shown/sent.
 
 ---
 

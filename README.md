@@ -124,11 +124,12 @@ cd ai-signal/scripts && pip install -r ../requirements.txt
 
 你的机器（任意 AI Agent：OpenClaw / Claude Code / Cursor / WorkBuddy / Codex）
   └── prepare_digest.py → 从本 repo 拉 feed
-      → 自动过滤你已经看过的内容（~/.ai-signal/seen.json，本地记录）
+      → 读取 ~/.ai-signal/seen.json，过滤你已经看过的内容
       → 完整内容写到 ~/.ai-signal/payload/（payload.json + 每集单独的 transcript 文件）
       → stdout 只输出一个几 KB 的 manifest，任何 Agent 都能直接读
       → 你的 AI 按需读取文件，按你的偏好生成摘要
       → 直接显示，或由支持定时/推送的 Agent 发送到 Telegram / 飞书 / 邮件
+      → 确认展示/发送成功后，mark_delivered.py 才把本次内容写入 seen.json
 ```
 
 **你不需要任何内容 API key。** 内容抓取在中央完成，摘要由你自己的 AI Agent 读取 JSON 后生成。

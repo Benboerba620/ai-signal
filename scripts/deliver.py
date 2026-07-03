@@ -17,6 +17,7 @@ from pathlib import Path
 
 import httpx
 
+SCRIPT_DIR = Path(__file__).parent
 USER_DIR = Path.home() / ".ai-signal"
 CONFIG_PATH = USER_DIR / "config.json"
 ENV_PATH = USER_DIR / ".env"
@@ -100,11 +101,29 @@ def send_email(text, api_key, to_email):
     return resp.is_success
 
 
+def mark_delivered(mark_file):
+    if not mark_file:
+        return
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT_DIR / "mark_delivered.py"), "--file", mark_file],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode == 0:
+        log("✅ Marked digest as delivered")
+    else:
+        log(f"⚠️ Could not mark delivered: {result.stderr or result.stdout}")
+
+
 def main():
     configure_stdio()
     parser = argparse.ArgumentParser()
     parser.add_argument("--message", "-m", type=str)
     parser.add_argument("--file", "-f", type=str)
+    parser.add_argument("--mark-delivered-file", type=str,
+                        help="Path to delivery-mark.json; marked only after successful delivery")
     args = parser.parse_args()
 
     if args.message:
@@ -138,6 +157,8 @@ def main():
             sys.exit(1)
         ok = send_telegram(text, token, chat_id)
         log("✅ Sent to Telegram" if ok else "❌ Telegram failed")
+        if ok:
+            mark_delivered(args.mark_delivered_file)
 
     elif method == "feishu":
         webhook = delivery.get("webhook_url", os.environ.get("FEISHU_WEBHOOK_URL", ""))
@@ -146,6 +167,8 @@ def main():
             sys.exit(1)
         ok = send_feishu(text, webhook)
         log("✅ Sent to Feishu" if ok else "❌ Feishu failed")
+        if ok:
+            mark_delivered(args.mark_delivered_file)
 
     elif method == "email":
         api_key = os.environ.get("RESEND_API_KEY", "")
@@ -155,9 +178,12 @@ def main():
             sys.exit(1)
         ok = send_email(text, api_key, email)
         log("✅ Sent to email" if ok else "❌ Email failed")
+        if ok:
+            mark_delivered(args.mark_delivered_file)
 
     else:
         print(text)
+        mark_delivered(args.mark_delivered_file)
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ local config and prompt preferences, then:
    agent can read it from stdout; the big content is read from files.
 
 Usage:
-    python scripts/prepare_digest.py [--out DIR] [--include-seen] [--no-mark-seen]
+    python scripts/prepare_digest.py [--out DIR] [--include-seen] [--mark-seen]
 """
 
 import argparse
@@ -49,6 +49,7 @@ USER_DIR = Path.home() / ".ai-signal"
 CONFIG_PATH = USER_DIR / "config.json"
 SEEN_PATH = USER_DIR / "seen.json"
 DEFAULT_PAYLOAD_DIR = USER_DIR / "payload"
+DEFAULT_DELIVERY_MARK = "delivery-mark.json"
 SEEN_RETENTION_DAYS = 14
 
 
@@ -242,6 +243,19 @@ def write_payload(out_dir, output, episodes):
     return payload_path, slim_episodes, transcript_files
 
 
+def write_delivery_mark(out_dir, marks, generated_at):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / DEFAULT_DELIVERY_MARK
+    payload = {
+        "generated_at": generated_at,
+        "prepared_at": datetime.now(timezone.utc).isoformat(),
+        "ids": marks,
+        "counts": {kind: len(ids) for kind, ids in marks.items()},
+    }
+    path.write_text(json.dumps(clean_data(payload), ensure_ascii=True, indent=2), encoding="utf-8")
+    return path
+
+
 def fetch_json(url):
     try:
         resp = httpx.get(url, timeout=30, follow_redirects=True)
@@ -343,8 +357,9 @@ def main():
                         help="Directory for payload.json and transcripts/ (default ~/.ai-signal/payload)")
     parser.add_argument("--include-seen", action="store_true",
                         help="Include items already delivered before (regenerate today's digest)")
-    parser.add_argument("--no-mark-seen", action="store_true",
-                        help="Do not record this run's items in ~/.ai-signal/seen.json")
+    parser.add_argument("--mark-seen", action="store_true",
+                        help="Legacy mode: immediately record prepared items as seen")
+    parser.add_argument("--no-mark-seen", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     errors = []
 
@@ -473,11 +488,31 @@ def main():
         errors.append(f"Payload write error: {e}")
         payload_path, slim_episodes, transcript_files = None, [], []
 
+    mark_path = None
+    if payload_path and not args.include_seen:
+        try:
+            mark_path = write_delivery_mark(out_dir, marks, output["generated_at"])
+        except Exception as e:
+            errors.append(f"Delivery mark write error: {e}")
+
+    if payload_path and args.mark_seen and not args.include_seen:
+        for kind, ids in marks.items():
+            seen.setdefault(kind, {}).update(ids)
+        save_seen(seen)
+
+    if args.include_seen:
+        seen_update = "off (--include-seen)"
+    elif args.mark_seen:
+        seen_update = "written (--mark-seen)"
+    else:
+        seen_update = "pending delivery confirmation"
+
     manifest = {
         "status": "ok" if payload_path else "error",
         "mode": "json_first",
         "generated_at": output["generated_at"],
         "payload_file": str(payload_path) if payload_path else None,
+        "delivery_mark_file": str(mark_path) if mark_path else None,
         "config": config_out,
         "output_contract": output_contract,
         "stats": stats,
@@ -498,17 +533,11 @@ def main():
         ],
         "papers_count": len(papers),
         "seen_filter": "off (--include-seen)" if args.include_seen else "on",
+        "seen_update": seen_update,
         "errors": errors if errors else None,
     }
     sys.stdout.write(json.dumps(clean_data(manifest), ensure_ascii=True, indent=2))
     sys.stdout.write("\n")
-
-    # 7. Record delivered items so the next run only shows new content
-    if payload_path and not args.no_mark_seen and not args.include_seen:
-        for kind, ids in marks.items():
-            seen.setdefault(kind, {}).update(ids)
-        save_seen(seen)
-
 
 if __name__ == "__main__":
     main()
