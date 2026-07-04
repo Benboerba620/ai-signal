@@ -1,4 +1,5 @@
-httpx>=0.27
-twscrape>=0.15
-youtube-transcript-api>=0.6
-yt-dlp>=2024.1
+# User-side (Agent) dependencies.
+# prepare_digest.py / mark_delivered.py / deliver.py only need httpx.
+# [socks] keeps GitHub raw fetch working behind SOCKS proxies (all_proxy=socks5://...).
+# Central feed-generation dependencies live in requirements-central.txt.
+httpx[socks]>=0.27
