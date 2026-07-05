@@ -6,6 +6,8 @@
 
 ### 修复
 
+- 修正 3 个 X 账号 handle：Dylan Patel `dylanpatel_`→`dylan522p`（原 handle 是同名假号，最近一条推是 7 年前的足球话题）、Leopold Aschenbrenner `leopoldaob`→`leopoldasch`（原 handle 不存在）、Jim Keller `jimkeller_`→`jimkxa`（原 handle 不存在）。三个真 handle 均已实测有近期推文。其余"0 条推文"的账号排查后确认 handle 无误，只是 48 小时窗口内没发推（每日运行 + 48h 窗口不会漏推文，属正常）。
+
 - `granularity` 配置值归一化：此前只有 `language` 会把"中文"这类显示标签归一为规范值，`granularity` 存了"精华/标准/完整"会原样透传——"精华"会错误落入标准档摘要。现在与 language 同样处理（精华→highlights、标准→summary、完整→full），manifest 新增 `granularity_raw` 保留原始值。
 - YouTube 频道的集数若缺 `rel="alternate"` 链接，改用 `yt:videoId` 拼出 watch URL 兜底。此前该集 `link` 为空串，按"无 URL 不收录"规则会被日报静默丢弃（实测 7/5 No Priors 核能这期就这样丢了）。
 - `skill.md` 更名为 `SKILL.md`，符合 Agent Skills 规范的大写文件名。
