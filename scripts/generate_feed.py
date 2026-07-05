@@ -866,37 +866,57 @@ CN_TITLE_SKIP_RE = re.compile(
 )
 
 
-def run_ytdlp_search(query, max_n, timeout=300):
+def _run_ytdlp(args, timeout=300):
     import subprocess
-    cmd = [sys.executable, "-m", "yt_dlp", "--no-warnings", "--dump-json",
-           "--skip-download", "--playlist-end", str(max_n)]
+    cmd = [sys.executable, "-m", "yt_dlp", "--no-warnings"]
     proxy = detect_proxy()
     if proxy:
         cmd += ["--proxy", proxy.replace("socks5h://", "socks5://")]
-    cmd.append(f"ytsearch{max_n}:{query}")
-    proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
-                          errors="replace", timeout=timeout)
-    videos = []
-    for line in proc.stdout.splitlines():
-        line = line.strip()
-        if not line.startswith("{"):
-            continue
-        try:
-            data = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        videos.append({
-            "id": data.get("id") or "",
-            "title": data.get("title") or "",
-            "channel": data.get("channel") or data.get("uploader") or "YouTube",
-            "upload_date": data.get("upload_date") or "",  # YYYYMMDD
-            "duration": data.get("duration") or 0,          # seconds
-            "description": data.get("description") or "",
-        })
-    if not videos and proc.returncode != 0:
+    return subprocess.run(cmd + args, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace", timeout=timeout)
+
+
+def run_ytdlp_search(query, max_n, timeout=300):
+    """Flat search: one request to the results page, no per-video extraction.
+
+    YouTube bot-checks per-video metadata extraction from datacenter IPs
+    (GitHub Actions), but serves the search results page itself. Flat entries
+    lack upload_date/description; fetch_video_meta() backfills them
+    best-effort for the few candidates that survive filtering.
+    """
+    proc = _run_ytdlp(["--flat-playlist", "-J", f"ytsearch{max_n}:{query}"],
+                      timeout=timeout)
+    try:
+        data = json.loads(proc.stdout or "{}")
+    except json.JSONDecodeError:
+        data = {}
+    entries = data.get("entries") or []
+    if not entries and proc.returncode != 0:
         detail = (proc.stderr or "").strip().splitlines()
         raise RuntimeError(detail[-1] if detail else f"yt-dlp exit {proc.returncode}")
-    return videos
+    return [{
+        "id": e.get("id") or "",
+        "title": e.get("title") or "",
+        "channel": e.get("channel") or e.get("uploader") or "YouTube",
+        "upload_date": "",
+        "duration": e.get("duration") or 0,  # seconds; may be missing in flat mode
+        "description": e.get("description") or "",
+    } for e in entries if e]
+
+
+def fetch_video_meta(vid, timeout=120):
+    """Full per-video metadata; returns None when blocked (datacenter IPs)."""
+    try:
+        proc = _run_ytdlp(["--dump-json", "--skip-download",
+                           f"https://www.youtube.com/watch?v={vid}"], timeout=timeout)
+        data = json.loads(proc.stdout.strip().splitlines()[-1])
+        return {
+            "upload_date": data.get("upload_date") or "",
+            "duration": data.get("duration") or 0,
+            "description": data.get("description") or "",
+        }
+    except Exception:
+        return None
 
 
 def format_hms(seconds):
@@ -906,7 +926,7 @@ def format_hms(seconds):
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
-def search_person_appearances(search, people_cfg, since):
+def search_person_appearances(search, people_cfg, since, known_ids):
     person = search["person"]
     query = f"{search['query']} {datetime.now(timezone.utc).year}"
     max_n = int(people_cfg.get("max_results_per_search", 3))
@@ -916,7 +936,7 @@ def search_person_appearances(search, people_cfg, since):
     kept = []
     for v in run_ytdlp_search(query, max_n):
         title = v["title"]
-        if not v["id"]:
+        if not v["id"] or v["id"] in known_ids:
             continue
         if person.lower() not in title.lower():
             log(f"  ⏭️ name not in title: {title[:60]}")
@@ -928,6 +948,14 @@ def search_person_appearances(search, people_cfg, since):
         if v["duration"] and v["duration"] < min_seconds:
             log(f"  ⏭️ too short ({v['duration']}s, likely a clip): {title[:60]}")
             continue
+        # Backfill date/description for the few survivors; returns None from
+        # datacenter IPs, in which case first_seen governs the feed window.
+        meta = fetch_video_meta(v["id"])
+        if meta:
+            v = {**v, **meta}
+            if v["duration"] and v["duration"] < min_seconds:
+                log(f"  ⏭️ too short ({v['duration']}s, likely a clip): {title[:60]}")
+                continue
         pub_date = None
         if v["upload_date"]:
             try:
@@ -989,8 +1017,9 @@ def fetch_people(sources, existing_feed, known_video_ids):
     seen = set(known_video_ids) | _person_video_ids(carried)
     errors = []
     candidates = []
+    known_ids = frozenset(seen)
     with ThreadPoolExecutor(max_workers=4) as pool:
-        futures = {pool.submit(search_person_appearances, s, people_cfg, since): s
+        futures = {pool.submit(search_person_appearances, s, people_cfg, since, known_ids): s
                    for s in searches}
         for fut in as_completed(futures):
             search = futures[fut]
