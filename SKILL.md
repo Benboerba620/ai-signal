@@ -60,7 +60,9 @@ The user's only action is telling you to install. Everything else is your job.
 
 ## Detecting Platform
 
-Before doing anything, detect which platform you're running on:
+Before doing anything, detect which platform you're running on. The question
+that matters is: **can you, the Agent, schedule a task that re-invokes yourself
+daily?**
 
 ```bash
 which openclaw 2>/dev/null && echo "PLATFORM=openclaw" || echo "PLATFORM=other"
@@ -69,19 +71,38 @@ which openclaw 2>/dev/null && echo "PLATFORM=openclaw" || echo "PLATFORM=other"
 - **OpenClaw** (`PLATFORM=openclaw`): Persistent agent with built-in messaging channels.
   Delivery is automatic via OpenClaw's channel system. Cron uses `openclaw cron add`.
 
-- **Other** (Claude Code, Cursor, WorkBuddy, Codex, etc.): Non-persistent agent.
-  These can generate digests on demand. Do not set a plain system cron that pipes
-  JSON directly to delivery; that skips the Agent remix and sends raw JSON.
-  For automatic delivery, use a persistent Agent scheduler such as OpenClaw.
+- **Other persistent agent** (e.g. Tencent WorkBuddy or any platform with a
+  scheduled-task / 定时任务 feature that re-runs the Agent — not just a bare
+  shell command): treat yourself as persistent. In Step 8, use your platform's
+  scheduler and make the scheduled instruction "run the ai-signal skill digest
+  workflow", so the Agent remix step is included in every scheduled run.
 
-Save the detected platform in config.json as `"platform": "openclaw"` or `"platform": "other"`.
+- **Non-persistent** (Claude Code, Cursor, Codex, etc.): can generate digests
+  on demand only. Do not set a plain system cron that pipes JSON directly to
+  delivery; that skips the Agent remix and sends raw JSON.
+
+Save it in config.json as `"platform": "openclaw"`, `"platform": "persistent"`,
+or `"platform": "other"`.
+
+**Windows note:** the bash snippets in this file are examples, not literal
+requirements. On Windows, translate them to PowerShell (write files with your
+file-writing tool instead of heredocs; use `$env:TEMP` instead of `/tmp`; the
+command is `python`, not `python3`). The Python scripts themselves are
+cross-platform.
 
 ---
 
 ## First Run — Onboarding
 
 Check if `~/.ai-signal/config.json` exists and has `onboardingComplete: true`.
-If NOT, run the onboarding flow:
+If NOT, run the onboarding flow.
+
+**Hard rule: ask Steps 2–6 as separate questions, in order. Do not skip or
+merge any of them.** In particular, always ask Step 2 (frequency + delivery
+time + timezone) even if you cannot schedule tasks yourself — save the answers
+to config.json anyway; they take effect as soon as the user runs this skill on
+a platform with a scheduler. Skipping the delivery-time question is the most
+common onboarding mistake.
 
 ### Step 1: Introduction
 
@@ -139,6 +160,11 @@ Ask: "你关注哪些领域？"
 
 **If OpenClaw:** SKIP this step. OpenClaw delivers via its built-in channels.
 Set `delivery.method` to `"stdout"` and move on.
+
+**If another persistent agent (WorkBuddy etc.) with its own chat channel:**
+same as OpenClaw — set `delivery.method` to `"stdout"` and let the scheduled
+Agent run deliver the digest in its own channel. Only configure Telegram/Feishu/
+email if the user explicitly wants delivery outside the platform.
 
 **If non-persistent agent (Claude Code, Cursor, etc.):**
 
@@ -250,6 +276,14 @@ openclaw cron run <jobId>
 ```
 
 Wait for test run to complete before proceeding.
+
+**Other persistent agent (WorkBuddy etc.):**
+
+Create a scheduled task with your platform's own scheduler at the user's
+`deliveryTime` / `timezone`. The scheduled instruction must re-invoke the Agent
+with: "Run the ai-signal skill: execute prepare_digest.py, remix the content
+into a digest following the prompts, then deliver it." Run it once as a test
+before confirming to the user.
 
 **Non-persistent agent:**
 

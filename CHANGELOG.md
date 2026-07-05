@@ -4,6 +4,14 @@
 
 ## 2026-07-05
 
+### 修复
+
+- `skill.md` 更名为 `SKILL.md`，符合 Agent Skills 规范的大写文件名。
+  之所以这样改：Linux 环境（多数云端 Agent）文件名大小写敏感，小写文件名可能导致 Agent 找不到 skill 定义、只能照 README 即兴引导——实测 WorkBuddy 安装时漏问了推送时间。
+- Onboarding 加硬规则：Step 2-6 逐条问、不许跳过；即使 Agent 自己不能定时，也必须问推送时间并存入配置。
+- 平台检测从"只认 OpenClaw"改为按定时能力判断：WorkBuddy 等自带定时任务的持久 Agent 走与 OpenClaw 同级的自动推送路径（Step 6 / Step 8 新增对应分支）。
+- 补 Windows 适配说明：bash 片段需换成 PowerShell 等价写法；Python 脚本本身跨平台（UTF-8 强制、无硬编码路径）。
+
 ### 新增
 
 - feed 拉取加多源镜像：GitHub raw 不可达时自动切换 jsDelivr CDN，全部失败才落本地缓存。大陆无代理用户从此每天能正常收到更新；也可用 `AI_SIGNAL_BASE_URLS` 环境变量自定义镜像列表。
