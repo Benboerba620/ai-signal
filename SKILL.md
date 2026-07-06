@@ -1,6 +1,6 @@
 ---
 name: ai-signal
-description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, and arXiv papers, then remixes central JSON feeds into a personalized digest. Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
+description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, official AI-lab blogs (Anthropic / OpenAI / DeepMind), and arXiv papers, then remixes central JSON feeds into a personalized digest. Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
 ---
 
 # AI Signal — 追踪 AI 一线的声音
@@ -18,8 +18,8 @@ the JSON, follows the prompts, writes the digest, and optionally sends it throug
 Telegram, Feishu, email, or the current chat.
 
 **No content API keys are required from users.** All source content (X/Twitter
-posts, podcast transcripts/descriptions, arXiv papers) is fetched centrally and
-served via public JSON feeds. Users only need delivery API keys if they choose
+posts, podcast transcripts/descriptions, official AI-lab blog announcements,
+arXiv papers) is fetched centrally and served via public JSON feeds. Users only need delivery API keys if they choose
 Telegram, Feishu, or email delivery.
 
 Default mode is **JSON-first**. Do not depend on central Chinese summaries.
@@ -379,7 +379,7 @@ If the script fails entirely (no JSON output), tell the user to check internet.
 
 ### Step 3: Check for content
 
-If all counts are 0 (no tweets, no episodes, no papers), tell the user:
+If all counts are 0 (no tweets, no episodes, no articles, no papers), tell the user:
 "今天暂无更新，明天再看！" Then stop.
 
 ### Step 4: Filter by domains
@@ -405,6 +405,7 @@ Use the raw JSON fields as the source of truth:
 - Podcasts: read each episode's `transcript_file` when present; otherwise use
   `description`.
 - Papers: use each paper's `title`, `abstract`, `abs_url`, and `pdf_url`.
+- Official blogs: use each article's `source_name`, `title`, `summary`, and `url`.
 - If `central_summaries` exists, treat it only as optional reference material,
   not as the canonical source.
 
@@ -413,6 +414,7 @@ Read prompts from the `prompts` field:
 - `prompts.summarize_podcast` — how to remix podcasts
 - `prompts.summarize_tweets` — how to remix tweets
 - `prompts.summarize_papers` — how to remix arXiv papers
+- `prompts.summarize_articles` — how to remix official blog announcements
 - `prompts.translate` — how to write Chinese or bilingual output
 
 **Tweets (process first):**
@@ -445,7 +447,12 @@ At the end of every digest, before delivery attribution, add one short line
 telling the user they can pick any podcast, tweet, or paper to expand. For
 Chinese output, use wording like: "想深读的话，可以直接说：展开第 2 个播客。"
 
-**Papers (process third):**
+**Official blogs (process third):**
+For each article in `articles`, follow `prompts.summarize_articles`. These are
+first-party announcements from Anthropic / OpenAI / Google DeepMind — present
+them as the company's own claims. Every article MUST include its `url`.
+
+**Papers (process fourth):**
 For each arXiv paper, summarize according to granularity:
 - highlights: one sentence on key contribution
 - summary: 2-3 sentences on problem, approach, result

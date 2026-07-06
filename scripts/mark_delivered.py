@@ -34,14 +34,14 @@ def load_seen():
             seen = json.loads(SEEN_PATH.read_text("utf-8"))
         except Exception:
             seen = {}
-    for key in ("tweets", "episodes", "papers"):
+    for key in ("tweets", "episodes", "papers", "articles"):
         seen.setdefault(key, {})
     return seen
 
 
 def save_seen(seen):
     cutoff = (datetime.now(timezone.utc) - timedelta(days=SEEN_RETENTION_DAYS)).isoformat()
-    for key in ("tweets", "episodes", "papers"):
+    for key in ("tweets", "episodes", "papers", "articles"):
         seen[key] = {k: v for k, v in seen.get(key, {}).items() if v > cutoff}
     SEEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     SEEN_PATH.write_text(json.dumps(seen, indent=2), encoding="utf-8")
@@ -50,7 +50,7 @@ def save_seen(seen):
 def load_mark(path):
     data = json.loads(path.read_text("utf-8"))
     ids = data.get("ids", {})
-    for key in ("tweets", "episodes", "papers"):
+    for key in ("tweets", "episodes", "papers", "articles"):
         ids.setdefault(key, {})
     return ids
 

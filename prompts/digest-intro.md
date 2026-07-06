@@ -12,7 +12,8 @@ Then use this order:
 
 1. X / Twitter
 2. Podcasts
-3. Papers
+3. Official Blogs (Anthropic / OpenAI / Google DeepMind announcements)
+4. Papers
 
 Only include sections that have relevant content.
 
@@ -22,6 +23,7 @@ Give every included item a stable, visible ID in the heading or first line:
 
 - X / Twitter items: `X1`, `X2`, `X3`
 - Podcast items: `P1`, `P2`, `P3`
+- Official blog items: `B1`, `B2`, `B3`
 - Paper items: `Paper1`, `Paper2`, `Paper3`
 
 End the digest with a short note telling the user they can ask follow-up

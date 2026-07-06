@@ -47,6 +47,7 @@ PROMPT_FILES = [
     "summarize-podcast.md",
     "summarize-tweets.md",
     "summarize-papers.md",
+    "summarize-articles.md",
     "digest-intro.md",
     "translate.md",
 ]
@@ -173,6 +174,7 @@ def build_output_contract(config):
             "For X/Twitter, keep each selected tweet as its own item and preserve the original text.",
             "For podcasts, use transcript first and description only when transcript is missing.",
             "For papers, keep title, arXiv link, and a short summary.",
+            "For official blog articles, keep source name, title, link, and a short summary of what was announced.",
             "Do not fabricate quotes, numbers, claims, or source details.",
         ],
     }
@@ -187,14 +189,14 @@ def load_seen():
             seen = json.loads(SEEN_PATH.read_text("utf-8"))
         except Exception:
             seen = {}
-    for key in ("tweets", "episodes", "papers"):
+    for key in ("tweets", "episodes", "papers", "articles"):
         seen.setdefault(key, {})
     return seen
 
 
 def save_seen(seen):
     cutoff = (datetime.now(timezone.utc) - timedelta(days=SEEN_RETENTION_DAYS)).isoformat()
-    for key in ("tweets", "episodes", "papers"):
+    for key in ("tweets", "episodes", "papers", "articles"):
         seen[key] = {k: v for k, v in seen.get(key, {}).items() if v > cutoff}
     SEEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     SEEN_PATH.write_text(json.dumps(seen, indent=2), encoding="utf-8")
@@ -204,9 +206,9 @@ def episode_key(episode):
     return episode.get("guid") or episode.get("link") or episode.get("title") or ""
 
 
-def filter_unseen(feed_x, feed_podcasts, papers, seen):
+def filter_unseen(feed_x, feed_podcasts, papers, articles, seen):
     now = datetime.now(timezone.utc).isoformat()
-    new_ids = {"tweets": [], "episodes": [], "papers": []}
+    new_ids = {"tweets": [], "episodes": [], "papers": [], "articles": []}
 
     accounts = []
     for account in (feed_x or {}).get("x", []):
@@ -232,8 +234,17 @@ def filter_unseen(feed_x, feed_podcasts, papers, seen):
             new_ids["papers"].append(pid)
         fresh_papers.append(paper)
 
+    fresh_articles = []
+    for article in articles:
+        aid = article.get("id") or article.get("url") or ""
+        if aid and aid in seen["articles"]:
+            continue
+        if aid:
+            new_ids["articles"].append(aid)
+        fresh_articles.append(article)
+
     marks = {kind: {i: now for i in ids} for kind, ids in new_ids.items()}
-    return accounts, episodes, fresh_papers, marks
+    return accounts, episodes, fresh_papers, fresh_articles, marks
 
 
 # ── Payload files ─────────────────────────────────────────────────────────────
@@ -585,6 +596,7 @@ def main():
     feed_x, x_source = fetch_feed("feed-x.json", "x")
     feed_podcasts, podcast_source = fetch_feed("feed-podcasts.json", "podcasts")
     feed_arxiv, arxiv_source = fetch_feed("feed-arxiv.json", "papers")
+    feed_blogs, blogs_source = fetch_feed("feed-blogs.json", "articles")
     include_central_summaries = wants_central_summaries(config)
     if include_central_summaries:
         feed_summaries, summaries_source = fetch_feed("feed-summaries.json", "profiles")
@@ -596,12 +608,14 @@ def main():
             "x": x_source,
             "podcasts": podcast_source,
             "arxiv": arxiv_source,
+            "blogs": blogs_source,
             "summaries": summaries_source,
         },
         {
             "x": feed_x,
             "podcasts": feed_podcasts,
             "arxiv": feed_arxiv,
+            "blogs": feed_blogs,
             "summaries": feed_summaries,
         },
     )
@@ -619,6 +633,9 @@ def main():
         errors.append("Could not fetch podcast feed")
     if not feed_arxiv:
         errors.append("Could not fetch arXiv feed")
+    if not feed_blogs:
+        # Newer feed: older central snapshots/mirror caches may not have it yet
+        warnings.append("Could not fetch official blog feed; skipping blog articles this run")
 
     # 3. Load prompts: user custom > remote > local
     prompts = {}
@@ -649,10 +666,15 @@ def main():
         x_accounts = (feed_x or {}).get("x", [])
         episodes = (feed_podcasts or {}).get("podcasts", [])
         papers = (feed_arxiv or {}).get("papers", [])
-        marks = {"tweets": {}, "episodes": {}, "papers": {}}
+        articles = (feed_blogs or {}).get("articles", [])
+        marks = {"tweets": {}, "episodes": {}, "papers": {}, "articles": {}}
     else:
-        x_accounts, episodes, papers, marks = filter_unseen(
-            feed_x, feed_podcasts, (feed_arxiv or {}).get("papers", []), seen
+        x_accounts, episodes, papers, articles, marks = filter_unseen(
+            feed_x,
+            feed_podcasts,
+            (feed_arxiv or {}).get("papers", []),
+            (feed_blogs or {}).get("articles", []),
+            seen,
         )
 
     # 5. Build output
@@ -704,6 +726,7 @@ def main():
         "x_builders": len(x_accounts),
         "total_tweets": sum(len(a.get("tweets", [])) for a in x_accounts),
         "arxiv_papers": len(papers),
+        "blog_articles": len(articles),
     }
     config_out = {
         "language": language,
@@ -729,6 +752,7 @@ def main():
         "podcasts": episodes,
         "x": x_accounts,
         "papers": papers,
+        "articles": articles,
         "stats": stats,
         "prompts": prompts,
         "warnings": warnings if warnings else None,
@@ -788,6 +812,15 @@ def main():
             for a in x_accounts if a.get("tweets")
         ],
         "papers_count": len(papers),
+        "articles": [
+            {
+                "source": a.get("source_name") or a.get("source"),
+                "title": a.get("title"),
+                "published": a.get("published"),
+                "url": a.get("url"),
+            }
+            for a in articles
+        ],
         "seen_filter": "off (--include-seen)" if args.include_seen else "on",
         "seen_update": seen_update,
         "warnings": warnings if warnings else None,

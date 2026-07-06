@@ -27,6 +27,7 @@ import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -1384,6 +1385,203 @@ def fetch_arxiv(sources):
     return {"papers": papers, "errors": None}
 
 
+# ── Official blogs (Anthropic / OpenAI / DeepMind) ────────────────────────────
+
+def parse_iso_datetime(value):
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def parse_rfc822_datetime(value):
+    if not value:
+        return None
+    try:
+        dt = parsedate_to_datetime(value.strip())
+    except Exception:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def blog_items_from_rss(xml_text, src, since):
+    """Parse RSS 2.0 <item> or Atom <entry> elements into article dicts."""
+    root = ET.fromstring(xml_text)
+    items = []
+    for el in root.iter("item"):
+        title = re.sub(r"\s+", " ", (el.findtext("title") or "")).strip()
+        link = (el.findtext("link") or "").strip()
+        pub = parse_rfc822_datetime(el.findtext("pubDate")) or parse_iso_datetime(el.findtext("pubDate"))
+        summary = html_to_text(el.findtext("description") or "")
+        items.append((title, link, pub, summary))
+    if not items:  # Atom fallback
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        for el in root.findall("atom:entry", ns):
+            title = re.sub(r"\s+", " ", (el.findtext("atom:title", "", ns) or "")).strip()
+            link = ""
+            for link_el in el.findall("atom:link", ns):
+                if link_el.get("rel") in (None, "alternate"):
+                    link = link_el.get("href", "")
+                    break
+            pub = parse_iso_datetime(
+                el.findtext("atom:published", "", ns) or el.findtext("atom:updated", "", ns)
+            )
+            summary = html_to_text(
+                el.findtext("atom:summary", "", ns) or el.findtext("atom:content", "", ns) or ""
+            )
+            items.append((title, link, pub, summary))
+
+    articles = []
+    for title, link, pub, summary in items:
+        if not title or not link:
+            continue
+        if pub and pub < since:
+            continue
+        articles.append({
+            "id": link,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": link,
+            "published": pub.isoformat() if pub else None,
+            "summary": summary[:600].strip(),
+        })
+    return articles
+
+
+MONTH_DATE_RE = re.compile(
+    r"\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
+    r"Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+"
+    r"(\d{1,2}),\s+(20\d{2})\b"
+)
+
+
+def parse_visible_date(html):
+    """First 'Sep 19, 2023'-style date on the page — the visible publish date."""
+    m = MONTH_DATE_RE.search(html or "")
+    if not m:
+        return None
+    month = m.group(1)[:3].title()
+    try:
+        return datetime.strptime(f"{month} {m.group(2)} {m.group(3)}", "%b %d %Y").replace(
+            tzinfo=timezone.utc
+        )
+    except ValueError:
+        return None
+
+
+def blog_page_meta(url):
+    """Fetch an article page: <title>, meta description, visible publish date."""
+    try:
+        resp = httpx.get(url, timeout=20, headers={"User-Agent": UA}, follow_redirects=True)
+        resp.raise_for_status()
+    except Exception:
+        return "", "", None
+    html = resp.text
+    title = ""
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    if m:
+        title = re.sub(r"\s+", " ", unescape(m.group(1))).strip()
+        # Drop site-name suffixes like "... \ Anthropic" or "... | Anthropic"
+        title = re.sub(r"\s*[\\|·—-]\s*Anthropic\s*$", "", title)
+    desc = ""
+    m = re.search(
+        r'<meta[^>]+(?:property="og:description"|name="description")[^>]+content="([^"]*)"',
+        html, re.IGNORECASE,
+    ) or re.search(
+        r'<meta[^>]+content="([^"]*)"[^>]+(?:property="og:description"|name="description")',
+        html, re.IGNORECASE,
+    )
+    if m:
+        desc = re.sub(r"\s+", " ", unescape(m.group(1))).strip()
+    return title, desc, parse_visible_date(html)
+
+
+def blog_items_from_sitemap(xml_text, src, since, max_items):
+    """Sites without RSS (Anthropic): official sitemap.xml gives URL + lastmod.
+    lastmod is only a cheap pre-filter — site redeploys bump it on old posts in
+    bulk — so fetch each candidate page and gate on its visible publish date."""
+    ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    root = ET.fromstring(xml_text)
+    prefixes = src.get("include_prefixes", [])
+    hits = []
+    for url_el in root.findall("sm:url", ns):
+        loc = (url_el.findtext("sm:loc", "", ns) or "").strip()
+        if prefixes and not any(loc.startswith(p) for p in prefixes):
+            continue
+        lastmod = parse_iso_datetime(url_el.findtext("sm:lastmod", "", ns))
+        if not lastmod or lastmod < since:
+            continue
+        hits.append((lastmod, loc))
+    hits.sort(reverse=True)
+
+    articles = []
+    # Visible publish dates are day-granular; pad the cutoff so a post from
+    # the lookback window's starting day is not dropped by its 00:00 timestamp.
+    day_since = since - timedelta(hours=24)
+    for lastmod, loc in hits:
+        if len(articles) >= max_items:
+            break
+        title, desc, page_date = blog_page_meta(loc)
+        if page_date and page_date < day_since:
+            continue  # old post whose lastmod was bumped by a redeploy/edit
+        if not title:
+            # Fall back to a de-slugged URL tail so the item is still usable
+            title = loc.rstrip("/").split("/")[-1].replace("-", " ").strip().title()
+        articles.append({
+            "id": loc,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": loc,
+            "published": (page_date or lastmod).isoformat(),
+            "summary": desc[:600],
+        })
+    return articles
+
+
+def fetch_blogs(sources):
+    blogs_cfg = sources.get("blogs", {})
+    blog_sources = blogs_cfg.get("sources", [])
+    lookback = blogs_cfg.get("lookback_hours", 48)
+    max_per_source = blogs_cfg.get("max_per_source", 5)
+
+    log(f"\n━━━ Official Blogs ━━━")
+    if not blog_sources:
+        return {"articles": [], "errors": ["No blog sources configured"]}
+
+    since = datetime.now(timezone.utc) - timedelta(hours=lookback)
+    articles = []
+    errors = []
+
+    for src in blog_sources:
+        name = src.get("name", src.get("id", "?"))
+        try:
+            resp = httpx.get(src["url"], timeout=30, headers={"User-Agent": UA}, follow_redirects=True)
+            resp.raise_for_status()
+            if src.get("type") == "sitemap":
+                found = blog_items_from_sitemap(resp.text, src, since, max_per_source)
+            else:
+                found = blog_items_from_rss(resp.text, src, since)
+            found.sort(key=lambda a: a.get("published") or "", reverse=True)
+            found = found[:max_per_source]
+            articles.extend(found)
+            log(f"  ✅ {name}: {len(found)} articles")
+        except Exception as e:
+            errors.append(f"{name}: {e}")
+            log(f"  ⚠️ {name} failed: {e}")
+
+    articles.sort(key=lambda a: a.get("published") or "", reverse=True)
+    return {"articles": articles, "errors": errors or None}
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 async def main():
@@ -1392,6 +1590,7 @@ async def main():
     parser.add_argument("--twitter-only", action="store_true")
     parser.add_argument("--podcasts-only", action="store_true")
     parser.add_argument("--arxiv-only", action="store_true")
+    parser.add_argument("--blogs-only", action="store_true")
     parser.add_argument("--people-only", action="store_true",
                         help="refresh person-appearance searches only; keep channel episodes as-is")
     args = parser.parse_args()
@@ -1400,7 +1599,8 @@ async def main():
     now = datetime.now(timezone.utc)
     FEEDS_DIR.mkdir(parents=True, exist_ok=True)
 
-    run_all = not (args.twitter_only or args.podcasts_only or args.arxiv_only or args.people_only)
+    run_all = not (args.twitter_only or args.podcasts_only or args.arxiv_only
+                   or args.blogs_only or args.people_only)
 
     if run_all or args.twitter_only:
         log("\n━━━ Twitter/X ━━━")
@@ -1430,6 +1630,17 @@ async def main():
                 arxiv_feed = existing_arxiv
         write_json(FEEDS_DIR / "feed-arxiv.json", arxiv_feed)
         log(f"✅ feed-arxiv.json ({len(arxiv_feed['papers'])} papers)")
+
+    if run_all or args.blogs_only:
+        blogs_feed = fetch_blogs(sources)
+        blogs_feed["generated_at"] = now.isoformat()
+        if not blogs_feed["articles"] and blogs_feed.get("errors"):
+            existing_blogs = load_feed("feed-blogs.json")
+            if existing_blogs and existing_blogs.get("articles"):
+                log("ℹ️  Blog fetch failed everywhere; keeping existing feed-blogs.json")
+                blogs_feed = existing_blogs
+        write_json(FEEDS_DIR / "feed-blogs.json", blogs_feed)
+        log(f"✅ feed-blogs.json ({len(blogs_feed['articles'])} articles)")
 
     log("\n🎉 Feed generation complete")
 
