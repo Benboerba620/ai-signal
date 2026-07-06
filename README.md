@@ -10,6 +10,7 @@
 
 ## 最近更新
 
+- `2026-07-06`：新增官方博客追踪——Anthropic / OpenAI / Google DeepMind 的模型发布、产品上线、研究成果直接进日报（编号 B1/B2，可展开）
 - `2026-07-06`：大陆直连加固——feed 镜像从 2 个扩到 5 个 CDN 入口，被阻断的源 5 秒快速跳过（回应用户反馈"没 VPN 拉不到数据"）
 - `2026-07-05`：新增人物追踪——27 位 AI 高管/分析师/创始人上任何播客都会被抓到（不再限于订阅频道），只收本周上传的最新访谈
 - `2026-07-05`：修正 3 个 X 账号 handle（Dylan Patel / Leopold Aschenbrenner / Jim Keller 此前配错，一直抓不到推文）
@@ -27,6 +28,7 @@
 
 - 一线播客的最新内容（含全文字幕，不是摘要的摘要）
 - 精选推特账号的当日观点
+- Anthropic / OpenAI / Google DeepMind 官方博客的最新发布（新模型、产品、研究、安全框架）
 - arXiv 最新 AI/ML/NLP 论文标题、链接和摘要原文
 - 按你的偏好定制：中文 / 英文 / 双语，精华 / 标准 / 完整
 - 不需要内容 API key——所有内容由中央服务统一抓取
@@ -84,6 +86,16 @@
 **建造者**：[@AmandaAskell](https://x.com/AmandaAskell)、[@bcherny](https://x.com/bcherny)（Claude Code）、[@_catwu](https://x.com/_catwu)、[@alexalbert__](https://x.com/alexalbert__)、[@rauchg](https://x.com/rauchg)（Vercel）、[@amasad](https://x.com/amasad)（Replit）、[@joshwoodward](https://x.com/joshwoodward)（Google Labs）
 
 > 选人标准：在一线做事 / 有独立判断 / 用真金白银下注。不选搬运号、评论员、流量账号。
+
+### 官方博客（3 家）
+
+| 来源 | 抓取方式 |
+|------|----------|
+| [Anthropic](https://www.anthropic.com/news) | 官方 sitemap（Anthropic 无 RSS）+ 文章页真实发布日期过滤 |
+| [OpenAI](https://openai.com/news/) | 官方 RSS |
+| [Google DeepMind](https://deepmind.google/blog/) | 官方 RSS |
+
+> 模型发布、产品上线、研究成果、安全框架，第一时间从官方渠道进日报，不等二手转述。每家每天最多 5 条，48 小时窗口。
 
 ### arXiv 论文（每日最多 30 篇）
 

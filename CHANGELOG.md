@@ -4,6 +4,12 @@
 
 ## 2026-07-06
 
+### 新增
+
+- 官方博客追踪：Anthropic / OpenAI / Google DeepMind 官方发布（新模型、产品、研究成果、安全框架）作为第四类信息源进入日报，编号 `B1/B2`，与推文/播客/论文一样可展开。每家每天最多 5 条，48 小时窗口，去重与已读机制复用现有管道（`feeds/feed-blogs.json`，名单在 `config/sources.json` 的 `blogs`）。
+  之所以这样加：一手信号里最"一手"的就是实验室自己的发布——此前日报靠推文和播客间接覆盖，官方公告要等别人转述才能进来。
+  抓取方式：OpenAI 与 DeepMind 走官方 RSS；Anthropic 没有 RSS，走官方 sitemap.xml + 逐篇文章页提取真实发布日期做时间窗过滤（sitemap 的 lastmod 会被网站重新部署批量刷新，直接用会把 2023 年的旧文当新发布——7/6 实测一次重部署刷了 18 篇旧文的 lastmod，页面可见日期才是可靠锚点）。
+
 ### 修复
 
 - feed 镜像从 2 个扩到 5 个：GitHub raw → jsDelivr 的 4 个 CDN 入口（cdn / fastly / gcore / testingcf）。
