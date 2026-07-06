@@ -869,6 +869,22 @@ CN_TITLE_SKIP_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Foreign-audience re-upload / reaction channels (Chinese dubs, Hindi "kissa"
+# recaps, Korean subs) clear the subscriber gate — some have 1M+ subs — but
+# carry no English transcript and aren't real interviews. They give themselves
+# away by naming the channel or writing the title in a non-Latin script.
+# Applied only to overseas people; region:"cn" voices legitimately appear in
+# Chinese-titled interviews and are handled by CN_TITLE_SKIP_RE instead.
+FOREIGN_SCRIPT_RE = re.compile(
+    r"[一-鿿"      # CJK (Chinese / kanji)
+    r"぀-ヿ"       # Japanese kana
+    r"가-힯"       # Korean hangul
+    r"ऀ-ॿ"       # Devanagari (Hindi)
+    r"؀-ۿ"       # Arabic
+    r"฀-๿"       # Thai
+    r"Ѐ-ӿ]"      # Cyrillic
+)
+
 
 def _run_ytdlp(args, timeout=300):
     import subprocess
@@ -1006,6 +1022,14 @@ def search_person_appearances(search, people_cfg, since, known_ids):
         if DAILY_BRIEFING_RE.search(title) or (
                 search.get("region") == "cn" and CN_TITLE_SKIP_RE.search(title)):
             log(f"  ⏭️ title blacklist: {title[:60]}")
+            continue
+        # Foreign-audience re-upload / reaction channel: non-Latin channel name
+        # or title on an overseas person. These clear the subscriber gate but
+        # carry no English transcript and aren't real interviews.
+        if search.get("region") != "cn" and (
+                FOREIGN_SCRIPT_RE.search(v.get("channel") or "")
+                or FOREIGN_SCRIPT_RE.search(title)):
+            log(f"  ⏭️ foreign re-upload ({v.get('channel')}): {title[:50]}")
             continue
         if v["duration"] and v["duration"] < min_seconds:
             log(f"  ⏭️ too short ({v['duration']}s, likely a clip): {title[:60]}")
