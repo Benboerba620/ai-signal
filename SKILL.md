@@ -271,11 +271,29 @@ openclaw cron add \
   --cron "<cron expression>" \
   --tz "<user timezone>" \
   --session isolated \
+  --timeout-seconds 900 \
   --message "Run the ai-signal skill: execute prepare_digest.py, remix the content into a digest following the prompts, then deliver via deliver.py" \
   --announce \
   --channel <channel name> \
   --to "<target ID>" \
   --exact
+```
+
+**`--timeout-seconds 900` is mandatory.** A digest run reads full podcast
+transcripts (a single episode can exceed 100K characters) — that is by design,
+full-text reading produces better summaries — so a normal run can take well
+over 5 minutes. If the job's time budget is shorter than the run, the platform
+kills it mid-generation and the scheduler relaunches it from scratch, which
+loops forever and never delivers. 15 minutes gives comfortable headroom.
+
+Also check that the agent-turn timeout is not shorter than the cron budget
+(some users lower it globally):
+```bash
+openclaw config get agents.defaults.timeoutSeconds
+```
+If it prints a value below 900, raise it:
+```bash
+openclaw config set agents.defaults.timeoutSeconds 900
 ```
 
 Verify with:
@@ -293,6 +311,12 @@ Create a scheduled task with your platform's own scheduler at the user's
 with: "Run the ai-signal skill: execute prepare_digest.py, remix the content
 into a digest following the prompts, then deliver it." Run it once as a test
 before confirming to the user.
+
+If the platform lets you set a per-task time limit, set it to **at least 10
+minutes (15 recommended)**. A digest run reads full podcast transcripts and
+regularly takes more than 5 minutes; a shorter limit makes the platform kill
+and relaunch the task in an endless loop (see the timeout note in the OpenClaw
+section above).
 
 **Non-persistent agent:**
 
@@ -499,6 +523,24 @@ cd ${SKILL_DIR}/scripts && python mark_delivered.py --file "<delivery_mark_file>
 
 Do not run `mark_delivered.py` if digest generation failed or the content was
 not shown/sent.
+
+### Troubleshooting: scheduled digest keeps restarting and never delivers
+
+Symptom: the scheduled run gets killed partway ("truncated", "timed out") and
+the scheduler relaunches it over and over; the user never receives a digest.
+
+Cause: the task or agent-turn time budget is shorter than a real digest run.
+Reading full transcripts takes time, and since items are only marked as seen
+after successful delivery, every relaunch redoes the full run — so a too-short
+limit loops forever instead of eventually succeeding.
+
+Fix: raise the time budget to at least 10 minutes (15 recommended):
+- OpenClaw: recreate or update the cron job with `--timeout-seconds 900`, and
+  check `openclaw config get agents.defaults.timeoutSeconds` is not lower.
+- Other platforms: raise the scheduled task's time limit in its scheduler
+  settings.
+- Also check for timeout settings in the user's LLM gateway/provider layer if
+  the platform settings look correct.
 
 ---
 
