@@ -822,7 +822,8 @@ def get_podcast_transcript(ep):
 
 def fetch_channel(channel, lookback_hours, transcript_cache):
     name = channel["name"]
-    since = datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
+    channel_lookback = int(channel.get("lookback_hours", lookback_hours))
+    since = datetime.now(timezone.utc) - timedelta(hours=channel_lookback)
     log(f"📻 {name}...")
 
     rss_text, final_url, rss_error = fetch_rss_with_fallback(channel)
