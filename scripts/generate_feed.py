@@ -213,6 +213,31 @@ def is_relevant_tweet(text, twitter_cfg):
     return has_platform and has_context
 
 
+def tweet_author_handle(tweet):
+    """Return the canonical author handle for a twscrape Tweet when available.
+
+    X search can return the original Tweet object for a repost even for a
+    ``from:<handle>`` query. In that case ``rawContent`` no longer starts with
+    ``RT @``, so author identity (or the canonical URL) is the reliable guard.
+    """
+    user = getattr(tweet, "user", None)
+    for attr in ("username", "screenName"):
+        value = getattr(user, attr, None) if user is not None else None
+        if value:
+            return str(value).lstrip("@")
+
+    url = str(getattr(tweet, "url", "") or "")
+    try:
+        parsed = urlparse(url)
+        parts = [part for part in parsed.path.split("/") if part]
+        if parsed.netloc.lower() in {"x.com", "www.x.com", "twitter.com", "www.twitter.com"}:
+            if len(parts) >= 3 and parts[1].lower() == "status":
+                return parts[0].lstrip("@")
+    except Exception:
+        pass
+    return ""
+
+
 def fetch_text_url(url, timeout=30):
     resp = httpx.get(url, headers={"User-Agent": UA}, timeout=timeout, follow_redirects=True)
     resp.raise_for_status()
@@ -437,6 +462,7 @@ async def fetch_twitter(sources):
     since = datetime.now(timezone.utc) - timedelta(hours=lookback)
     results = []
     errors = []
+    global_seen_ids = set()
 
     for account in accounts:
         handle = account["handle"]
@@ -451,15 +477,21 @@ async def fetch_twitter(sources):
         tweets = []
         seen_ids = set()
         filtered_count = 0
+        repost_count = 0
         for t in raw:
             if t.date and t.date.replace(tzinfo=timezone.utc) < since:
                 continue
             if t.rawContent.startswith("RT @"):
                 continue
+            author_handle = tweet_author_handle(t)
+            if author_handle and author_handle.casefold() != handle.casefold():
+                repost_count += 1
+                continue
             tid = str(t.id)
-            if tid in seen_ids:
+            if tid in seen_ids or tid in global_seen_ids:
                 continue
             seen_ids.add(tid)
+            global_seen_ids.add(tid)
             if not is_relevant_tweet(t.rawContent, twitter_cfg):
                 filtered_count += 1
                 continue
@@ -477,10 +509,20 @@ async def fetch_twitter(sources):
         tweets = tweets[:max_per_user]
 
         if tweets:
-            suffix = f", filtered {filtered_count}" if filtered_count else ""
+            details = []
+            if filtered_count:
+                details.append(f"filtered {filtered_count}")
+            if repost_count:
+                details.append(f"skipped {repost_count} reposts")
+            suffix = f", {', '.join(details)}" if details else ""
             log(f"  ✅ {len(tweets)} tweets{suffix}")
         else:
-            suffix = f" (filtered {filtered_count})" if filtered_count else ""
+            details = []
+            if filtered_count:
+                details.append(f"filtered {filtered_count}")
+            if repost_count:
+                details.append(f"skipped {repost_count} reposts")
+            suffix = f" ({', '.join(details)})" if details else ""
             log(f"  ⏭️ nothing new{suffix}")
 
         results.append({

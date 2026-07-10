@@ -2,6 +2,14 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-07-10
+
+### 修复
+
+- 修复 X/Twitter 转发被误认成账号原创、导致同一条推文重复进入日报：抓取时核验推文真实作者，并在所有追踪账号之间做全局 ID 去重；消费端 `prepare_digest.py` 再做一层批次内去重，即使中央 feed 出现脏数据也不会重复推送。
+- GitHub Actions 新增回归测试和 feed 唯一性校验，重复 tweet ID、播客 key、arXiv ID 或博客 ID 会在提交前直接失败。
+- 修复 `feed-blogs.json` 未被每日工作流加入 Git 提交的问题，官方博客 feed 现在会随其他 feed 一起更新。
+
 ## 2026-07-08
 
 ### 新增

@@ -209,37 +209,48 @@ def episode_key(episode):
 def filter_unseen(feed_x, feed_podcasts, papers, articles, seen):
     now = datetime.now(timezone.utc).isoformat()
     new_ids = {"tweets": [], "episodes": [], "papers": [], "articles": []}
+    emitted = {"tweets": set(), "episodes": set(), "papers": set(), "articles": set()}
 
     accounts = []
     for account in (feed_x or {}).get("x", []):
-        tweets = [t for t in account.get("tweets", []) if t.get("id") not in seen["tweets"]]
-        new_ids["tweets"].extend(t["id"] for t in tweets if t.get("id"))
+        tweets = []
+        for tweet in account.get("tweets", []):
+            key = str(tweet.get("id") or tweet.get("url") or "")
+            if key and (key in seen["tweets"] or key in emitted["tweets"]):
+                continue
+            if key:
+                emitted["tweets"].add(key)
+                new_ids["tweets"].append(key)
+            tweets.append(tweet)
         accounts.append({**account, "tweets": tweets})
 
     episodes = []
     for ep in (feed_podcasts or {}).get("podcasts", []):
         key = episode_key(ep)
-        if key and key in seen["episodes"]:
+        if key and (key in seen["episodes"] or key in emitted["episodes"]):
             continue
         if key:
+            emitted["episodes"].add(key)
             new_ids["episodes"].append(key)
         episodes.append(ep)
 
     fresh_papers = []
     for paper in papers:
         pid = paper.get("arxiv_id") or ""
-        if pid and pid in seen["papers"]:
+        if pid and (pid in seen["papers"] or pid in emitted["papers"]):
             continue
         if pid:
+            emitted["papers"].add(pid)
             new_ids["papers"].append(pid)
         fresh_papers.append(paper)
 
     fresh_articles = []
     for article in articles:
         aid = article.get("id") or article.get("url") or ""
-        if aid and aid in seen["articles"]:
+        if aid and (aid in seen["articles"] or aid in emitted["articles"]):
             continue
         if aid:
+            emitted["articles"].add(aid)
             new_ids["articles"].append(aid)
         fresh_articles.append(article)
 
