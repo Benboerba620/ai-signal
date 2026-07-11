@@ -5,9 +5,9 @@ local config and prompt preferences, then:
 
 1. Filters out items this user has already been shown (~/.ai-signal/seen.json).
    Central feeds are rolling-window snapshots; per-user dedup happens here.
-2. Writes the full payload to files (default ~/.ai-signal/payload/):
-   - payload.json      — everything except transcript full text
-   - transcripts/*.txt — one file per podcast episode
+2. Writes a metadata-first payload to `~/.ai-signal/payload/payload.json`.
+   Podcast transcripts remain remote and are fetched one at a time only when
+   the user explicitly asks to expand an episode.
 3. Prints a compact JSON manifest to stdout (stats, config, output contract,
    item overview, file paths). The manifest is intentionally small so any
    agent can read it from stdout; the big content is read from files.
@@ -25,6 +25,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
+
+from feedback import summarize_feedback
 
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
@@ -172,10 +174,11 @@ def build_output_contract(config):
             "Select only AI/product/research/infrastructure/investing-relevant items.",
             "Every included item must keep its original URL.",
             "For X/Twitter, keep each selected tweet as its own item and preserve the original text.",
-            "For podcasts, use transcript first and description only when transcript is missing.",
+            "For the daily digest, use podcast metadata and description only; fetch a transcript only after an explicit expansion request.",
             "For papers, keep title, arXiv link, and a short summary.",
             "For official blog articles, keep source name, title, link, and a short summary of what was announced.",
             "Do not fabricate quotes, numbers, claims, or source details.",
+            "Use local feedback_summary as a soft ranking preference, never as permission to hide critical official announcements.",
         ],
     }
 
@@ -260,38 +263,24 @@ def filter_unseen(feed_x, feed_podcasts, papers, articles, seen):
 
 # ── Payload files ─────────────────────────────────────────────────────────────
 
-def slugify(text, max_len=60):
-    text = re.sub(r"[^a-zA-Z0-9]+", "-", (text or "").lower()).strip("-")
-    return text[:max_len].rstrip("-") or "untitled"
-
-
 def write_payload(out_dir, output, episodes):
     out_dir.mkdir(parents=True, exist_ok=True)
-    transcripts_dir = out_dir / "transcripts"
-    transcripts_dir.mkdir(exist_ok=True)
-    for old in transcripts_dir.glob("*.txt"):
-        old.unlink()
-
-    slim_episodes = []
-    transcript_files = []
-    for i, ep in enumerate(episodes, 1):
-        slim = {k: v for k, v in ep.items() if k != "transcript"}
-        transcript = ep.get("transcript")
-        if transcript:
-            fname = f"{i:02d}-{slugify(ep.get('channel'))}-{slugify(ep.get('title'))}.txt"
-            path = transcripts_dir / fname
-            path.write_text(clean_text(transcript), encoding="utf-8")
-            slim["transcript_file"] = str(path)
-            slim["transcript_chars"] = len(transcript)
-            transcript_files.append(str(path))
-        slim_episodes.append(slim)
+    legacy_transcripts_dir = out_dir / "transcripts"
+    if legacy_transcripts_dir.is_dir():
+        for old in legacy_transcripts_dir.glob("*.txt"):
+            old.unlink()
+        try:
+            legacy_transcripts_dir.rmdir()
+        except OSError:
+            pass
+    slim_episodes = [{k: v for k, v in ep.items() if k != "transcript"} for ep in episodes]
 
     payload = {**output, "podcasts": slim_episodes}
     payload_path = out_dir / "payload.json"
     payload_path.write_text(
         json.dumps(clean_data(payload), ensure_ascii=True, indent=2), encoding="utf-8"
     )
-    return payload_path, slim_episodes, transcript_files
+    return payload_path, slim_episodes
 
 
 def write_delivery_mark(out_dir, marks, generated_at):
@@ -730,7 +719,7 @@ def main():
 
     stats = {
         "podcast_episodes": len(episodes),
-        "podcast_with_transcript": sum(1 for e in episodes if e.get("transcript")),
+        "podcast_with_transcript": sum(1 for e in episodes if e.get("transcript_available")),
         "central_x_summaries": len((central_summaries or {}).get("x", [])),
         "central_podcast_summaries": len((central_summaries or {}).get("podcasts", [])),
         "central_paper_summaries": len((central_summaries or {}).get("papers", [])),
@@ -751,6 +740,7 @@ def main():
         "delivery": config.get("delivery", {"method": "stdout"}),
     }
     output_contract = build_output_contract({**config, "language": language})
+    feedback_summary = summarize_feedback()
 
     output = {
         "status": "ok",
@@ -765,6 +755,7 @@ def main():
         "papers": papers,
         "articles": articles,
         "stats": stats,
+        "feedback_summary": feedback_summary,
         "prompts": prompts,
         "warnings": warnings if warnings else None,
         "errors": errors if errors else None,
@@ -773,10 +764,10 @@ def main():
     # 6. Write payload files (full content) + print compact manifest (stdout)
     out_dir = Path(args.out)
     try:
-        payload_path, slim_episodes, transcript_files = write_payload(out_dir, output, episodes)
+        payload_path, slim_episodes = write_payload(out_dir, output, episodes)
     except Exception as e:
         errors.append(f"Payload write error: {e}")
-        payload_path, slim_episodes, transcript_files = None, [], []
+        payload_path, slim_episodes = None, []
 
     mark_path = None
     if payload_path and not args.include_seen:
@@ -807,13 +798,16 @@ def main():
         "output_contract": output_contract,
         "feed_sources": feed_sources,
         "stats": stats,
+        "feedback_summary": feedback_summary,
         "podcasts": [
             {
                 "channel": ep.get("channel"),
+                "guid": ep.get("guid"),
                 "title": ep.get("title"),
                 "pub_date": ep.get("pub_date"),
                 "link": ep.get("link"),
-                "transcript_file": ep.get("transcript_file"),
+                "transcript_available": ep.get("transcript_available", False),
+                "transcript_path": ep.get("transcript_path"),
                 "transcript_chars": ep.get("transcript_chars", 0),
             }
             for ep in slim_episodes

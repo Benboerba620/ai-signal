@@ -35,6 +35,8 @@ from urllib.parse import quote_plus, urljoin, urlparse
 
 import httpx
 
+from podcast_transcripts import externalize_transcripts, hydrate_transcripts
+
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
 FEEDS_DIR = ROOT_DIR / "feeds"
@@ -236,6 +238,20 @@ def tweet_author_handle(tweet):
     except Exception:
         pass
     return ""
+
+
+def tweet_engagement_score(tweet):
+    return (
+        int(getattr(tweet, "likeCount", 0) or 0)
+        + int(getattr(tweet, "retweetCount", 0) or 0) * 2
+        + int(getattr(tweet, "replyCount", 0) or 0)
+    )
+
+
+def is_reply_tweet(tweet):
+    if getattr(tweet, "inReplyToTweetId", None):
+        return True
+    return str(getattr(tweet, "rawContent", "") or "").lstrip().startswith("@")
 
 
 def fetch_text_url(url, timeout=30):
@@ -466,6 +482,8 @@ async def fetch_twitter(sources):
 
     for account in accounts:
         handle = account["handle"]
+        min_engagement = int(account.get("min_engagement", twitter_cfg.get("min_engagement", 0)))
+        include_replies = bool(account.get("include_replies", twitter_cfg.get("include_replies", False)))
         log(f"📥 @{handle}...")
         try:
             raw = await gather(api.search(f"from:{handle}", limit=max_per_user * 3, kv={"product": "Latest"}))
@@ -478,6 +496,8 @@ async def fetch_twitter(sources):
         seen_ids = set()
         filtered_count = 0
         repost_count = 0
+        reply_count = 0
+        low_engagement_count = 0
         for t in raw:
             if t.date and t.date.replace(tzinfo=timezone.utc) < since:
                 continue
@@ -486,6 +506,13 @@ async def fetch_twitter(sources):
             author_handle = tweet_author_handle(t)
             if author_handle and author_handle.casefold() != handle.casefold():
                 repost_count += 1
+                continue
+            if not include_replies and is_reply_tweet(t):
+                reply_count += 1
+                continue
+            engagement = tweet_engagement_score(t)
+            if engagement < min_engagement:
+                low_engagement_count += 1
                 continue
             tid = str(t.id)
             if tid in seen_ids or tid in global_seen_ids:
@@ -502,10 +529,11 @@ async def fetch_twitter(sources):
                 "like_count": t.likeCount or 0,
                 "retweet_count": t.retweetCount or 0,
                 "reply_count": t.replyCount or 0,
+                "engagement_score": engagement,
                 "url": t.url or "",
             })
 
-        tweets.sort(key=lambda x: x["like_count"] + x["retweet_count"] * 2, reverse=True)
+        tweets.sort(key=lambda x: x["engagement_score"], reverse=True)
         tweets = tweets[:max_per_user]
 
         if tweets:
@@ -514,6 +542,10 @@ async def fetch_twitter(sources):
                 details.append(f"filtered {filtered_count}")
             if repost_count:
                 details.append(f"skipped {repost_count} reposts")
+            if reply_count:
+                details.append(f"skipped {reply_count} replies")
+            if low_engagement_count:
+                details.append(f"skipped {low_engagement_count} below engagement {min_engagement}")
             suffix = f", {', '.join(details)}" if details else ""
             log(f"  ✅ {len(tweets)} tweets{suffix}")
         else:
@@ -522,6 +554,10 @@ async def fetch_twitter(sources):
                 details.append(f"filtered {filtered_count}")
             if repost_count:
                 details.append(f"skipped {repost_count} reposts")
+            if reply_count:
+                details.append(f"skipped {reply_count} replies")
+            if low_engagement_count:
+                details.append(f"skipped {low_engagement_count} below engagement {min_engagement}")
             suffix = f" ({', '.join(details)})" if details else ""
             log(f"  ⏭️ nothing new{suffix}")
 
@@ -1327,6 +1363,7 @@ def fetch_podcasts(sources, people_only=False):
     # transcript are retried each run.
     transcript_cache = {}
     existing = load_feed("feed-podcasts.json") or {}
+    hydrate_transcripts(existing)
     for entry in existing.get("podcasts", []):
         if not entry.get("transcript"):
             continue
@@ -1710,8 +1747,9 @@ async def main():
         log("\n━━━ Podcasts ━━━")
         podcast_feed = fetch_podcasts(sources, people_only=args.people_only)
         podcast_feed["generated_at"] = now.isoformat()
-        write_json(FEEDS_DIR / "feed-podcasts.json", podcast_feed)
         with_transcript = sum(1 for e in podcast_feed["podcasts"] if e.get("transcript"))
+        externalize_transcripts(podcast_feed)
+        write_json(FEEDS_DIR / "feed-podcasts.json", podcast_feed)
         person_hits = sum(1 for e in podcast_feed["podcasts"] if e.get("person"))
         log(f"✅ feed-podcasts.json ({len(podcast_feed['podcasts'])} episodes, "
             f"{with_transcript} with transcript, {person_hits} person hits)")
