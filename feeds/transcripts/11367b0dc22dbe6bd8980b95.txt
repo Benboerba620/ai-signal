@@ -1,0 +1,78 @@
+[AINews] not much happened today - Latent.Space
+Sign in
+AINews: Weekday Roundups
+[AINews] not much happened today
+a quiet day after a week of nonstop model releases
+Jul 11, 2026
+∙ Paid
+41
+So dancing bugs got upstaged by kpop girls , there’s the whole Bun vs Zig drama , and yesterday’s ChatGPT/Codex superapp launch was bumpier than expected , and the reset button was pressed a couple times to compensate.
+After buying Statsig and making a big deal out of GPT5’s routing/getting rid of the model picker , the main issue now is that GPT 5.6’s extra options are confusing people a bit. Most people just have a single slider:
+But API users have literally 36 variants of GPT 5.6 now:
+Most people can get by with just 3 rough clusters
+JUMPERZ @jumperz
+so this is what i've found works best with gpt-5.6 so far..
+> luna high, normal everyday coding, fast, capable, doesn't feel wasteful...
+>luna xhigh better quality without jumping to the expensive models...
+>terra medium, bigger features
+>terra high, repo-wide changes..
+>
+JUMPERZ @jumperz
+gpt 5.6 is honestly making the $200 pro plan harder to justify…
+when 5.5 never made me think about usage..
+now you’ve got sol, terra, and luna, all with different limits and usage costs…
+so Instead of just picking the best model for the job, you’re constantly trying to make https://t.co/eA50elhmLP
+4:28 PM · Jul 10, 2026 · 31.5K Views
+20 Replies · 18 Reposts · 284 Likes
+And many guides are coming up:
+Sebastian Raschka @rasbt
+For agentic coding, one can say:
+- Unless you need Terra Ultra perf, it's always better to use a Luna model with higher effort setting (same or better performance but cheaper).
+- Forget everything below Sol High, use Luna with higher effort settings here
+- Forget Sol Extra
+1:32 PM · Jul 10, 2026 · 459K Views
+250 Replies · 272 Reposts · 3.11K Likes
+The top AIE talk so far this week has been Theo’s closing keynote, and the last of the online track will be released this weekend.
+AI News for 7/09/2026-7/10/2026. We checked 12 subreddits and 544 Twitters . AINews’ website lets you search all past issues. As a reminder, AINews is now a section of Latent Space . You can opt in/out of email frequencies!
+AI Twitter Recap
+OpenAI’s GPT-5.6 rollout: model stratification, agent UX, and early benchmark signals
+GPT-5.6 introduced a more explicit model/compute ladder : users are now navigating Luna / Terra / Sol plus multiple effort levels, with community guidance converging around “start lower than you did on 5.5.” OpenAI staff explained that Max means one model spending longer on a hard problem, while Ultra parallelizes work across subagents; they also noted that 5.5→5.6 effort settings are not directly comparable ( guidance from @reach_vb , follow-up , practical default suggestion ). The community reaction was mixed: many praised the added control, while others criticized the 30+ configuration combinatorics and missing “Auto” routing ( @rasbt , @Yuchenj_UW ).
+The product launch landed with real UX regressions, and OpenAI publicly course-corrected fast : users complained that the new ChatGPT Work / Codex split was confusing, chats/projects became harder to find, and usage burned down faster than expected ( @scaling01 , @simonw , @kimmonismus ). OpenAI responded unusually directly: multiple usage-limit resets , acknowledgements that defaults nudged users toward overly expensive settings, and a commitment to restore familiar sidebar/navigation patterns and clarify positioning between Work and Codex ( @thsottiaux reset announcement , second reset , full corrective roadmap ).
+Initial eval picture : GPT-5.6 appears strongest in agentic coding / presentation / some science tasks , but not unambiguously dominant everywhere. Examples: #1 tie in Code Arena: Frontend with Claude Fable 5 while being ~ 2× cheaper on listed IO pricing ( Arena ); best recorded Presentation Elo on AA-Briefcase with a ~ 500-point jump over GPT-5.5 ( Artificial Analysis ); CritPt gains over GPT-5.5 and beats Fable 5 by ~4 points ( Artificial Analysis ); and strong results on WeirdML at lower cost ( @htihle ). At the same time, users reported instruction-following issues , uneven token efficiency in practice, and some concern about jailbreakability / reward hacking ( @teortaxesTex , @Mononofu , @kimmonismus ).
+Parallel-agent workflows, computer use, and the “harness is the product” theme
+GPT-5.6’s biggest perceived leap may be orchestration and computer use rather than pure chat quality . Multiple users highlighted that Sol is unusually strong as a planner / verifier / orchestrator , often using subagents automatically and reacting more quickly to steering ( @omarsar0 , @Hangsiin ). OpenAI also showcased computer use with Sol Ultra and promoted ChatGPT Work as bringing agents to consumer/mobile scale ( OpenAI demo via @gdb , Work positioning ). Community reports described very high-throughput GUI automation and Blender workflows ( @mckbrando , @kimmonismus ).
+A recurring operational issue is hidden subagent cost explosion : users found that spawned agents may inherit premium settings, draining quotas much faster than expected. One concrete claim was that spawn_agent doesn’t let users choose model/effort, so Sol Ultra spawns more Sol Ultra by default ( @evi77ain ). This fits the broader pattern of people liking the capability jump but finding the cost model opaque.
+The broader systems trend is toward harness-centric competition . This came through in product commentary from Perplexity’s Arav Srinivas (“the real product is now the harness around it”), in LangChain’s launch framing around Deep Agents + Nemotron + OpenShell , and in a growing set of memory / orchestration tools like OpenWiki and OpenSWE ( @dee_bosa quoting Arav , @hwchase17 , OpenWiki proactive memory , OpenSWE adoption ). The meta-point: frontier model parity is tightening, so value is increasingly shifting to routing, memory, tool use, safety rails, and enterprise context .
+Meta’s Muse Spark 1.1 and the widening frontier of “good enough, fast, cheap” models
+Muse Spark 1.1 was the other major model story of the day , with many practitioners calling it the most surprising release of the week. Reports consistently emphasized strong UI/frontend generation, fast responses, and unusually aggressive pricing , often framing it as near-frontier quality for a large subset of coding/product tasks ( @alexandr_wang , @rowancheung , @kimmonismus ).
+Benchmarking suggests a real step up, but not outright frontier leadership . Artificial Analysis scored Muse Spark 1.1 at 51 on its Intelligence Index, up 8 points from 1.0, roughly tied with GLM-5.2 / GPT-5.4 / GPT-5.6 Luna and behind Grok 4.5 / GPT-5.6 Sol / Claude Fable 5 . Notable details: 1M context , median speed ~ 114 tok/s , pricing $1.25 / $4.25 per 1M input/output tokens, and strong token efficiency ( Artificial Analysis ). Arena also placed it #9 on Code Arena: Frontend with strong gains in instruction-following and longer-query categories ( Arena ).
+The strategic implication many drew : Meta’s compute-heavy bet is starting to show up as cost-effective inference products , not just talent headlines. Several commentators argued this materially raises competitive pressure on OpenAI/Anthropic, especially if Meta improves distribution and API ergonomics ( @scaling01 asking for OpenRouter , @alexandr_wang , @mweinbach ).
+Open models, infra, and efficiency work
+Open-model tooling kept shipping despite the closed-model attention vacuum . Unsloth released Qwen3.6 NVFP4 quants with claims of 2.5× faster inference, including 27B on 24GB VRAM and a 35B-A3B variant hitting 17,561 tok/s on B200 ( Unsloth , technical details from @danielhanchen ). QuixiAI reported Qwen3.6-35B-A3B-NVFP4 on dual B60 at 65 tok/s and 128k context ( QuixiAI ).
+Inference optimization remains a major live research area . Cohere open-sourced Hardware-aware Dynamic Speculative Decoding in vLLM, addressing the familiar issue where speculative decoding helps at low batch sizes but hurts at high ones ( Cohere/vLLM , vLLM commentary ). Google/Hugging Face’s Gemma challenge reported up to 5× faster single-A10G inference, with 315 TPS lossless and 491.8 TPS fastest overall ( Gemma ).
+Agent evaluation / self-improvement work is getting more concrete : “ LLM-as-a-Verifier ” reported SOTA on Terminal-Bench V2, SWE-Bench Verified, RoboRewardBench, and MedAgentBench using repeated sampling plus score-logprob ranking ( paper thread ); Meta researchers proposed an explicit memory agent to combat behavioral state decay in long-horizon agents ( summary ).
+Science, math, health, and modality-specific systems
+Math/science capability claims escalated sharply . OpenAI staff and community members circulated examples of GPT-5.6 Sol Ultra producing a claimed proof of the Cycle Double Cover Conjecture using 64 subagents in under an hour ( claim from @ eknight , amplified by @gdb ). Separately, Bubeck noted a single-person 1M-line Lean formalization effort with GPT-5.6 ( @SebastienBubeck ). These are still claims pending external scrutiny, but they indicate where labs want the narrative to go: parallelized research agents as a scientific compute primitive .
+Health is becoming a first-class benchmark and product vertical . OpenAI said GPT-5.6 is a major step forward for health intelligence , highlighting that Luna at lowest effort beats GPT-5.5 at highest effort while costing 25× less ( OpenAI ). Karan Singhal added that, in blinded physician comparisons over 20,000 axis ratings , physicians found fewer flaws in GPT-5.6 responses than physician-written responses across a hard task set ( details ).
+Audio/music and creative tooling also moved : Kyutai + Mirelo released MuScriptor , an open model for multi-instrument audio-to-MIDI transcription from full mixes , not stems ( MireloAI , Kyutai ). Sakana’s new Picbreeder-style work explored open-ended creativity with VLM agents , concluding that diverse agent populations help but still fall short of human open-ended exploration ( Sakana ).
+Security, safety, and policy frictions
+Security concerns rose alongside capability gains . OpenAI moved its Bio Bug Bounty into a private ongoing program and doubled rewards to $50K , specifically seeking universal jailbreaks against predefined biosafety challenges ( OpenAI ). Separately, OpenAI tightened access requirements for its most cyber-capable models, requiring hardware security keys for Trusted Access for Cyber members starting Sept. 1 ( @cryps1s ).
+Evidence of misuse remains salient : a new study reported Boko Haram members using frontier chatbots for bomb-making and related tactical queries ( @AntoniaJuelich ). That thread sat uncomfortably next to ongoing online discussion that GPT-5.6 may be relatively easy to jailbreak or reward-hack in some settings ( @Mononofu ).
+Policy discourse remains polarized and speculative . The “AI 2040 / Plan A” transparency-and-governance scenario drew both support and ridicule, with Ajeya Cotra emphasizing the centrality of total research transparency while critics questioned feasibility and assumptions about superintelligence/governance capacity ( @ajeya_cotra , @binarybits , @banteg satire ).
+Top tweets (by engagement)
+OpenAI launch and rollback management : OpenAI’s product lead acknowledged launch confusion, promised UI fixes, and reset usage twice while clarifying that Codex is here to stay ( full thread ).
+Claude Code desktop browser : Anthropic shipped an in-app browser for Claude Code desktop so Claude can browse docs/sites inside the app ( @ClaudeDevs ).
+OpenAI org update : Fidji Simo announced she is leaving her full-time role at OpenAI and becoming a part-time advisor , citing the need to focus on recovery from chronic illness while continuing work related to AI and health ( @fidjissimo ).
+Perplexity harness expansion : Perplexity added Grok 4.5 as an orchestrator in Computer after internal evals showed strong WANDR performance at roughly half the cost of Opus 4.8 ( Perplexity ).
+AI Reddit Recap
+/r/LocalLlama + /r/localLLM Recap
+1. GLM-5.2 Local Inference and Security Scrutiny
+Keep reading with a 7-day free trial
+to Latent.Space to keep reading this post and get 7 days of free access to the full post archives.
+Start trial
+Already a paid
+r? Sign in
+Previous
+© 2026 Latent.Space · Privacy ∙ Terms ∙ Collection notice
+Start your Substack Get the app
+Substack is the home for great culture
