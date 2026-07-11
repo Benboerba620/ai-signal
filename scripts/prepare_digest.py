@@ -26,6 +26,8 @@ from pathlib import Path
 
 import httpx
 
+from feedback import summarize_feedback
+
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
 
@@ -176,6 +178,7 @@ def build_output_contract(config):
             "For papers, keep title, arXiv link, and a short summary.",
             "For official blog articles, keep source name, title, link, and a short summary of what was announced.",
             "Do not fabricate quotes, numbers, claims, or source details.",
+            "Use local feedback_summary as a soft ranking preference, never as permission to hide critical official announcements.",
         ],
     }
 
@@ -737,6 +740,7 @@ def main():
         "delivery": config.get("delivery", {"method": "stdout"}),
     }
     output_contract = build_output_contract({**config, "language": language})
+    feedback_summary = summarize_feedback()
 
     output = {
         "status": "ok",
@@ -751,6 +755,7 @@ def main():
         "papers": papers,
         "articles": articles,
         "stats": stats,
+        "feedback_summary": feedback_summary,
         "prompts": prompts,
         "warnings": warnings if warnings else None,
         "errors": errors if errors else None,
@@ -793,6 +798,7 @@ def main():
         "output_contract": output_contract,
         "feed_sources": feed_sources,
         "stats": stats,
+        "feedback_summary": feedback_summary,
         "podcasts": [
             {
                 "channel": ep.get("channel"),

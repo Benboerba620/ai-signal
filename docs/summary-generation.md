@@ -2,6 +2,9 @@
 
 `scripts/generate_summaries.py` is the central LLM cache layer.
 
+It is legacy/debug-only. Scheduled feed runs do not call it; use the
+`generate_summaries` workflow-dispatch option when testing this layer manually.
+
 It reads:
 
 - `feeds/feed-podcasts.json`

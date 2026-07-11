@@ -96,6 +96,60 @@ class TwitterFetchTests(unittest.IsolatedAsyncioTestCase):
             [["2"], ["3"]],
         )
 
+    async def test_applies_engagement_threshold_and_excludes_replies(self):
+        def tweet(tweet_id, text, likes, replies_to=None):
+            return SimpleNamespace(
+                id=tweet_id,
+                user=SimpleNamespace(username="sama"),
+                url=f"https://x.com/sama/status/{tweet_id}",
+                rawContent=text,
+                date=datetime.now(timezone.utc),
+                likeCount=likes,
+                retweetCount=0,
+                replyCount=0,
+                inReplyToTweetId=replies_to,
+            )
+
+        items = [
+            tweet(1, "AI note with too little engagement", 3),
+            tweet(2, "@someone substantive AI reply", 100, replies_to="parent"),
+            tweet(3, "AI launch with enough engagement", 10),
+        ]
+
+        class FakePool:
+            async def get_account(self, _):
+                return object()
+
+        class FakeAPI:
+            def __init__(self, *_args, **_kwargs):
+                self.pool = FakePool()
+
+            def search(self, _query, **_kwargs):
+                return items
+
+        async def fake_gather(values):
+            return values
+
+        fake_twscrape = types.ModuleType("twscrape")
+        fake_twscrape.API = FakeAPI
+        fake_twscrape.gather = fake_gather
+        sources = {
+            "twitter": {
+                "lookback_hours": 48,
+                "max_tweets_per_user": 5,
+                "min_engagement": 10,
+                "include_replies": False,
+                "accounts": [{"handle": "sama", "name": "Sam Altman"}],
+            }
+        }
+
+        with mock.patch.dict(os.environ, {"TWITTER_COOKIES": "test"}), \
+                mock.patch.dict(sys.modules, {"twscrape": fake_twscrape}), \
+                mock.patch.object(generate_feed, "detect_proxy", return_value=""):
+            result = await generate_feed.fetch_twitter(sources)
+
+        self.assertEqual([item["id"] for item in result["x"][0]["tweets"]], ["3"])
+
 class DigestDedupTests(unittest.TestCase):
     def test_dedupes_current_batch_across_all_content_types(self):
         duplicate_tweet = {"id": "tweet-1", "url": "https://x.com/OpenAI/status/1"}

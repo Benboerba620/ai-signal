@@ -124,6 +124,7 @@ class PodcastTranscriptSidecarTests(unittest.TestCase):
             output = Path(tmp) / "episode.txt"
             with mock.patch.object(fetch_transcript, "fetch_feed", side_effect=sources), \
                     mock.patch.object(fetch_transcript, "transcript_for_episode", return_value="retained text"), \
+                    mock.patch.object(fetch_transcript, "record_feedback") as record_mock, \
                     mock.patch.object(
                         sys,
                         "argv",
@@ -137,6 +138,13 @@ class PodcastTranscriptSidecarTests(unittest.TestCase):
                     ):
                 self.assertEqual(fetch_transcript.main(), 0)
             self.assertEqual(output.read_text("utf-8"), "retained text")
+            record_mock.assert_called_once_with(
+                "expanded",
+                kind="podcast",
+                source="",
+                stable_id="expired-from-main-feed",
+                note="Retained episode",
+            )
 
 
 if __name__ == "__main__":

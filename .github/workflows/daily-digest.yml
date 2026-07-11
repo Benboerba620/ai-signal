@@ -18,7 +18,7 @@ on:
           - 'deepseek-flash'
           - 'minimax-m3'
       generate_summaries:
-        description: 'Generate central LLM summaries. Scheduled runs always do this.'
+        description: 'Generate legacy central LLM summaries for manual debugging.'
         required: false
         default: 'false'
         type: choice
@@ -71,7 +71,7 @@ jobs:
         run: python scripts/validate_feeds.py
 
       - name: Generate central summaries
-        if: ${{ github.event_name == 'schedule' || inputs.generate_summaries == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.generate_summaries == 'true' }}
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
@@ -113,7 +113,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add feeds/feed-x.json feeds/feed-podcasts.json feeds/feed-arxiv.json feeds/feed-blogs.json feeds/feed-transcripts-index.json feeds/transcripts -f
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.generate_summaries }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.generate_summaries }}" = "true" ]; then
             [ -f feeds/feed-summaries.json ] && git add feeds/feed-summaries.json -f
             [ -d content/summaries ] && git add content/summaries -f
           fi

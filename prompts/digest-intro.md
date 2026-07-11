@@ -49,6 +49,9 @@ Write a short 2-3 sentence opening that explains the strongest signal across tod
 - Use only content found in the JSON.
 - During the daily digest, use podcast metadata and descriptions only. Do not
   fetch transcripts until the user explicitly asks to expand an episode.
+- Use `feedback_summary` as a soft ranking preference. Positive source scores
+  may raise priority and negative scores may reduce repetitive items, but never
+  suppress a major official release solely because of past feedback.
 - Every included item must have its original link.
 - Do not visit websites, search the web, or call APIs.
 - Do not invent quotes, metrics, product details, or claims.

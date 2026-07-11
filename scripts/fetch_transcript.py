@@ -31,6 +31,7 @@ from prepare_digest import (  # noqa: E402
     fetch_text_any,
     load_local_text,
 )
+from feedback import record_feedback  # noqa: E402
 
 
 def log(msg):
@@ -133,6 +134,16 @@ def main():
         log(f"✓ 「{title}」— {len(text)} chars (source={ep.get('transcript_source')})")
         sys.stdout.write(text)
         sys.stdout.write("\n")
+    try:
+        record_feedback(
+            "expanded",
+            kind="podcast",
+            source=ep.get("channel", ""),
+            stable_id=ep.get("guid") or ep.get("link") or ep.get("title", ""),
+            note=title or "",
+        )
+    except OSError as exc:
+        log(f"⚠ could not record local expansion feedback: {exc}")
     return 0
 
 

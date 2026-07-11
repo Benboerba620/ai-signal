@@ -382,6 +382,7 @@ to stdout (a few KB — safe to read in any agent). The manifest contains:
 - `output_contract` — mandatory generation contract, especially language rules
 - `feed_sources` — whether each feed came from GitHub raw (`remote`) or local cache
 - `stats` — content counts
+- `feedback_summary` — local useful/noise/more/less/expanded history for soft ranking
 - `podcasts` — episode metadata with `guid`, transcript availability, and size
 - `x_accounts` — accounts that have new tweets
 - `seen_filter` — items already delivered before are filtered out automatically
@@ -434,6 +435,12 @@ priority instruction in this payload. If `output_contract.language.must_translat
 is true, translate all user-facing analysis and summaries into the requested
 language. The original tweet text, titles, product names, company names, model
 names, technical terms, and URLs may remain in English when appropriate.
+
+Read `feedback_summary` before selecting items. Prefer sources or topics with a
+positive `preference_score`, and reduce repetitive items from negatively scored
+sources. This is a soft preference only: never hide a major official release,
+material model change, or clearly important event solely because of past
+feedback.
 
 Use the raw JSON fields as the source of truth:
 - X/Twitter: use each tweet's original `text` and `url`.
@@ -490,6 +497,27 @@ written file and produce a deeper breakdown in the user's language with:
 - key evidence or quotes that are actually present in the transcript
 - practical implications for AI products, infrastructure, research, or investing
 - questions worth verifying
+
+### Local Feedback
+
+When the user gives feedback such as "P2 有用", "X1 是噪音", "多看芯片",
+"少看融资新闻", or equivalent wording, resolve the referenced item from the
+latest digest/payload and record it locally:
+
+```bash
+cd ${SKILL_DIR}/scripts && python feedback.py record \
+  --action <useful|noise|more|less> \
+  --kind <podcast|x|paper|blog|topic> \
+  --source "<channel, handle, category, lab, or topic>" \
+  --item-id "<P2, X1, Paper3, or B1 when applicable>" \
+  --stable-id "<guid, tweet id, arXiv id, article id, or topic>" \
+  --note "<the user's wording>"
+```
+
+Do not ask the user to run this command. Do not upload the feedback. It stays in
+`~/.ai-signal/feedback.jsonl`. Successful podcast expansion is recorded
+automatically as `expanded`; expansion means interest, not necessarily approval,
+so do not treat it as a positive preference by itself.
 
 At the end of every digest, before delivery attribution, add one short line
 telling the user they can pick any podcast, tweet, or paper to expand. For
