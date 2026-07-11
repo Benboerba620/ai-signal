@@ -1,13 +1,12 @@
 """On-demand transcript fetch for the "expand this podcast" flow.
 
-The daily digest ships a slim payload (metadata only); full transcripts are NOT
-kept around locally, because prepare_digest wipes the transcripts/ dir on every
-run and the seen-filter drops already-shown episodes, so a transcript delivered
-in the morning is gone by the time you ask to expand it in the afternoon.
+The daily digest ships a slim payload (metadata only). Full transcripts are
+kept as individual central sidecars for a limited retention window and are not
+downloaded during daily digest preparation.
 
-Instead of caching every transcript, this fetches the one you actually want
-straight from the central feed by guid (or title / link). The central feed keeps
-the full transcript inline, so an already-seen episode expands fine.
+Instead of caching every transcript, this resolves the episode in the slim
+central feed, then downloads only its transcript sidecar. Legacy inline feeds
+remain supported during migration.
 
 Usage:
     python scripts/fetch_transcript.py --guid <guid>
@@ -25,7 +24,13 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from prepare_digest import configure_stdio, fetch_feed, clean_text  # noqa: E402
+from prepare_digest import (  # noqa: E402
+    clean_text,
+    configure_stdio,
+    fetch_feed,
+    fetch_text_any,
+    load_local_text,
+)
 
 
 def log(msg):
@@ -59,6 +64,16 @@ def match_episode(episodes, guid=None, title=None, link=None):
     return None
 
 
+def transcript_for_episode(episode):
+    inline = episode.get("transcript")
+    if inline:
+        return clean_text(inline)
+    path = episode.get("transcript_path")
+    if not path:
+        return ""
+    return clean_text(fetch_text_any(path) or load_local_text(path) or "")
+
+
 def main():
     configure_stdio()
     ap = argparse.ArgumentParser(description="Fetch one podcast transcript from the central feed.")
@@ -72,22 +87,35 @@ def main():
         ap.error("give at least one of --guid / --title / --link")
 
     feed, meta = fetch_feed("feed-podcasts.json", "podcasts")
-    if not feed:
-        log("✗ central feed unreachable (all mirrors failed, no local copy)")
-        return 4
-    episodes = feed.get("podcasts", [])
-    log(f"↪ feed source={meta.get('source')} generated_at={meta.get('generated_at')} "
-        f"({len(episodes)} episodes)")
+    episodes = (feed or {}).get("podcasts", [])
+    if feed:
+        log(f"↪ feed source={meta.get('source')} generated_at={meta.get('generated_at')} "
+            f"({len(episodes)} episodes)")
 
     ep = match_episode(episodes, args.guid, args.title, args.link)
+    index = None
     if not ep:
-        log("✗ no episode matched. Available titles:")
+        index, index_meta = fetch_feed("feed-transcripts-index.json", "transcripts")
+        indexed_episodes = (index or {}).get("transcripts", [])
+        ep = match_episode(indexed_episodes, args.guid, args.title, args.link)
+        if ep:
+            log(
+                f"↪ transcript index source={index_meta.get('source')} "
+                f"generated_at={index_meta.get('generated_at')} "
+                f"expires_at={ep.get('expires_at')}"
+            )
+    if not ep:
+        if not feed and not index:
+            log("✗ central feed and transcript index are unreachable")
+            return 4
+        log("✗ no episode matched in the current feed or retained transcript index.")
+        log("  Available current-feed titles:")
         for e in episodes:
             log(f"    [{e.get('guid')}] {e.get('channel')} | {e.get('title')}")
         return 3
 
     title = ep.get("title")
-    transcript = ep.get("transcript")
+    transcript = transcript_for_episode(ep)
     if not transcript:
         why = ep.get("transcript_error") or (
             "this channel is not configured for transcript capture and the RSS "

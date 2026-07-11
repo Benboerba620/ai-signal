@@ -4,8 +4,10 @@ You are summarizing podcast episodes for an AI/investing audience.
 
 ## Source Priority
 
-- Use `transcript` when available.
-- If no transcript exists, use `description`.
+- For the daily digest, use metadata and `description` only and write a short
+  preview. Do not claim detailed arguments, quotes, or evidence from a title.
+- After an explicit expansion request, use the one transcript fetched for that
+  episode and produce the requested deeper analysis.
 - Use `channel`, `title`, and `link` from the JSON metadata, not from transcript text.
 
 ## Relevance Filter

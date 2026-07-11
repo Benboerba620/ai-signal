@@ -65,7 +65,13 @@ or `podcasts_llm` in `config/summary.json`.
 
 ## Notes
 
-- Full podcast transcripts are used as temporary input only.
+- Full podcast transcripts are stored as per-episode sidecars under
+  `feeds/transcripts/`; the main podcast feed contains only metadata and a path.
+- Subscriber digest preparation does not download sidecars. One transcript is
+  fetched only when the user explicitly asks to expand that episode.
+- `feeds/feed-transcripts-index.json` keeps sidecar metadata for 14 days after
+  the episode was last present in the rolling feed. Expired index entries and
+  unreferenced sidecars are removed by the daily feed generation run.
 - The script stores small Markdown summaries, not full transcripts.
 - Existing summaries are reused when the source text, model, and profile config
   have not changed.

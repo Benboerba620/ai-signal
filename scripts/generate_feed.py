@@ -35,6 +35,8 @@ from urllib.parse import quote_plus, urljoin, urlparse
 
 import httpx
 
+from podcast_transcripts import externalize_transcripts, hydrate_transcripts
+
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
 FEEDS_DIR = ROOT_DIR / "feeds"
@@ -1327,6 +1329,7 @@ def fetch_podcasts(sources, people_only=False):
     # transcript are retried each run.
     transcript_cache = {}
     existing = load_feed("feed-podcasts.json") or {}
+    hydrate_transcripts(existing)
     for entry in existing.get("podcasts", []):
         if not entry.get("transcript"):
             continue
@@ -1710,8 +1713,9 @@ async def main():
         log("\n━━━ Podcasts ━━━")
         podcast_feed = fetch_podcasts(sources, people_only=args.people_only)
         podcast_feed["generated_at"] = now.isoformat()
-        write_json(FEEDS_DIR / "feed-podcasts.json", podcast_feed)
         with_transcript = sum(1 for e in podcast_feed["podcasts"] if e.get("transcript"))
+        externalize_transcripts(podcast_feed)
+        write_json(FEEDS_DIR / "feed-podcasts.json", podcast_feed)
         person_hits = sum(1 for e in podcast_feed["podcasts"] if e.get("person"))
         log(f"✅ feed-podcasts.json ({len(podcast_feed['podcasts'])} episodes, "
             f"{with_transcript} with transcript, {person_hits} person hits)")

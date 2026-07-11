@@ -26,6 +26,8 @@ from urllib.parse import urlparse
 
 import httpx
 
+from podcast_transcripts import externalize_transcripts
+
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
 FEED_PATH = ROOT_DIR / "feeds" / "feed-podcasts.json"
@@ -163,7 +165,9 @@ def is_relevant(item, keywords):
 
 
 def should_transcribe(item, policy, keywords):
-    if item.get("transcript"):
+    if item.get("transcript") or (
+        item.get("transcript_available") and item.get("transcript_path")
+    ):
         return False, "already has transcript"
     if not item.get("audio_url") and not is_youtube_url(item.get("link")):
         return False, "missing audio_url"
@@ -366,6 +370,7 @@ def main():
             log(f"  ✅ transcript ({len(text)} chars)")
 
     if changed:
+        externalize_transcripts(feed)
         write_json(FEED_PATH, feed)
     log(f"Done. transcripts_added={changed}")
 
