@@ -1,0 +1,80 @@
+🎙️ How I AI: GPT-5.6 review, How a solo builder runs 24/7 local AI, and What an agent harness is and how to build one
+Sign in
+How I AI
+🎙️ How I AI: GPT-5.6 review, How a solo builder runs 24/7 local AI, and What an agent harness is and how to build one
+Your weekly listens from How I AI, part of the Lenny’s Podcast Network
+Lenny Rachitsky
+Jul 13, 2026
+234
+3
+What a harness is and how to build one with Claude Agent SDK
+Listen now on YouTube • Spotify • Apple Podcasts
+Brought to you by:
+Bolt.new —Turn your idea into a real product
+Customer.io —Build customer engagement campaigns from a single prompt
+Claire explains why harnesses matter and when they’re better than general-purpose tools like Claude Code or Codex, and walks through the custom Claude Agent SDK harness she built to automate Sentry bug triage at ChatPRD. You’ll see how she structured the workflow, encoded permissions, connected tools like Sentry and Linear, and turned a repeatable engineering task into something an agent can run more consistently every time.
+Biggest takeaways:
+A harness is just code around an AI agent—nothing more mysterious than that. The term has taken on an almost mythical quality in engineering circles, but I strip it down in this episode: a harness is code you write to make an AI agent more effective at a specific job. Cursor is a complex harness. Claude Code is a complex harness. Yours can be eight files and a terminal UI.
+Build a harness when the same workflow needs the same setup and the same outcomes every time. The trigger is recognizing a job that is partly deterministic (defined steps, defined tools) and partly non-deterministic (the AI figures out root causes and writes the report). Sentry bug triage qualified because every investigation follows the same evidence-gathering process and ends with the same artifact bundle.
+Opinionated tool adapters beat general MCP access for specialized workflows. Rather than giving the agent broad access to the Sentry MCP and letting it wander through traces, I built a custom Sentry adapter that pulls exactly what matters for a bug report and nothing else. That specificity makes the agent faster, cheaper, and less likely to go off-script.
+Encoding permissions in the harness removes the need to prompt them every single time. In a general-purpose coding tool, you have to remember to say “investigate only, do not write code.” In my harness, that is a flag in the interface. I click “investigate,” paste the Sentry link, and the agent already knows its constraints without being told.
+Structured artifacts are what separate a one-off investigation from a team-wide resource. Every time my harness runs, it outputs a task log, a Sentry issue brief, relevant logs, a worker report, and an HTML summary file. That artifact bundle means the engineering team gets a consistent, scannable record of every bug investigation without anyone having to write it up manually.
+A harness lets you do multi-model routing in ways a single general-purpose tool never could. Claude Code is Claude. Codex is GPT. A custom harness using the Claude Agent SDK lets you pick the right model per step, enforce different tool policies per invocation, and swap models over time without changing how the interface works. That flexibility is one of the strongest arguments for owning the harness layer yourself.
+The open chat field has been good enough, until it stopped being good enough. I acknowledge in this episode that just typing into Claude Code has produced real work. But this marks a shift in my thinking: general-purpose agents are now better used to orchestrate specialized harnesses than to do every job themselves. Giving a constrained agent a specific harness gets more consistent output than giving a powerful agent an open prompt.
+Blog from this episode:
+How I Built a Custom AI Harness with the Claude Agent SDK for Bug Triage: https://www.chatprd.ai/how-i-ai/how-i-built-a-custom-ai-harness
+This solo builder runs 24/7 local AI on his own hardware | Alex Finn
+Listen now on YouTube • Spotify • Apple Podcasts
+Brought to you by:
+Runway —The creative AI platform for images, video, and more
+Jira Product Discovery —Prioritize with insights, build with confidence
+Claire talks with Alex Finn about how he built a 24/7 local AI fleet using Mac Studios, a DGX Spark, an RTX 5090, and a custom dashboard to keep agents running around the clock. Alex breaks down what each machine is actually good for, how he routes work across local models like GLM, Qwen, and Ornith, and why “unlimited inference” changes the entire economics of AI workflows. They also get into his Claude Code build-and-review loop, his OpenClaw and Hermes setup, and the surprisingly practical playbook behind running your own always-on software factory.
+Biggest takeaways:
+The case for local AI isn’t ROI; it’s unlimited inference. The math on a $10,000 Mac Studio vs. a $20 ChatGPT subscription only looks crazy until you run an agent 24/7. At that scale, cloud APIs get expensive fast, and local models running around the clock open use cases that simply aren’t economically viable otherwise. Alex runs security scans, code reviews, and social signal monitoring on a continuous loop that would cost thousands a month in cloud credits.
+Each hardware tier has a job. Mac Studio handles massive models slowly but at Opus-level intelligence (Alex runs GLM 5.2, which he calls Opus 4.8-equivalent, on a single Mac Studio). DGX Spark is the sweet spot: 128 GB of Nvidia unified memory plus CUDA speed, enough for models like Qwen 3.6 running fast. The RTX 5090 has only 32 GB of VRAM but is cloud-speed fast. Buy for the task, not the spec sheet.
+Tailscale is the connective tissue for a multi-machine setup. Once all your machines are on the same Tailscale network, one agent (OpenClaw or Hermes) can hop across them, check the hardware, load the right model, and get it running without any manual configuration. Alex says there’s truly no technical knowledge required once Tailscale is installed, and he recommends it even if you only have one machine, because it also lets you test local apps from your phone.
+Local models are the BDR; Claude Code is the closer. Alex’s security scanning loop is a good example of the hybrid model that actually works. A local model (GLM 5.2) scans code every 20 minutes and dumps findings into a Markdown file. Claude Code checks that report once a day and decides what’s real and worth fixing. The local model does the volume work cheaply; the frontier model does the judgment work precisely. Trying to run Claude Code every 20 minutes instead would cost thousands a month.
+The software factory runs on two loops and a rocket emoji. Every morning, Alex does a planning session in Claude with a “morning build” prompt that produces a task list for his SaaS. The build loop picks those up and starts shipping. The review loop checks the work. When something passes review, Alex gets a Slack ping, and leaving a rocket emoji on it triggers an automated merge. He goes from morning brief to reviewing and merging code without touching the keyboard again until he does the approval round.
+OpenClaw and Hermes fill different needs, and you probably want both. Alex prefers OpenClaw for the “big bang” wow moments and the emotional connection (his words). But Hermes has been more reliable under repeated updates. His solution is redundancy: three Hermes agents and two OpenClaw agents running simultaneously, so when three of the five are broken (which happens), the other two can fix them. The failover is deliberate, not accidental.
+Task allocation by model intelligence is the skill that makes the fleet useful. GLM 5.2 is Opus-level smart but painfully slow, so it gets the deep, latency-tolerant work. Qwen 3.6 is quick and good enough to read Twitter for product signals. Ornith 1.0, a Qwen fine-tune with reinforcement learning baked in for coding, has beaten Qwen on every eval Alex has run and runs comfortably on a DGX Spark. The insight is that “smartest model everywhere” is wasteful; matching model intelligence to task complexity is what makes ambient AI economically coherent.
+The vague posting about loops is partly a competitive moat. Alex’s theory: the companies building the best AI coding infrastructure (including OpenAI and Anthropic themselves) have internal loop systems that are their last real competitive advantage. If you can pump out high-quality code faster than anyone else because your build-review loop is better, you don’t go publishing a how-to. Claire’s counter-theory: most people vague-post because their loops are boring and vagueness gets more engagement than specifics. Both are probably true, depending on who’s doing the posting.
+Blog and detailed workflow walkthroughs from this episode:
+How I AI: Alex Finn’s Local AI Fleet and Automated Software Factory: https://www.chatprd.ai/how-i-ai/alex-finns-local-ai-fleet-and-automated-software-factory
+↳ How to Assemble a Multi-Machine Local AI Fleet: https://www.chatprd.ai/how-i-ai/workflows/how-to-assemble-a-multi-machine-local-ai-fleet
+↳ How to Build an Automated Software Factory with AI Agents: https://www.chatprd.ai/how-i-ai/workflows/how-to-build-an-automated-software-factory-with-ai-agents
+↳ How to Set Up a Continuous Code Security Scan Using a Hybrid AI Workflow: https://www.chatprd.ai/how-i-ai/workflows/how-to-set-up-a-continuous-code-security-scan-using-a-hybrid-ai-workflow
+GPT-5.6 Sol vs. Claude Fable: Why OpenAI’s new model crushes my benchmark
+Listen now on YouTube • Spotify • Apple Podcasts
+Claire puts GPT-5.6 Sol head-to-head with Claude Fable, Sonnet 5, and the rest of the GPT-5.6 lineup using her own five-part benchmark for real product work. The result: Sol becomes her new daily driver. Claire breaks down exactly why and also
+s where she’d still use Terra, Sonnet, or Fable instead.
+Biggest takeaways:
+GPT-5.6 Sol is the most practically effective model I’ve tested, even if Fable is theoretically smarter. I ran a five-category benchmark across PRDs, prototypes, wireframes, debugging, and agentic voice, and Sol had the highest taste score by a significant margin on the 70% Claire/30% machine split. That gap between “hyper-intelligent” and “actually ships” is real, and for product work Sol wins.
+Full-fidelity prototypes from Sol are more functional and more opinionated than anything else I’ve tested. Across a doc scheduler, a dev tools incident triage site, and a consumer habit tracker app, Sol consistently produced designs with better visual hierarchy, semantic color use, and working interactivity. Fable’s outputs were fine; Sol’s were the ones I’d actually show a stakeholder.
+Sol’s writing is just easier to work with. Fable writes like it has never met a human before, incredibly pedantic and almost inscrutable when you need to collaborate. Sol writes like a normal person, and that difference compounds fast when you’re iterating on PRDs or talking to an agent all day.
+For PRD writing specifically, GPT-5.6 Terra might be the better pick. I asked Sol to greenfield-rebuild my approach to PRDs for 2026, and while Sol’s output was excellent, Terra’s clean, direct, no-frills business writing made me think it’s the right call when you want crisp, fast documentation without extra flair.
+Fable gets too locked in its own frameworks; Sol is willing to reconsider. I had a hardened tool-calling loop in my prototyping product that only GPT-5.5 could run. Fable insisted it was a model problem and refused to budge. The moment I switched to Codex and told it to just fix it, Sol got Sonnet 5 working in one shot. That kind of practical flexibility is exactly what you need when building real products.
+Sonnet 5 is still my favorite for agentic voice in Open Claw. Even after this whole benchmark, I gave Sonnet 5 a gold star for voice: aside from the dashes, it sounds the most human. I use Sonnet for my OpenClaw and I’m not changing that. Sol did a worse job on agentic voice overall, and I still can’t get GPT models to run well in my OpenClaw setup.
+GPT-5.6’s video editing via Codex is one of my favorite new workflows. I dropped in a full recording from a talk I gave at Cursor’s event, asked for five hype-video clips, gave feedback on pacing and orientation, and had
+able social clips I could drop into CapCut in a fraction of the time. This use case alone justifies experimenting with GPT-5.6.
+Browser use with Codex plus GPT-5.6 and @Chrome is the best agentic workflow I’ve found. I opened LinkedIn, told it to reply to high-value messages from executives and ChatPRD fans, and it burned through roughly 500 messages. I’ve also used it to test web apps and fill out forms. When I got rolled back to GPT-5.5 temporarily, my life was measurably worse. Learn @Chrome and just let it rip.
+The “forest green” tell is real, so name it in your prompts. Sol has a strong aesthetic bias toward what feels like a woodland-themed palette hardcoded somewhere in its system. You will see a lot of green. I told the OpenAI team, I’m noting it here, and I’m already prompting against it when I want a different aesthetic direction.
+Blog and detailed workflow walkthroughs from this episode:
+How I AI: My GPT-5.6 Sol Benchmark & 4 Game-Changing Workflows (vs. Fable): https://www.chatprd.ai/how-i-ai/my-gpt-56-sol-benchmark-game-changing-workflows
+↳ How to Automate LinkedIn Messaging with AI Browser Control: https://www.chatprd.ai/how-i-ai/workflows/how-to-automate-linkedin-messaging-with-ai-browser-control
+↳ How to Quickly Create Social Media Video Clips Using AI: https://www.chatprd.ai/how-i-ai/workflows/how-to-quickly-create-social-media-video-clips-using-ai
+↳ How to Build a Gamified Homework App with AI in a Single Shot: https://www.chatprd.ai/how-i-ai/workflows/how-to-build-a-gamified-homework-app-with-ai-in-a-single-shot
+If you’re enjoying these episodes, reply and let me know what you’d love to learn more about: AI workflows, hiring, growth, product strategy—anything.
+Catch you next week,
+Lenny
+P.S. Want every new episode delivered the moment it drops? Hit “Follow” on your favorite podcast app.
+234
+3
+Previous
+Discussion about this post
+Comments Restacks
+Top Latest Discussions
+No posts
+Ready for more?
+© 2026 Substack Inc · Privacy ∙ Terms ∙ Collection notice
+Start your Substack Get the app
+Substack is the home for great culture
