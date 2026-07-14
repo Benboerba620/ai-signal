@@ -11,6 +11,7 @@ Only include papers that are clearly related to AI, machine learning, language m
 For each included paper:
 
 - Title
+- First-submission time from `published`, shown in the user's configured timezone
 - arXiv link
 - One short summary in the user's language
 
@@ -22,7 +23,7 @@ For each included paper:
 
 ## Rules
 
-- Use `title`, `abstract`, `abs_url`, and `pdf_url` from the JSON.
+- Use `title`, `published`, `abstract`, `abs_url`, and `pdf_url` from the JSON.
 - Include benchmark numbers only if they are present in the abstract.
 - Do not over-explain papers; the digest should stay lightweight.
 - Group related papers only when it improves readability.

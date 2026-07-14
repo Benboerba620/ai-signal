@@ -11,7 +11,8 @@ Usage:
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 AI_KEYWORDS = (
     "agent", "agents", "model", "models",
@@ -96,6 +97,28 @@ def short_text(text, limit):
     if len(text) <= limit:
         return text
     return text[:limit].rstrip() + "..."
+
+
+def digest_timezone(data):
+    return (data.get("config") or {}).get("timezone") or "Asia/Shanghai"
+
+
+def format_source_time(value, timezone_name):
+    if not value:
+        return "未验证"
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return "未验证"
+    if parsed.tzinfo is None:
+        return "未验证"
+    try:
+        target_timezone = ZoneInfo(timezone_name)
+        label = "北京时间" if timezone_name == "Asia/Shanghai" else timezone_name
+    except ZoneInfoNotFoundError:
+        target_timezone = timezone.utc
+        label = "UTC"
+    return f"{parsed.astimezone(target_timezone):%Y-%m-%d %H:%M}（{label}）"
 
 
 def is_noise_tweet(text):
@@ -213,6 +236,8 @@ def selected_podcasts(data):
 
 def render_podcasts(data, lines):
     central = data.get("central_summaries") or {}
+    timezone_name = digest_timezone(data)
+    raw_lookup = podcast_lookup(data)
     podcasts = selected_podcasts(data) if (central.get("podcasts") or []) else []
     if podcasts:
         lines.append("## 播客精选")
@@ -220,7 +245,16 @@ def render_podcasts(data, lines):
             title = item.get("title", "Untitled")
             url = item.get("source_url", "")
             channel = item.get("channel", "")
+            raw_item = (
+                raw_lookup.get(url)
+                or raw_lookup.get(f"{channel}\n{title}")
+                or raw_lookup.get(title)
+                or {}
+            )
             lines.append(f"### {channel} - {title}" if channel else f"### {title}")
+            lines.append(
+                f"发布时间：{format_source_time(item.get('pub_date') or raw_item.get('pub_date'), timezone_name)}"
+            )
             if url:
                 lines.append(f"原文：{url}")
             summary = section_from_summary(item.get("summary_text", ""))
@@ -237,6 +271,7 @@ def render_podcasts(data, lines):
             url = item.get("link", "")
             desc = short_text(item.get("description", ""), 260)
             lines.append(f"- {channel} - {title}")
+            lines.append(f"  发布时间：{format_source_time(item.get('pub_date'), timezone_name)}")
             if desc:
                 lines.append(f"  {desc}")
             if url:
@@ -246,6 +281,7 @@ def render_podcasts(data, lines):
 
 def render_tweets(data, lines):
     central = data.get("central_summaries") or {}
+    timezone_name = digest_timezone(data)
     x_by_id = {str(item.get("tweet_id") or item.get("id")): item for item in central.get("x", [])}
     selected = selected_tweets(data)
 
@@ -259,6 +295,9 @@ def render_tweets(data, lines):
             url = item.get("source_url") or tweet.get("url", "")
             original = item.get("original_text") or tweet.get("text", "")
             lines.append(f"### {name}" + (f" (@{handle})" if handle else ""))
+            lines.append(
+                f"发布时间：{format_source_time(item.get('created_at') or tweet.get('created_at'), timezone_name)}"
+            )
             translation = zh_from_summary(item.get("summary_text", ""))
             if translation:
                 prefix = "中文：" if len(original) <= 280 else "简要说明："
@@ -289,6 +328,7 @@ def render_tweets(data, lines):
             text = short_text(tweet.get("text", ""), 260)
             url = tweet.get("url", "")
             lines.append(f"- 原文：{text}")
+            lines.append(f"  发布时间：{format_source_time(tweet.get('created_at'), timezone_name)}")
             if url:
                 lines.append(f"  {url}")
         lines.append("")
@@ -296,6 +336,12 @@ def render_tweets(data, lines):
 
 def render_papers(data, lines):
     central = data.get("central_summaries") or {}
+    timezone_name = digest_timezone(data)
+    raw_lookup = {}
+    for paper in data.get("papers") or []:
+        for key in (paper.get("arxiv_id"), paper.get("title")):
+            if key:
+                raw_lookup[str(key)] = paper
     central_papers = selected_papers(data) if (central.get("papers") or []) else []
     filtered_papers = central_papers
     if filtered_papers:
@@ -303,7 +349,11 @@ def render_papers(data, lines):
         for item in filtered_papers[:8]:
             title = item.get("title", "Untitled")
             url = item.get("source_url", "")
+            raw_item = raw_lookup.get(str(item.get("arxiv_id") or "")) or raw_lookup.get(title) or {}
             lines.append(f"### {title}")
+            lines.append(
+                f"首次提交：{format_source_time(item.get('published') or raw_item.get('published'), timezone_name)}"
+            )
             if url:
                 lines.append(f"arXiv：{url}")
             summary = simple_paper_summary(item.get("summary_text", ""))
@@ -320,6 +370,7 @@ def render_papers(data, lines):
             abstract = short_text(paper.get("abstract", ""), 220)
             url = paper.get("abs_url", "")
             lines.append(f"### {title}")
+            lines.append(f"首次提交：{format_source_time(paper.get('published'), timezone_name)}")
             if url:
                 lines.append(f"arXiv：{url}")
             if abstract:

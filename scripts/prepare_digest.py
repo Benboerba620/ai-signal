@@ -135,6 +135,7 @@ def normalize_granularity(value):
 def build_output_contract(config):
     language = normalize_language(config.get("language", "en"))
     granularity = normalize_granularity(config.get("granularity", "summary"))
+    timezone_name = config.get("timezone") or "Asia/Shanghai"
 
     if language == "zh":
         language_policy = {
@@ -170,9 +171,24 @@ def build_output_contract(config):
         "source_of_truth": "Use only the JSON fields in this payload. Do not browse the web or call external APIs.",
         "language": language_policy,
         "granularity": granularity,
+        "time_display": {
+            "timezone": timezone_name,
+            "required_fields": {
+                "x": "created_at",
+                "podcasts": "pub_date",
+                "papers": "published",
+            },
+            "missing_value": "Show the time as unverified; never infer it from feed or discovery time.",
+        },
         "content_rules": [
             "Select only AI/product/research/infrastructure/investing-relevant items.",
             "Every included item must keep its original URL.",
+            (
+                f"Every included X post, podcast, and paper must display its source timestamp in "
+                f"{timezone_name}: X uses created_at, podcasts use pub_date, and papers use published "
+                "as the first-submission time. If the field is empty, say the time is unverified; "
+                "never substitute generated_at or first_seen."
+            ),
             "For X/Twitter, keep each selected tweet as its own item and preserve the original text.",
             "For the daily digest, use podcast metadata and description only; fetch a transcript only after an explicit expansion request.",
             "For papers, keep title, arXiv link, and a short summary.",
@@ -733,6 +749,7 @@ def main():
         "language_raw": config.get("language", "en"),
         "granularity": normalize_granularity(config.get("granularity", "summary")),
         "granularity_raw": config.get("granularity", "summary"),
+        "timezone": config.get("timezone") or "Asia/Shanghai",
         "include_central_summaries": include_central_summaries,
         "summary_profile": summary_profile,
         "available_summary_profiles": available_summary_profiles,

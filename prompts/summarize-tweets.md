@@ -18,6 +18,7 @@ You are distilling AI-relevant X/Twitter posts for a busy reader.
 ## Output Rules
 
 - Treat each selected tweet as its own item.
+- Show `created_at` as the post time in the user's configured timezone.
 - Always include the original tweet text and direct URL.
 - For short tweets, provide a direct Chinese translation if the user wants Chinese. Do not add a separate summary.
 - For long tweets or threads, write a concise explanation before the original text.
