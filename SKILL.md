@@ -135,8 +135,10 @@ Then ask: "几点推送？你在哪个时区？（默认早上 7:30）"
 **Default: `deliveryTime: "07:30"`, `timezone: "Asia/Shanghai"`.** If the user
 says "默认" / "都行" / doesn't give a time, use 07:30 Beijing time. The central
 feed regenerates daily at 06:00 Beijing time (22:00 UTC), so 07:30 delivery
-picks up the freshest feed. If the user gives a timezone but no time, default
-to 07:30 in their timezone.
+picks up the freshest X, podcast, and blog feeds. arXiv gets a second weekday
+refresh around 09:30 Beijing time after its daily release; deliveries before
+then may contain the previous paper batch. If the user gives a timezone but no
+time, default to 07:30 in their timezone.
 
 For weekly, also ask which day.
 
@@ -443,10 +445,10 @@ material model change, or clearly important event solely because of past
 feedback.
 
 Use the raw JSON fields as the source of truth:
-- X/Twitter: use each tweet's original `text` and `url`.
-- Podcasts: use metadata and `description` for the daily digest. Treat it as a
+- X/Twitter: use each tweet's original `text`, `url`, and `created_at`.
+- Podcasts: use metadata, `description`, and `pub_date` for the daily digest. Treat it as a
   first-pass preview, not a full-transcript analysis.
-- Papers: use each paper's `title`, `abstract`, `abs_url`, and `pdf_url`.
+- Papers: use each paper's `title`, `published`, `abstract`, `abs_url`, and `pdf_url`.
 - Official blogs: use each article's `source_name`, `title`, `summary`, and `url`.
 - If `central_summaries` exists, treat it only as optional reference material,
   not as the canonical source.
@@ -463,12 +465,16 @@ Read prompts from the `prompts` field:
 Process selected tweets one by one. Each selected tweet should be its own item.
 For Chinese output, translate short tweets directly and keep the original text
 plus URL. Only summarize when the tweet/thread is long enough that translation
-alone would be unwieldy. Every tweet MUST include its `url`.
+alone would be unwieldy. Every tweet MUST include its `url` and display
+`created_at` in the user's configured timezone.
 
 **Podcasts (process second):**
 For each episode, write a short preview from its title, description, channel,
-and link. Do not claim to know detailed arguments, quotes, or evidence until the
-transcript has been fetched through the follow-up flow. If
+and link. Display `pub_date` in the user's configured timezone. If `pub_date`
+is empty, explicitly say the publication time is unverified. Never substitute
+`first_seen` or the feed generation time. Do not claim to know detailed
+arguments, quotes, or evidence until the transcript has been fetched through
+the follow-up flow. If
 `transcript_available` is true, mark the item as available for expansion.
 Use `channel`, `title`, `link` from the JSON — NOT from transcript text.
 
@@ -534,6 +540,8 @@ For each arXiv paper, summarize according to granularity:
 - summary: 2-3 sentences on problem, approach, result
 - full: Problem / Approach / Results / Significance, with benchmark numbers
 Include `abs_url` for each paper. Group by theme when papers overlap.
+Display `published` as the paper's first-submission time in the user's
+configured timezone.
 
 **ABSOLUTE RULES:**
 - NEVER invent or fabricate content. Only use what's in the JSON.

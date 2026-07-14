@@ -161,6 +161,21 @@ class TextHTMLParser(HTMLParser):
         return clean_text(text).strip()
 
 
+class YouTubePublishedDateParser(HTMLParser):
+    """Read YouTube's structured publish date without scraping visible text."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.values = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "meta":
+            return
+        attrs = dict(attrs)
+        if attrs.get("itemprop") in {"datePublished", "uploadDate"} and attrs.get("content"):
+            self.values.append(attrs["content"])
+
+
 def html_to_text(html):
     parser = TextHTMLParser()
     try:
@@ -1135,6 +1150,38 @@ def fetch_video_meta(vid, timeout=120):
         return None
 
 
+def parse_youtube_published_date(html):
+    parser = YouTubePublishedDateParser()
+    try:
+        parser.feed(html or "")
+    except Exception:
+        return None
+    for value in parser.values:
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+    return None
+
+
+def fetch_video_page_published_date(vid, timeout=30):
+    """Fallback for datacenter runs where yt-dlp's full metadata is blocked."""
+    try:
+        resp = httpx.get(
+            f"https://www.youtube.com/watch?v={vid}",
+            timeout=timeout,
+            headers={"User-Agent": UA},
+            follow_redirects=True,
+        )
+        resp.raise_for_status()
+    except Exception:
+        return None
+    return parse_youtube_published_date(resp.text)
+
+
 def format_hms(seconds):
     seconds = int(seconds or 0)
     if seconds >= 3600:
@@ -1194,8 +1241,8 @@ def search_person_appearances(search, people_cfg, since, known_ids):
                 continue
             if subs is None:
                 log(f"  ⚠️ subscriber count unknown, kept: {v['channel']}")
-        # Backfill date/description for the few survivors; returns None from
-        # datacenter IPs, in which case first_seen governs the feed window.
+        # Backfill date/description for the few survivors. If full metadata is
+        # blocked, the structured date on the watch page is checked below.
         meta = fetch_video_meta(v["id"])
         if meta:
             v = {**v, **meta}
@@ -1203,15 +1250,23 @@ def search_person_appearances(search, people_cfg, since, known_ids):
                 log(f"  ⏭️ too short ({v['duration']}s, likely a clip): {title[:60]}")
                 continue
         pub_date = None
+        pub_date_source = "unverified"
         if v["upload_date"]:
             try:
                 pub_date = datetime.strptime(v["upload_date"], "%Y%m%d").replace(tzinfo=timezone.utc)
+                pub_date_source = "video_metadata"
             except ValueError:
                 pass
-        # Keep entries with an unparseable date: search is year-anchored, and
-        # dropping them here would lose fresh videos YouTube hasn't dated yet.
+        if pub_date is None:
+            pub_date = fetch_video_page_published_date(v["id"])
+            if pub_date is not None:
+                pub_date_source = "youtube_page"
+        # Unknown dates remain eligible, but any date exposed by the watch page
+        # must pass the real publication window instead of using discovery time.
         if pub_date and pub_date < since:
+            log(f"  ⏭️ outside publication window ({pub_date.date()}): {title[:60]}")
             continue
+        v["pub_date_source"] = pub_date_source
         kept.append((v, pub_date))
     return kept
 
@@ -1250,6 +1305,21 @@ def fetch_people(sources, existing_feed, known_video_ids):
             stamp_dt = stamp_dt.replace(tzinfo=timezone.utc)
         if stamp_dt < since:
             continue
+        vid = entry.get("transcript_video_id") or _youtube_video_id(entry.get("link"))
+        if not entry.get("pub_date"):
+            entry = dict(entry)
+            entry["pub_date_source"] = "unverified"
+            entry["publish_date_unverified"] = True
+            if vid:
+                verified_date = fetch_video_page_published_date(vid)
+                if verified_date is not None:
+                    if verified_date < since:
+                        log(f"  ⏭️ carried old entry dropped ({verified_date.date()}): "
+                            f"{entry.get('title','')[:50]}")
+                        continue
+                    entry["pub_date"] = verified_date.isoformat()
+                    entry["pub_date_source"] = "youtube_page"
+                    entry["publish_date_unverified"] = False
         # Purge entries accepted before the topic-position gate existed (or
         # through any earlier gap): being talked about is not an appearance.
         if _person_in_topic_position(entry["person"], entry.get("title", "")):
@@ -1334,6 +1404,8 @@ def fetch_people(sources, existing_feed, known_video_ids):
             "guid": f"yt:{vid}",
             "title": v["title"],
             "pub_date": pub_date.isoformat() if pub_date else "",
+            "pub_date_source": v.get("pub_date_source", "unverified"),
+            "publish_date_unverified": pub_date is None,
             "first_seen": now.isoformat(),
             "link": f"https://www.youtube.com/watch?v={vid}",
             "audio_url": "",
@@ -1411,97 +1483,98 @@ def fetch_arxiv(sources):
         return {"papers": [], "errors": ["No arXiv categories configured"]}
 
     cat_query = "+OR+".join(f"cat:{c['id']}" for c in categories)
-    # NOTE: arXiv 的 sortBy=submittedDate 索引会滞后好几天（已知 bug），
-    # 会让"最新论文"卡在 3-4 天前。改用 lastUpdatedDate 排序（实时），
-    # 再在下面按 submitted 日期窗口过滤掉"旧论文改版"混进来的条目。
-    # 用 lastUpdatedDate 时新旧混排，slot 会被改版老论文占用，故多拉一些。
-    url = (f"https://export.arxiv.org/api/query?search_query={cat_query}"
-           f"&sortBy=lastUpdatedDate&sortOrder=descending&max_results={max_papers * 3}")
-
     log(f"\n━━━ arXiv Papers ━━━")
     log(f"🔬 Categories: {', '.join(c['id'] for c in categories)}")
-
-    try:
-        resp = httpx.get(url, timeout=30, headers={"User-Agent": UA})
-        resp.raise_for_status()
-    except Exception as e:
-        log(f"  ⚠️ arXiv API failed: {e}")
-        return {"papers": [], "errors": [str(e)]}
 
     ns = {
         "atom": "http://www.w3.org/2005/Atom",
         "arxiv": "http://arxiv.org/schemas/atom",
     }
+    roots = []
+    errors = []
+    # submittedDate is the correct semantic order but its index can lag;
+    # lastUpdatedDate is fresher but mixes old revisions into the result. Merge
+    # both views, then filter and sort by the original publication timestamp.
+    for query_index, sort_by in enumerate(("submittedDate", "lastUpdatedDate")):
+        if query_index:
+            time.sleep(3)
+        url = (f"https://export.arxiv.org/api/query?search_query={cat_query}"
+               f"&sortBy={sort_by}&sortOrder=descending&max_results={max_papers * 3}")
+        try:
+            resp = httpx.get(url, timeout=30, headers={"User-Agent": UA})
+            resp.raise_for_status()
+            roots.append(ET.fromstring(resp.text))
+        except Exception as e:
+            log(f"  ⚠️ arXiv {sort_by} query failed: {e}")
+            errors.append(f"{sort_by}: {e}")
 
-    try:
-        root = ET.fromstring(resp.text)
-    except ET.ParseError as e:
-        log(f"  ⚠️ XML parse error: {e}")
-        return {"papers": [], "errors": [str(e)]}
+    if not roots:
+        return {"papers": [], "errors": errors}
 
     since = datetime.now(timezone.utc) - timedelta(hours=lookback)
     papers = []
     seen_ids = set()
 
-    for entry in root.findall("atom:entry", ns):
-        id_url = entry.findtext("atom:id", "", ns)
-        arxiv_id = id_url.split("/abs/")[-1] if "/abs/" in id_url else id_url
+    for root in roots:
+        for entry in root.findall("atom:entry", ns):
+            id_url = entry.findtext("atom:id", "", ns)
+            arxiv_id = id_url.split("/abs/")[-1] if "/abs/" in id_url else id_url
 
-        if arxiv_id in seen_ids:
-            continue
-        seen_ids.add(arxiv_id)
+            if arxiv_id in seen_ids:
+                continue
+            seen_ids.add(arxiv_id)
 
-        pub_str = entry.findtext("atom:published", "", ns)
-        pub_date = None
-        if pub_str:
-            try:
-                pub_date = datetime.fromisoformat(pub_str.replace("Z", "+00:00"))
-            except ValueError:
-                pass
+            pub_str = entry.findtext("atom:published", "", ns)
+            pub_date = None
+            if pub_str:
+                try:
+                    pub_date = datetime.fromisoformat(pub_str.replace("Z", "+00:00"))
+                except ValueError:
+                    pass
 
-        if pub_date and pub_date < since:
-            continue
+            if pub_date and pub_date < since:
+                continue
 
-        title = entry.findtext("atom:title", "", ns).strip()
-        title = re.sub(r"\s+", " ", title)
-        abstract = entry.findtext("atom:summary", "", ns).strip()
-        abstract = re.sub(r"\s+", " ", abstract)
+            title = entry.findtext("atom:title", "", ns).strip()
+            title = re.sub(r"\s+", " ", title)
+            abstract = entry.findtext("atom:summary", "", ns).strip()
+            abstract = re.sub(r"\s+", " ", abstract)
 
-        authors = []
-        for author_el in entry.findall("atom:author", ns):
-            name = author_el.findtext("atom:name", "", ns).strip()
-            if name:
-                authors.append(name)
+            authors = []
+            for author_el in entry.findall("atom:author", ns):
+                name = author_el.findtext("atom:name", "", ns).strip()
+                if name:
+                    authors.append(name)
 
-        cats = [cat.get("term", "") for cat in entry.findall("atom:category", ns) if cat.get("term")]
-        primary_el = entry.find("arxiv:primary_category", ns)
-        primary_cat = primary_el.get("term", "") if primary_el is not None else ""
+            cats = [cat.get("term", "") for cat in entry.findall("atom:category", ns) if cat.get("term")]
+            primary_el = entry.find("arxiv:primary_category", ns)
+            primary_cat = primary_el.get("term", "") if primary_el is not None else ""
 
-        pdf_url = ""
-        for link_el in entry.findall("atom:link", ns):
-            if link_el.get("title") == "pdf":
-                pdf_url = link_el.get("href", "")
-                break
+            pdf_url = ""
+            for link_el in entry.findall("atom:link", ns):
+                if link_el.get("title") == "pdf":
+                    pdf_url = link_el.get("href", "")
+                    break
 
-        comment = (entry.findtext("arxiv:comment", "", ns) or "").strip()
+            comment = (entry.findtext("arxiv:comment", "", ns) or "").strip()
 
-        papers.append({
-            "arxiv_id": arxiv_id,
-            "title": title,
-            "authors": authors[:5],
-            "abstract": abstract,
-            "primary_category": primary_cat,
-            "categories": cats,
-            "pdf_url": pdf_url,
-            "abs_url": f"https://arxiv.org/abs/{arxiv_id}",
-            "published": pub_date.isoformat() if pub_date else pub_str,
-            "comment": comment,
-        })
+            papers.append({
+                "arxiv_id": arxiv_id,
+                "title": title,
+                "authors": authors[:5],
+                "abstract": abstract,
+                "primary_category": primary_cat,
+                "categories": cats,
+                "pdf_url": pdf_url,
+                "abs_url": f"https://arxiv.org/abs/{arxiv_id}",
+                "published": pub_date.isoformat() if pub_date else pub_str,
+                "comment": comment,
+            })
 
     papers.sort(key=lambda p: p.get("published") or "", reverse=True)
     papers = papers[:max_papers]
     log(f"  ✅ {len(papers)} papers")
-    return {"papers": papers, "errors": None}
+    return {"papers": papers, "errors": errors or None}
 
 
 # ── Official blogs (Anthropic / OpenAI / DeepMind) ────────────────────────────

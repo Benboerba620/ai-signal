@@ -53,6 +53,10 @@ Write a short 2-3 sentence opening that explains the strongest signal across tod
   may raise priority and negative scores may reduce repetitive items, but never
   suppress a major official release solely because of past feedback.
 - Every included item must have its original link.
+- Every included X post, podcast, and paper must show its source time in the
+  user's configured timezone. Use `created_at` for X, `pub_date` for podcasts,
+  and `published` for a paper's first-submission time. If the field is empty,
+  label the time as unverified; never use feed generation or discovery time.
 - Do not visit websites, search the web, or call APIs.
 - Do not invent quotes, metrics, product details, or claims.
 - Skip items that are not related to AI, AI products, developer tools, AI infrastructure, AI research, or AI-relevant investing.
