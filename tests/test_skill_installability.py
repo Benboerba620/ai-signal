@@ -23,6 +23,12 @@ class SkillInstallabilityTests(unittest.TestCase):
         }
         self.assertTrue(expected.issubset({path.name for path in REFERENCES.glob("*.md")}))
 
+    def test_single_file_installers_have_a_runtime_bootstrap(self):
+        skill = SKILL.read_text(encoding="utf-8")
+        self.assertIn("## Runtime Bootstrap", skill)
+        self.assertIn("https://github.com/Benboerba620/ai-signal.git", skill)
+        self.assertIn("scripts/prepare_digest.py", skill)
+
     def test_instruction_docs_avoid_common_injection_scanner_triggers(self):
         docs = [SKILL, *REFERENCES.glob("*.md")]
         text = "\n".join(path.read_text(encoding="utf-8") for path in docs).lower()

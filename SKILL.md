@@ -25,17 +25,37 @@ Default mode is **JSON-first**. Do not depend on central Chinese summaries.
 Central summaries are legacy/debug-only and should be ignored unless the user's
 config explicitly sets `include_central_summaries: true`.
 
+## Runtime Bootstrap
+
+Before any workflow, locate a complete AI Signal checkout. A complete checkout
+contains both `scripts/prepare_digest.py` and `references/` next to this file.
+
+If those support files are present, use this skill directory directly. Some
+single-file installers copy only `SKILL.md`; in that case, install the runtime
+checkout automatically:
+
+```bash
+mkdir -p ~/.ai-signal/runtime
+git clone --depth 1 https://github.com/Benboerba620/ai-signal.git ~/.ai-signal/runtime/ai-signal
+python -m pip install -r ~/.ai-signal/runtime/ai-signal/requirements.txt
+```
+
+If the runtime checkout already exists, update it with `git pull --ff-only`
+instead of cloning again. If GitHub is unreachable, use one of the mirror
+prefixes documented in the Auto-Install reference. Treat the complete checkout
+as `SKILL_DIR` for every referenced command. Keep user configuration in
+`~/.ai-signal/`; never replace it while refreshing the runtime checkout.
+
 ## Workflow References
 
 Read only the references needed for the current task:
 
-- Installing: read [Auto-Install](references/auto-install-zero-command-line.md),
-  [Platform Detection](references/detecting-platform.md), then
-  [Onboarding](references/first-run-onboarding.md).
+- Installing: read `references/auto-install-zero-command-line.md`,
+  `references/detecting-platform.md`, then
+  `references/first-run-onboarding.md`.
 - Generating or delivering a digest: read
-  [Content Delivery](references/content-delivery-digest-run.md). For an explicit
-  on-demand request, also read [Manual Trigger](references/manual-trigger.md).
-- Changing user preferences: read
-  [Configuration Handling](references/configuration-handling.md).
+  `references/content-delivery-digest-run.md`. For an explicit on-demand
+  request, also read `references/manual-trigger.md`.
+- Changing user preferences: read `references/configuration-handling.md`.
 - Answering questions about tracked feeds: read
-  [Content Sources](references/content-sources.md).
+  `references/content-sources.md`.
