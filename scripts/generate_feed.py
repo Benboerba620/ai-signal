@@ -479,7 +479,11 @@ async def fetch_twitter(sources):
         try:
             import twscrape.xclid as _xclid
             from twscrape.http import make_client as _mc
-            _xclid._make_client = lambda: _mc(proxy=proxy, headers={"user-agent": "@chrome"})
+            _xclid._make_client = lambda cookies=None: _mc(
+                proxy=proxy,
+                headers={"user-agent": "@chrome"},
+                cookies=cookies,
+            )
         except Exception:
             pass
 
@@ -494,6 +498,7 @@ async def fetch_twitter(sources):
     results = []
     errors = []
     global_seen_ids = set()
+    accounts_with_raw_results = 0
 
     for account in accounts:
         handle = account["handle"]
@@ -506,6 +511,9 @@ async def fetch_twitter(sources):
             log(f"  ⚠️ {e}")
             errors.append(f"@{handle}: {e}")
             continue
+
+        if raw:
+            accounts_with_raw_results += 1
 
         tweets = []
         seen_ids = set()
@@ -583,6 +591,12 @@ async def fetch_twitter(sources):
             "tier": account.get("tier", ""),
             "tweets": tweets,
         })
+
+    if accounts and accounts_with_raw_results == 0:
+        raise RuntimeError(
+            f"Twitter health check failed: all {len(accounts)} account queries "
+            "returned no raw results"
+        )
 
     return {"x": results, "errors": errors if errors else None}
 
