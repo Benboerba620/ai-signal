@@ -150,6 +150,42 @@ class TwitterFetchTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual([item["id"] for item in result["x"][0]["tweets"]], ["3"])
 
+    async def test_rejects_an_all_empty_twitter_response(self):
+        class FakePool:
+            async def get_account(self, _):
+                return object()
+
+        class FakeAPI:
+            def __init__(self, *_args, **_kwargs):
+                self.pool = FakePool()
+
+            def search(self, _query, **_kwargs):
+                return []
+
+        async def fake_gather(values):
+            return values
+
+        fake_twscrape = types.ModuleType("twscrape")
+        fake_twscrape.API = FakeAPI
+        fake_twscrape.gather = fake_gather
+        sources = {
+            "twitter": {
+                "accounts": [
+                    {"handle": "sama", "name": "Sam Altman"},
+                    {"handle": "nvidia", "name": "NVIDIA"},
+                ],
+            }
+        }
+
+        with mock.patch.dict(os.environ, {"TWITTER_COOKIES": "test"}), \
+                mock.patch.dict(sys.modules, {"twscrape": fake_twscrape}), \
+                mock.patch.object(generate_feed, "detect_proxy", return_value=""):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "all 2 account queries returned no raw results",
+            ):
+                await generate_feed.fetch_twitter(sources)
+
 class DigestDedupTests(unittest.TestCase):
     def test_dedupes_current_batch_across_all_content_types(self):
         duplicate_tweet = {"id": "tweet-1", "url": "https://x.com/OpenAI/status/1"}
