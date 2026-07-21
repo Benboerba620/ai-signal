@@ -1,0 +1,79 @@
+🔬Causal Models Need Causal Data - Xaira’s X-Cell model for Drug Discovery (Bo Wang & Ci Chu, Chief Discovery Officer & Chief AI Scientist)
+Sign in
+Latent Space: The AI Engineer Podcast
+🔬Causal Models Need Causal Data - Xaira’s X-Cell model for Drug Discovery (Bo Wang & Ci Chu, Chief Discovery Officer & Chief AI Scientist)
+27
+1×
+0:00
+Current time: 0:00 / Total time: -1:29:46
+-1:29:46
+Audio playback is not supported on your browser. Please upgrade.
+🔬Causal Models Need Causal Data - Xaira’s X-Cell model for Drug Discovery (Bo Wang & Ci Chu, Chief Discovery Officer & Chief AI Scientist)
+Xaira Therapeutics is all in on data generation for model building! We talk with Bo Wang and Ci Chu about how and why.
+RJ Honicky
+Jul 21, 2026
+27
+Transcript
+Bet on information
+If test loss flatlines after 1.5B parameters while training loss continues to drop as you scale, that tells you that your model is limited by the amount of information in your data.
+Training on a single, smallish data set exposed an information gap: the 3.1B model falls off the scaling trend. Neither parameters nor compute will improve performance past this wall. For predicting changes to gene expression, you need more information rich data .
+This is what Chu and Bo’s teams have done, and here is what ~30x the information buys you:
+Now we can scale with parameters and training compute! We don’t know how much this effort costed, but we can guess that data collection experiments and infrastructure was a few tens of millions, and compute + headcount + research was a few million. The budget looks like a RL rollout budget, rather than a data rich pre-training one.
+We were lucky enough to have the two central figures in this story on our podcast. Taking the lead from Ci Chu and Bo Wang, Xaira Therapeutics is betting that information rich data is the key to AI-driven drug development. Chu was recently promoted to Chief Discovery Officer and Bo to Chief AI Scientist 1 , underscoring just how strategic Xaira considers this bet.
+Reverse engineering the human cell
+If you had to figure out how a human cell works, what would you do? A good place to start might be by documenting what genes are expressed (e.g. what RNA is floating around) in different kinds of cells, in different circumstances.
+That is CELLxGENE , a database of 168M cells built by Chan Zuckerberg Institute that maps each cell to a count of how many times 20K-30K genes were detected in that cell, plus detailed metadata about every cell . A ~4 trillion-entry matrix.
+If the Protein Data Bank (PDB) unlocked structural biology models ( Boltz Episode , ESM/BioHub Episode ), CELLxGENE has done the same thing for Virtual Cell models. Like PDB, CELLxGENE has inspired a zoo of AI models of RNA expression; so much so that RNA expression models have become synonymous with Virtual Cell models. Bo Wang built one of the most influential, scGPT , that became the starting point for Xaira’s new model.
+RNA expression ≠ Virtual Cell
+Models trained on CELLxGENE describe the relationship between cell types and cell states, but they are not good at predicting what will happen if we make changes to RNA expression. Changes in gene expression are highly correlated, and its is difficult (impossible) to figure out what causes what in most cases.
+If you could “turn the dial down” on one gene at a time, however, then you would be able to observe what is upstream and downstream of a given gene 2 . You could tell if A → B & C or B → A & C or B → A, C → B → … If you did this for all of the genes, then maybe you could train a model that could predict what would happen to a cell if you change a gene (e.g. with a drug or a gene edit). Or maybe you could figure out the least invasive way to change a particular gene’s expression.
+X-Atlas → X-Cell
+This is exactly what Chu and Bo’s teams have done. The data set is called X-Atlas and the model is called X-Cell.
+In this episode, we discuss:
+Why the team abandoned autoregression for diffusion
+The CRISPR-based experiments that run millions of tests in parallel, and generate the raw data for X-Atlas and X-cell
+Generalization to real lab experiments in real human cells
+Beating the linear baseline that has outperformed previous models
+Justifying a kitchen-sink of priors, and how that stacks up vs. data and architecture
+Bo also
+d with us some of the (major) advantages he has as an academic vs. industry leader, and how his labs keep up with the breakneck pace of AI innovation.
+Check out the full episode on YouTube, or your favorite podcasting platform!
+1
+These promotions happened after we recorded the episode
+2
+There can be cycles in the chain reaction, of course, and there can be second, third, etc. order effects (meaning things that only happen when multiple genes change at once), but the first order effects are a great place to start, and might tell us a lot of what we need to know.
+Discussion about this episode
+Comments Restacks
+Latent Space: The AI Engineer Podcast
+The podcast by and for AI Engineers! In 2025, over 10 million readers and listeners came to Latent Space to hear about news, papers and interviews in Software 3.0.
+We cover Foundation Models changing every domain in Code Generation, Multimodality, AI Agents, GPU Infra and more, directly from the founders, builders, and thinkers involved in pushing the cutting edge. Striving to give you both the definitive take on the Current Thing down to the first introduction to the tech you'll be using in the next 3 months! We break news and exclusive interviews from OpenAI, Anthropic, Gemini, Meta (Soumith Chintala), Sierra (Bret Taylor), tiny (George Hotz), Databricks/MosaicML (Jon Frankle), Modular (Chris Lattner), Answer.ai (Jeremy Howard), et al.
+Full show notes always on https://latent.space
+The podcast by and for AI Engineers! In 2025, over 10 million readers and listeners came to Latent Space to hear about news, papers and interviews in Software 3.0.
+We cover Foundation Models changing every domain in Code Generation, Multimodality, AI Agents, GPU Infra and more, directly from the founders, builders, and thinkers involved in pushing the cutting edge. Striving to give you both the definitive take on the Current Thing down to the first introduction to the tech you'll be using in the next 3 months! We break news and exclusive interviews from OpenAI, Anthropic, Gemini, Meta (Soumith Chintala), Sierra (Bret Taylor), tiny (George Hotz), Databricks/MosaicML (Jon Frankle), Modular (Chris Lattner), Answer.ai (Jeremy Howard), et al.
+Full show notes always on https://latent.space
+Listen on
+Substack App
+Apple Podcasts
+Spotify
+RSS Feed
+Appears in episode
+RJ Honicky
+Recent Episodes
+🔬 The Lab of the Future Should Feel Like a Data Center — Andy Beam & Rafa Gómez-Bombarelli, Lila Sciences
+Jul 16
+Why AI Infrastructure must evolve for Agent Experience — Akshat Bubna, Modal CTO
+Jul 8
+🔬 The Coolest Diffusion Research Isn't in LLMs — Evan Feinberg & Sergey Edunov, Genesis Molecular AI
+Jul 1 • Brandon Anderson
+Why the Frontier Ecosystem must be Open — Matei Zaharia and Reynold Xin, Databricks
+Jun 24
+Red-Teaming after Mythos — Zico Kolter & Matt Fredrikson, Gray Swan
+Jun 22
+The Professor of Outputmaxxing — Anjney Midha, AMP
+Jun 18
+🔬 The Self-Driving Lab — Joseph Krause, Radical AI
+Jun 17 • Brandon Anderson
+Ready for more?
+© 2026 Latent.Space · Privacy ∙ Terms ∙ Collection notice
+Start your Substack Get the app
+Substack is the home for great culture
