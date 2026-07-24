@@ -622,6 +622,10 @@ def parse_rss(xml_text):
         content = item.findtext("content:encoded", "", ns)
         enc = item.find("enclosure")
         audio = enc.get("url", "") if enc is not None else ""
+        try:
+            audio_bytes = int(enc.get("length", "0") or 0) if enc is not None else 0
+        except ValueError:
+            audio_bytes = 0
         dur_el = item.find("itunes:duration", ns)
         duration = dur_el.text.strip() if dur_el is not None and dur_el.text else ""
         transcript_urls = []
@@ -646,7 +650,8 @@ def parse_rss(xml_text):
 
         episodes.append({
             "title": title, "guid": guid, "pub_date": parsed_date,
-            "link": link, "audio_url": audio, "duration": duration,
+            "link": link, "audio_url": audio, "audio_bytes": audio_bytes,
+            "duration": duration,
             "description": desc[:2000],
             "raw_description": desc,
             "content": content,
@@ -687,7 +692,7 @@ def parse_rss(xml_text):
 
             episodes.append({
                 "title": title, "guid": guid, "pub_date": parsed_date,
-                "link": link, "audio_url": "", "duration": "",
+                "link": link, "audio_url": "", "audio_bytes": 0, "duration": "",
                 "description": desc[:2000],
                 "raw_description": desc,
                 "content": "",
@@ -974,6 +979,7 @@ def fetch_channel(channel, lookback_hours, transcript_cache):
             "pub_date": ep["pub_date"].isoformat() if ep["pub_date"] else "",
             "link": ep["link"],
             "audio_url": ep["audio_url"],
+            "audio_bytes": ep.get("audio_bytes", 0),
             "duration": ep["duration"],
             "description": ep["description"],
             "transcript": transcript,
