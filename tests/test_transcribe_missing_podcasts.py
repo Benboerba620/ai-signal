@@ -104,7 +104,6 @@ class SemiAnalysisConfigTests(unittest.TestCase):
         )
         self.assertTrue(channel["transcribe_missing"])
         self.assertTrue(channel["require_direct_audio"])
-        self.assertEqual(channel["asr_audio_proxy"], "github_release")
         self.assertEqual(channel["min_transcription_duration_minutes"], 10)
         self.assertEqual(channel["min_transcription_audio_bytes"], 5000000)
 
@@ -127,40 +126,6 @@ class SemiAnalysisConfigTests(unittest.TestCase):
         fetch.assert_not_called()
         self.assertIsNone(result["text"])
         self.assertIn("show notes, not transcripts", result["error"])
-
-
-class AudioProxyFallbackTests(unittest.TestCase):
-    def test_retries_download_failure_through_github_release(self):
-        proxy = {"url": "https://github.com/example/repo/releases/download/cache/audio.mp3"}
-        with mock.patch.object(
-            transcribe_missing_podcasts,
-            "submit_task",
-            side_effect=["direct-request", "proxy-request"],
-        ), mock.patch.object(
-            transcribe_missing_podcasts,
-            "query_task",
-            side_effect=[RuntimeError("Invalid audio URI: audio download failed"), "transcript"],
-        ), mock.patch.object(
-            transcribe_missing_podcasts,
-            "publish_github_audio_proxy",
-            return_value=proxy,
-        ) as publish, mock.patch.object(
-            transcribe_missing_podcasts,
-            "cleanup_github_audio_proxy",
-        ) as cleanup:
-            request_id, text = transcribe_missing_podcasts.transcribe_item(
-                mock.Mock(),
-                "api-key",
-                {"guid": "episode-1", "audio_url": "https://example.com/audio.mp3"},
-                {"asr_audio_proxy": "github_release"},
-                1,
-                10,
-            )
-
-        self.assertEqual(request_id, "proxy-request")
-        self.assertEqual(text, "transcript")
-        publish.assert_called_once()
-        cleanup.assert_called_once_with(proxy)
 
 
 if __name__ == "__main__":
