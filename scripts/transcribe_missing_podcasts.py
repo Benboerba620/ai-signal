@@ -19,8 +19,10 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
+from hashlib import sha256
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -125,6 +127,81 @@ def resolve_audio_url(item):
         return ""
     urls = [line.strip() for line in proc.stdout.splitlines() if line.strip().startswith("http")]
     return urls[0] if urls else ""
+
+
+def is_audio_download_error(exc):
+    message = str(exc).lower()
+    return "audio download failed" in message or "invalid audio uri" in message
+
+
+def publish_github_audio_proxy(client, item):
+    repository = os.environ.get("GITHUB_REPOSITORY", "").strip()
+    target = os.environ.get("GITHUB_SHA", "").strip()
+    if not repository or not target or not os.environ.get("GH_TOKEN"):
+        raise RuntimeError("GitHub release audio proxy requires Actions repository context")
+
+    source_url = resolve_audio_url(item)
+    if not source_url:
+        raise RuntimeError("No audio URL available for GitHub release proxy")
+
+    digest = sha256(str(item.get("guid") or source_url).encode("utf-8")).hexdigest()[:12]
+    tag = f"asr-audio-cache-{digest}-{uuid.uuid4().hex[:8]}"
+    temp_dir = tempfile.TemporaryDirectory(prefix="ai-signal-asr-")
+    extension = audio_format(source_url)
+    audio_path = Path(temp_dir.name) / f"audio-{digest}.{extension}"
+
+    try:
+        with client.stream("GET", source_url, headers={"User-Agent": UA}) as response:
+            response.raise_for_status()
+            with audio_path.open("wb") as output:
+                for chunk in response.iter_bytes():
+                    output.write(chunk)
+
+        subprocess.run(
+            [
+                "gh", "release", "create", tag, str(audio_path),
+                "--repo", repository,
+                "--target", target,
+                "--title", "Temporary ASR audio cache",
+                "--notes", "Managed by ai-signal; deleted after transcription.",
+                "--prerelease",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=180,
+            check=True,
+        )
+    except Exception:
+        temp_dir.cleanup()
+        raise
+
+    asset_url = (
+        f"https://github.com/{repository}/releases/download/{tag}/{audio_path.name}"
+    )
+    return {"url": asset_url, "tag": tag, "temp_dir": temp_dir}
+
+
+def cleanup_github_audio_proxy(proxy):
+    try:
+        result = subprocess.run(
+            [
+                "gh", "release", "delete", proxy["tag"],
+                "--repo", os.environ.get("GITHUB_REPOSITORY", ""),
+                "--cleanup-tag", "--yes",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+            check=False,
+        )
+        if result.returncode:
+            log(f"  temporary GitHub release cleanup failed: {result.stderr.strip()}")
+    finally:
+        proxy["temp_dir"].cleanup()
 
 
 SPONSOR_MARKERS = (
@@ -330,6 +407,30 @@ def query_task(client, api_key, request_id, poll_interval, max_wait):
     raise TimeoutError(f"transcription timed out after {max_wait}s; last body: {last_body[:500]}")
 
 
+def transcribe_item(client, api_key, item, policy, poll_interval, max_wait):
+    try:
+        request_id = submit_task(client, api_key, item)
+        log(f"  request_id={request_id}")
+        return request_id, query_task(
+            client, api_key, request_id, poll_interval, max_wait
+        )
+    except Exception as exc:
+        if policy.get("asr_audio_proxy") != "github_release" or not is_audio_download_error(exc):
+            raise
+        log(f"  direct audio download failed; retrying via temporary GitHub release: {exc}")
+
+    proxy = publish_github_audio_proxy(client, item)
+    try:
+        proxy_item = dict(item, audio_url=proxy["url"])
+        request_id = submit_task(client, api_key, proxy_item)
+        log(f"  proxy request_id={request_id}")
+        return request_id, query_task(
+            client, api_key, request_id, poll_interval, max_wait
+        )
+    finally:
+        cleanup_github_audio_proxy(proxy)
+
+
 def candidate_items(feed, sources):
     podcast_cfg = sources.get("podcasts", {})
     policies = channel_policy_map(sources)
@@ -377,13 +478,19 @@ def main():
         return
 
     changed = 0
+    policies = channel_policy_map(sources)
     with httpx.Client(timeout=60, follow_redirects=True) as client:
         for index, item, reason in candidates[:limit]:
             log(f"Submitting: {item.get('channel')} | {item.get('title')} ({reason})")
             try:
-                request_id = submit_task(client, api_key, item)
-                log(f"  request_id={request_id}")
-                text = query_task(client, api_key, request_id, poll_interval, max_wait)
+                request_id, text = transcribe_item(
+                    client,
+                    api_key,
+                    item,
+                    policies.get(item.get("channel"), {}),
+                    poll_interval,
+                    max_wait,
+                )
             except Exception as exc:
                 feed["podcasts"][index]["transcript_error"] = f"volc_asr_auc: {exc}"
                 log(f"  ❌ {exc}")

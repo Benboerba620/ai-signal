@@ -82,6 +82,7 @@ jobs:
         if: ${{ github.event.schedule != '30 1 * * 1-5' && (github.event_name == 'schedule' || inputs.transcribe_missing == 'true' || inputs.transcribe_missing == 'config') }}
         env:
           VOLC_ASR_API_KEY: ${{ secrets.VOLC_ASR_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: python scripts/transcribe_missing_podcasts.py
 
       - name: Validate feed uniqueness
