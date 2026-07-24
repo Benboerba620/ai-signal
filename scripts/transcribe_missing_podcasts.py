@@ -26,6 +26,7 @@ from urllib.parse import urlparse
 
 import httpx
 
+import generate_feed
 from podcast_transcripts import externalize_transcripts
 
 SCRIPT_DIR = Path(__file__).parent
@@ -182,11 +183,7 @@ def duration_seconds(value):
     return hours * 3600 + minutes * 60 + seconds
 
 
-def should_transcribe(item, policy, keywords):
-    if item.get("transcript") or (
-        item.get("transcript_available") and item.get("transcript_path")
-    ):
-        return False, "already has transcript"
+def asr_eligibility(item, policy):
     if policy.get("require_direct_audio") and not item.get("audio_url"):
         return False, "missing direct audio_url"
     if not item.get("audio_url") and not is_youtube_url(item.get("link")):
@@ -201,6 +198,20 @@ def should_transcribe(item, policy, keywords):
     item_bytes = int(item.get("audio_bytes", 0) or 0)
     if minimum_bytes and item_bytes and item_bytes < minimum_bytes:
         return False, f"audio too small ({item_bytes} bytes < {minimum_bytes})"
+    return True, "eligible for ASR"
+
+
+def should_transcribe(item, policy, keywords, force=False):
+    if item.get("transcript") or (
+        item.get("transcript_available") and item.get("transcript_path")
+    ):
+        return False, "already has transcript"
+    if force:
+        return True, "manual channel override"
+
+    eligible, reason = asr_eligibility(item, policy)
+    if not eligible:
+        return False, reason
 
     mode = policy.get("transcribe_missing", False)
     if mode is True:
@@ -210,6 +221,42 @@ def should_transcribe(item, policy, keywords):
             return True, "keyword relevant"
         return False, "not relevant enough"
     return False, "channel not enabled"
+
+
+def canonical_episode_title(value):
+    title = str(value or "").split(" | ", 1)[0]
+    return re.sub(r"[^a-z0-9]+", " ", title.casefold()).strip()
+
+
+def fetch_configured_public_transcript(client, item, policy):
+    rss_url = str(policy.get("transcript_rss_url") or "").strip()
+    if not rss_url:
+        return None
+
+    try:
+        response = client.get(rss_url, headers={"User-Agent": UA})
+        response.raise_for_status()
+        episodes = generate_feed.parse_rss(response.text)
+    except Exception as exc:
+        log(f"  public transcript feed failed: {exc}")
+        return None
+
+    target = canonical_episode_title(item.get("title"))
+    match = next(
+        (episode for episode in episodes
+         if canonical_episode_title(episode.get("title")) == target),
+        None,
+    )
+    if not match:
+        log("  no matching episode in configured public transcript feed")
+        return None
+
+    result = generate_feed.get_youtube_transcript(match.get("link"))
+    if not result.get("text"):
+        log(f"  matching public transcript unavailable: {result.get('error')}")
+        return None
+    result["url"] = match.get("link")
+    return result
 
 
 def headers(api_key, request_id, sequence="-1"):
@@ -330,16 +377,27 @@ def query_task(client, api_key, request_id, poll_interval, max_wait):
     raise TimeoutError(f"transcription timed out after {max_wait}s; last body: {last_body[:500]}")
 
 
-def candidate_items(feed, sources):
+def candidate_items(feed, sources, force_channels=None, only_channels=None):
     podcast_cfg = sources.get("podcasts", {})
     policies = channel_policy_map(sources)
     keywords = podcast_cfg.get("transcription", {}).get("relevance_keywords", [])
+    force_channels = set(force_channels or [])
+    only_channels = set(only_channels or [])
 
     candidates = []
     skipped = []
     for index, item in enumerate(feed.get("podcasts", [])):
-        policy = policies.get(item.get("channel"), {})
-        ok, reason = should_transcribe(item, policy, keywords)
+        channel = item.get("channel")
+        if only_channels and channel not in only_channels:
+            skipped.append((item, "channel not selected"))
+            continue
+        policy = policies.get(channel, {})
+        ok, reason = should_transcribe(
+            item,
+            policy,
+            keywords,
+            force=channel in force_channels,
+        )
         if ok:
             candidates.append((index, item, reason))
         else:
@@ -354,6 +412,8 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Print candidates without calling ASR")
     parser.add_argument("--poll-interval", type=int, default=None)
     parser.add_argument("--max-wait", type=int, default=None)
+    parser.add_argument("--force-channel", action="append", default=[])
+    parser.add_argument("--only-channel", action="append", default=[])
     args = parser.parse_args()
 
     feed = load_json(FEED_PATH, {"podcasts": []})
@@ -363,7 +423,12 @@ def main():
     poll_interval = args.poll_interval or int(transcribe_cfg.get("poll_interval_seconds", 10))
     max_wait = args.max_wait or int(transcribe_cfg.get("max_wait_seconds", 1800))
 
-    candidates, skipped = candidate_items(feed, sources)
+    candidates, skipped = candidate_items(
+        feed,
+        sources,
+        force_channels=args.force_channel,
+        only_channels=args.only_channel,
+    )
     log(f"Candidates: {len(candidates)}; skipped: {len(skipped)}; limit: {limit}")
     for _, item, reason in candidates[:limit]:
         log(f"  ✅ {item.get('channel')} | {item.get('title')} ({reason})")
@@ -372,14 +437,31 @@ def main():
         return
 
     api_key = os.environ.get("VOLC_ASR_API_KEY")
-    if not api_key:
-        log("VOLC_ASR_API_KEY is not set; skipping optional podcast transcription.")
-        return
-
     changed = 0
+    policies = channel_policy_map(sources)
     with httpx.Client(timeout=60, follow_redirects=True) as client:
         for index, item, reason in candidates[:limit]:
             log(f"Submitting: {item.get('channel')} | {item.get('title')} ({reason})")
+            policy = policies.get(item.get("channel"), {})
+            public_result = fetch_configured_public_transcript(client, item, policy)
+            if public_result:
+                feed["podcasts"][index]["transcript"] = public_result["text"]
+                feed["podcasts"][index]["transcript_available"] = True
+                feed["podcasts"][index]["transcript_source"] = public_result["source"]
+                feed["podcasts"][index]["transcript_url"] = public_result.get("url")
+                feed["podcasts"][index]["transcript_video_id"] = public_result.get("video_id")
+                feed["podcasts"][index]["transcript_error"] = None
+                changed += 1
+                log(f"  ✅ transcript ({len(public_result['text'])} chars, {public_result['source']})")
+                continue
+
+            asr_ok, asr_reason = asr_eligibility(item, policy)
+            if not asr_ok:
+                log(f"  ⏭️ ASR skipped: {asr_reason}")
+                continue
+            if not api_key:
+                log("  ⏭️ VOLC_ASR_API_KEY is not set; ASR fallback skipped")
+                continue
             try:
                 request_id = submit_task(client, api_key, item)
                 log(f"  request_id={request_id}")

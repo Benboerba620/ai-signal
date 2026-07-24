@@ -89,6 +89,17 @@ class DurationTests(unittest.TestCase):
         self.assertTrue(allowed)
         self.assertEqual(reason, "channel default")
 
+    def test_manual_override_enables_disabled_channel(self):
+        item = {"audio_url": "https://example.com/episode.mp3"}
+        policy = {"transcribe_missing": False}
+
+        allowed, reason = transcribe_missing_podcasts.should_transcribe(
+            item, policy, [], force=True
+        )
+
+        self.assertTrue(allowed)
+        self.assertEqual(reason, "manual channel override")
+
 
 class SemiAnalysisConfigTests(unittest.TestCase):
     def test_uses_direct_audio_feed_with_transcription_guard(self):
@@ -101,6 +112,10 @@ class SemiAnalysisConfigTests(unittest.TestCase):
 
         self.assertEqual(
             channel["rss_url"], "https://anchor.fm/s/10fbee758/podcast/rss"
+        )
+        self.assertEqual(
+            channel["transcript_rss_url"],
+            "https://www.youtube.com/feeds/videos.xml?channel_id=UCf_KhBXw5TIV0A7butjgFhg",
         )
         self.assertFalse(channel["transcribe_missing"])
         self.assertTrue(channel["require_direct_audio"])
@@ -126,6 +141,66 @@ class SemiAnalysisConfigTests(unittest.TestCase):
         fetch.assert_not_called()
         self.assertIsNone(result["text"])
         self.assertIn("show notes, not transcripts", result["error"])
+
+    def test_matches_audio_episode_to_official_youtube_transcript(self):
+        client = mock.Mock()
+        response = mock.Mock(text="rss")
+        response.raise_for_status.return_value = None
+        client.get.return_value = response
+        item = {
+            "title": "Ep. 021 - The AI Project Trinity | Jordan Nanos",
+        }
+        policy = {"transcript_rss_url": "https://example.com/youtube.xml"}
+        youtube_episode = {
+            "title": "Ep. 021 - The AI Project Trinity",
+            "link": "https://www.youtube.com/watch?v=episode-21",
+        }
+        transcript = {
+            "text": "full transcript",
+            "source": "youtube_transcript_api",
+            "video_id": "episode-21",
+            "error": None,
+        }
+
+        with mock.patch.object(generate_feed, "parse_rss", return_value=[youtube_episode]), \
+                mock.patch.object(
+                    generate_feed,
+                    "get_youtube_transcript",
+                    return_value=transcript,
+                ):
+            result = transcribe_missing_podcasts.fetch_configured_public_transcript(
+                client, item, policy
+            )
+
+        self.assertEqual(result["text"], "full transcript")
+        self.assertEqual(result["url"], youtube_episode["link"])
+
+    def test_force_and_only_channel_select_semianalysis(self):
+        feed = {
+            "podcasts": [
+                {"channel": "SemiAnalysis", "title": "Episode", "audio_url": "audio"},
+                {"channel": "Other", "title": "Other episode", "audio_url": "audio"},
+            ]
+        }
+        sources = {
+            "podcasts": {
+                "channels": [
+                    {"name": "SemiAnalysis", "transcribe_missing": False},
+                    {"name": "Other", "transcribe_missing": True},
+                ]
+            }
+        }
+
+        candidates, _ = transcribe_missing_podcasts.candidate_items(
+            feed,
+            sources,
+            force_channels=["SemiAnalysis"],
+            only_channels=["SemiAnalysis"],
+        )
+
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0][1]["channel"], "SemiAnalysis")
+        self.assertEqual(candidates[0][2], "manual channel override")
 
 
 if __name__ == "__main__":

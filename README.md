@@ -52,6 +52,8 @@
 
 字幕从最后一次出现在最近更新 feed 起保留 14 天。播客退出主 feed 后，仍可通过字幕索引展开；超过 14 天后全文缓存自动过期，只保留日报中的标题、链接和已有摘要。
 
+仓库维护者可以在 GitHub Actions 的 `Generate Daily Feed` 手动运行页把 `transcribe_semianalysis` 设为 `true`，为最新一期 SemiAnalysis 节目补全文字幕。该选项默认关闭，每次最多处理 1 期；系统优先读取官方 YouTube 同期视频的公开字幕，匹配不到时才尝试火山 ASR。
+
 ## 信息源
 
 ### 播客（14 个频道）
