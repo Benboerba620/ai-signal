@@ -2,6 +2,7 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -115,6 +116,16 @@ class SemiAnalysisConfigTests(unittest.TestCase):
         episode = generate_feed.parse_rss(xml)[0]
 
         self.assertEqual(episode["audio_bytes"], 48741563)
+
+    def test_spotify_catalog_page_is_not_accepted_as_transcript(self):
+        url = "https://podcasters.spotify.com/pod/show/jordan-nanos/episodes/example"
+
+        with mock.patch.object(generate_feed, "fetch_text_url") as fetch:
+            result = generate_feed.transcript_from_episode_page(url)
+
+        fetch.assert_not_called()
+        self.assertIsNone(result["text"])
+        self.assertIn("show notes, not transcripts", result["error"])
 
 
 if __name__ == "__main__":

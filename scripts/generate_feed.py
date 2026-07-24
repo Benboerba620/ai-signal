@@ -831,9 +831,20 @@ def transcript_from_url(url, source="transcript_url"):
         return transcript_result(source=source, url=url, error=str(e))
 
 
+def is_spotify_episode_page(url):
+    host = urlparse(url or "").netloc.lower()
+    return host in {"anchor.fm", "podcasters.spotify.com", "open.spotify.com"}
+
+
 def transcript_from_episode_page(url):
     if not url:
         return transcript_result(source="episode_page", error="No episode link")
+    if is_spotify_episode_page(url):
+        return transcript_result(
+            source="episode_page",
+            url=url,
+            error="Spotify/Anchor catalog pages are show notes, not transcripts",
+        )
     try:
         html, final_url, _ = fetch_text_url(url, timeout=45)
     except Exception as e:
