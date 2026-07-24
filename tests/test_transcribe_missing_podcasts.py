@@ -102,7 +102,7 @@ class SemiAnalysisConfigTests(unittest.TestCase):
         self.assertEqual(
             channel["rss_url"], "https://anchor.fm/s/10fbee758/podcast/rss"
         )
-        self.assertTrue(channel["transcribe_missing"])
+        self.assertFalse(channel["transcribe_missing"])
         self.assertTrue(channel["require_direct_audio"])
         self.assertEqual(channel["min_transcription_duration_minutes"], 10)
         self.assertEqual(channel["min_transcription_audio_bytes"], 5000000)
