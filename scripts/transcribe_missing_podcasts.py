@@ -164,13 +164,43 @@ def is_relevant(item, keywords):
     return False
 
 
+def duration_seconds(value):
+    text = str(value or "").strip()
+    if not text:
+        return 0
+    if text.isdigit():
+        return int(text)
+
+    parts = text.split(":")
+    if len(parts) not in (2, 3) or not all(part.isdigit() for part in parts):
+        return 0
+    numbers = [int(part) for part in parts]
+    if len(numbers) == 2:
+        minutes, seconds = numbers
+        return minutes * 60 + seconds
+    hours, minutes, seconds = numbers
+    return hours * 3600 + minutes * 60 + seconds
+
+
 def should_transcribe(item, policy, keywords):
     if item.get("transcript") or (
         item.get("transcript_available") and item.get("transcript_path")
     ):
         return False, "already has transcript"
+    if policy.get("require_direct_audio") and not item.get("audio_url"):
+        return False, "missing direct audio_url"
     if not item.get("audio_url") and not is_youtube_url(item.get("link")):
         return False, "missing audio_url"
+
+    minimum_minutes = int(policy.get("min_transcription_duration_minutes", 0) or 0)
+    item_duration = duration_seconds(item.get("duration"))
+    if minimum_minutes and item_duration and item_duration < minimum_minutes * 60:
+        return False, f"too short ({item_duration}s < {minimum_minutes}m)"
+
+    minimum_bytes = int(policy.get("min_transcription_audio_bytes", 0) or 0)
+    item_bytes = int(item.get("audio_bytes", 0) or 0)
+    if minimum_bytes and item_bytes and item_bytes < minimum_bytes:
+        return False, f"audio too small ({item_bytes} bytes < {minimum_bytes})"
 
     mode = policy.get("transcribe_missing", False)
     if mode is True:
