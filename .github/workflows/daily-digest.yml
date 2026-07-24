@@ -35,6 +35,14 @@ on:
           - 'config'
           - 'false'
           - 'true'
+      transcribe_semianalysis:
+        description: 'Transcribe the newest SemiAnalysis episode using official YouTube captions, with ASR fallback.'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
       feed_scope:
         description: 'Limit a manual run to one feed type.'
         required: false
@@ -79,10 +87,22 @@ jobs:
           fi
 
       - name: Transcribe selected missing podcast transcripts
-        if: ${{ github.event.schedule != '30 1 * * 1-5' && (github.event_name == 'schedule' || inputs.transcribe_missing == 'true' || inputs.transcribe_missing == 'config') }}
+        if: ${{ github.event.schedule != '30 1 * * 1-5' && (github.event_name == 'schedule' || inputs.transcribe_missing == 'true' || inputs.transcribe_missing == 'config' || inputs.transcribe_semianalysis == 'true') }}
         env:
           VOLC_ASR_API_KEY: ${{ secrets.VOLC_ASR_API_KEY }}
-        run: python scripts/transcribe_missing_podcasts.py
+          EVENT_NAME: ${{ github.event_name }}
+          TRANSCRIBE_MISSING: ${{ inputs.transcribe_missing }}
+          TRANSCRIBE_SEMIANALYSIS: ${{ inputs.transcribe_semianalysis }}
+        run: |
+          if [ "$EVENT_NAME" = "schedule" ] || [ "$TRANSCRIBE_MISSING" != "false" ]; then
+            python scripts/transcribe_missing_podcasts.py
+          fi
+          if [ "$TRANSCRIBE_SEMIANALYSIS" = "true" ]; then
+            python scripts/transcribe_missing_podcasts.py \
+              --only-channel SemiAnalysis \
+              --force-channel SemiAnalysis \
+              --limit 1
+          fi
 
       - name: Validate feed uniqueness
         run: python scripts/validate_feeds.py
