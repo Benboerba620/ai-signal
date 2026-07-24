@@ -35,6 +35,14 @@ on:
           - 'config'
           - 'false'
           - 'true'
+      feed_scope:
+        description: 'Limit a manual run to one feed type.'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'podcasts'
 
 permissions:
   contents: write
@@ -64,6 +72,8 @@ jobs:
         run: |
           if [ "$SCHEDULE" = "30 1 * * 1-5" ]; then
             python scripts/generate_feed.py --arxiv-only
+          elif [ "${{ inputs.feed_scope }}" = "podcasts" ]; then
+            python scripts/generate_feed.py --podcasts-only
           else
             python scripts/generate_feed.py
           fi
