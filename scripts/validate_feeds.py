@@ -3,12 +3,18 @@
 import json
 import sys
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 FEEDS_DIR = ROOT_DIR / "feeds"
+
+# Expired index entries are pruned by the next full feed run
+# (podcast_transcripts.externalize_transcripts). Runs that skip pruning
+# (e.g. the arXiv-only schedule) must not fail on freshly expired entries,
+# so only treat entries expired beyond this grace window as errors.
+TRANSCRIPT_EXPIRY_GRACE = timedelta(hours=24)
 
 
 def load_items(filename, key):
@@ -71,7 +77,7 @@ def transcript_index_failures(podcasts, index_items, now=None):
         except ValueError:
             failures.append(f"{label}: invalid expires_at")
             continue
-        if expires_at <= now:
+        if expires_at <= now - TRANSCRIPT_EXPIRY_GRACE:
             failures.append(f"{label}: expired transcript remains indexed")
 
     disk_paths = {
