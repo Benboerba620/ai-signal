@@ -1,0 +1,303 @@
+[AINews] Qwen 3.8 Max(2.4T) and 27B, new open weights models for Coding and Cowork
+Sign in
+AINews: Weekday Roundups
+[AINews] Qwen 3.8 Max(2.4T) and 27B, new open weights models for Coding and Cowork
+Qwen is so back!
+Aug 04, 2026
+∙ Paid
+74
+2
+After the Qwen Exodus last year and new management took over launching more closed model APIs, there was some real doubt as to whether or not this leading open models lab would continue to release relevant models.
+That doubt is now gone. Qwen 3.8 Max is a MONSTER 2.4T model that would have been the top open model in the world but for the Kimi K3 release we already covered .
+Qwen offers them on API for $2 input/$6 output per million tokens, but they have promised to open-weight both models.
+Qwen @Alibaba_Qwen
+📢Meet Qwen3.8-Max — our most capable model to date.
+Next week, the open weights of Qwen3.8-Max will be released, and Qwen3.8-27B is also going open-weights to meet you all!🎉
+Qwen3.8-Max, a new bar for coding and cowork at 2.4T parameters:
+- Autonomous coding: 10+ days of
+2:15 AM · Aug 3, 2026 · 4.96M Views
+1.04K Replies · 2.5K Reposts · 20.1K Likes
+Key Capabilities & Breakthrough Highlights
+Autonomous Long-Horizon Coding:
+10+ Days Unattended Coding: Built a self-evolving coding harness from scratch over a multi-week autonomous run.
+Autonomous AI Research: Rebuilt a complete paper’s pipeline ( Unified Data Selection for LLM Reasoning ) from scratch, then autonomously ran an iterative research loop over 125 hours to invent a new data selection method beating the original paper’s benchmark by +2.71 points .
+Competitive Data Science: Competed against 526 human teams in the WWW2025 Multimodal Dialogue Intent Recognition Challenge, placing in the top 13% ( outperforming 87% of human teams ) within 24 hours.
+Autonomous Hardware & Chip Design:
+Executed a complete silicon design flow (GCD/RSA cryptographic accelerator) from RTL editing to simulation, synthesis, and physical layout.
+Reduced gate count from 8,298 to 678 gates while achieving an 81% die area reduction and meeting physical timing closure at 500 MHz.
+Deep Real-World Work & Operations:
+Demonstrated production-grade outputs across hundreds of professional workflows (e.g., corporate legal reviews, UI/UX design, structural engineering models, and automated ETF quant research).
+Outperformed competing models in the E-Commerce Bench (a 365-day store operation simulation), generating a 4.16x return (¥416,252 balance) through continuous game-theoretic negotiation and inventory planning.
+Multimodal Agents & Visual Feedback:
+Integrates native visual feedback across planning, coding, and GUI interaction, enabling direct application recreation across platforms (desktop, mobile, web).
+Released Qwen-MM-Plugins to extend multimodal capabilities to existing agent frameworks.
+A very nice win for open weights! On today’s pod with Baseten we talked about what it’s like to support these massive model drops on release.
+AI News for 7/25/2026-7/27/2026. We checked 12 subreddits, 544 Twitters and no further Discords. AINews’ website lets you search all past issues. As a reminder, AINews is now a section of Latent Space . You can opt in/out of email frequencies!
+AI Twitter Recap
+Top Story: Qwen 3.8 Max open model launch
+What happened
+Alibaba Qwen announced Qwen3.8-Max as its new flagship and said open weights are coming next week.
+Alibaba introduced Qwen3.8-Max as its “most capable model to date,” describing it as a 2.4T-parameter model focused on coding, long-horizon agentic work, and multimodal reasoning, with the explicit claim that open weights will be released next week , alongside Qwen3.8-27B also going open-weight @Alibaba_Qwen
+The launch tweet also included API pricing: $2.00 / M input tokens , $6.00 / M output tokens , and $0.25 / M cached tokens @Alibaba_Qwen
+Alibaba framed the model around several headline capabilities: 10+ days of autonomous coding , 500+ turns of chip design optimization , 365 days of e-commerce strategy , and native multimodal intelligence where vision is part of the execution loop rather than just an input channel @Alibaba_Qwen
+The company simultaneously pushed availability across its own surfaces and partners: Qwen Studio , API , Command Code , and later Venice ; infra and app builders quickly confirmed support plans or integrations including Baseten , Hermes Agent , and Command Code @Alibaba_Qwen @Alibaba_Qwen @baseten @Teknium
+The announcement landed as part of a broader pattern: multiple observers described it as evidence that the Chinese open-weight frontier is now competing directly with top Western closed models , especially in coding, agentic workflows, and multimodal tasks @kimmonismus @matvelloso
+Official claims and reported specs
+Vendor-reported model details and performance claims were unusually aggressive for an open-weight release.
+Alibaba’s own framing:
+2.4T total parameters @Alibaba_Qwen
+Long-horizon agentic/cowork focus @Alibaba_Qwen
+Autonomous coding over 10+ days with a public GitHub trace @Alibaba_Qwen
+500+ turns for chip design optimization @Alibaba_Qwen
+365 days of e-commerce strategy execution @Alibaba_Qwen
+Native multimodal planning loop rather than vision-only input @Alibaba_Qwen
+Third-party summary tweet from ZhihuFrontier added more claimed or reported technical details:
+95B active parameters per token , implying an MoE activation ratio of roughly 4%
+1M-token context window
+API exposes low / medium / xhigh reasoning-effort modes
+Compatibility with OpenAI and Anthropic protocols
+Benchmark claims: PaperBench 93.0 , CoWorkBench 74.8 , WideSearch 81.9 @ZhihuFrontier
+Vals AI independently posted concrete eval/runtime settings:
+1M token context
+128k max output tokens
+Tested at temperature 0.7 with default top-p / top-k @ValsAI
+These numbers matter because they place Qwen3.8-Max in the same deployment class as other giant sparse open models like Kimi K3 and GLM-5.2 , not the more practical 30B–70B local tier.
+Independent evaluations and leaderboard placements
+The model immediately posted strong third-party results, especially in coding-adjacent, vision, and design-heavy arenas.
+Frontend Code Arena: Qwen3.8-Max debuted at #4 overall with 1,668 Elo , trailing only Claude Opus 5 [Max] at 1,705 and Kimi K3 [Max] at 1,676 , and roughly tied with Claude Opus 5 [High] at 1,669 @arena
+In Frontend Code Arena subslices, it ranked:
+#2 Consumer Product
+#3 Brand & Marketing, Reference-based design, Gaming, Content Creation Tools
+#4 Data & Analytics
+#5 Simulations @arena
+Vision Arena: Qwen3.8-Max ranked #2 with 1,305 , only 13 points behind Claude Fable 5 [High] @arena
+Vals Index: Qwen3.8-Max ranked #2 among open-weight models , #10 overall out of 43 , with a score of 66.1 @ValsAI
+Vals also reported:
+It matched Claude Opus 4.7 on the Index, 66.1 vs 66.1
+At about 2.3x lower cost per test : $2.68 vs $6.17 @ValsAI
+Vals’ benchmark-specific numbers:
+SWE-bench: 87.3% , ahead of GPT-5.5 (82.6%) and GLM-5.2 (83.3%) , but behind Claude Opus 4.8 (89.2%)
+Terminal-Bench 2.1: 67.4 , up from 61.0 for Qwen 3.7 Max @ValsAI
+Vals also highlighted the pace of progress:
+Qwen 3.7 Max = 57.5
+Qwen 3.8 Max = 66.1
+Gain of 8.6 points in ~2.5 months
+Price cut from $2.50/$7.50 to $2.00/$6.00 input/output @ValsAI
+There were also more anecdotal but technically relevant claims:
+One user visualized benchmark deltas and argued “Opus 4.8 is mostly subsumed by 3.8-Max” on the chart they reconstructed @deliprao
+Another claimed Qwen 3.8 surpassed Fable 5 on Terminal Bench and said Anthropic was now under visible pressure @kimmonismus
+A separate tweet called Qwen 3.8 Max the “best object detection VLM” across satellite, infrared, documents, technical drawings, sketches, crowded scenes, and small objects, though this was based on examples rather than a cited benchmark paper @skalskip92
+Facts vs. opinions
+Facts / directly attributable claims
+Alibaba announced Qwen3.8-Max and said open weights arrive next week ; Qwen3.8-27B will also go open-weight @Alibaba_Qwen
+Alibaba disclosed API pricing of $2 input / $6 output / $0.25 cached per million tokens @Alibaba_Qwen
+Arena reported #4 in Frontend Code Arena at 1,668 and #2 in Vision Arena at 1,305 @arena @arena
+Vals reported 66.1 on Vals Index , #2 among open-weight models , 87.3% SWE-bench , 67.4 Terminal-Bench 2.1 , 1M context , 128k output , and lower cost-per-test than Opus 4.7 @ValsAI @ValsAI @ValsAI
+ZhihuFrontier stated 95B active parameters and protocol compatibility; this appears to be a secondary summary rather than an original Alibaba spec sheet @ZhihuFrontier
+Opinions / extrapolations / rhetoric
+“China is no longer lagging behind but competing on equal footing” @kimmonismus
+“Open models are winning now” @JonathanRoss321
+“Looks like Opus 4.8 is mostly subsumed” @deliprao
+“Anthropic is under pressure” and “mood shifted drastically” are ecosystem readings, not measurements @kimmonismus
+“Best object detection VLM” is an informed product judgment, but not one tied in-thread to a standard benchmark table @skalskip92
+Claims that Qwen3.8-Max plus open agents prove open models have “caught up” are user-level interpretations rather than consensus eval conclusions @omarsar0
+The central factual story is strong even after stripping out the hype: a very large sparse model , open-weight promise , lower pricing than prior Qwen Max , and high placements on multiple third-party leaderboards .
+The infrastructure reality: “open-weight” does not mean easy to run
+A major counterpoint in the discussion was that frontier open models are operationally open, but not broadly accessible in the local-inference sense.
+Jamin Ball argued that pricing comparisons were overstated because “vanilla” token prices ignore token efficiency and because these models are enormous :
+Qwen 3.8 Max >2T params
+Kimi K3 ~104B active per token
+GLM 5.2 = 744B total, 40B active
+For K3, loading weights alone is >1TB memory
+Requires at least 8 H100/B200 GPUs to run
+Moonshot recommends 64+ accelerators in supernode-style setups @jaminball
+This same critique implicitly applies to Qwen3.8-Max, even if its active-parameter count is somewhat lower than K3’s: a 2.4T-class MoE is not a commodity local model @jaminball
+StableQuan made the practical version of the same point more bluntly: long, RAM-heavy prompts and slow tool calls make giant models painful on consumer hardware, recommending API use instead @stablequan
+At the same time, the excitement around Qwen3.8-27B shows where many developers think the real adoption wave may come from: a smaller open-weight descendant in the same family, possibly inheriting some of the flagship’s post-training or distilled capabilities @kimmonismus @TheZachMueller
+This is the key split in the open-model story: ecosystem influence and benchmark legitimacy come from releasing the 2.4T flagship; practical deployment at scale may come from the 27B release.
+Licensing controversy and geographic restrictions
+The most concrete skeptical reaction was not about performance, but about the license.
+OstrisAI flagged what they read as a license prohibition covering the USA, EU, UK, and Korea , saying the terms appeared to forbid even
+ing the model from the US @ostrisai
+That concern echoed a broader discussion happening simultaneously around another open-weight release, MiniMax H3, where users argued that geographic restrictions undercut claims of openness @kimmonismus
+No clarifying Qwen license tweet appears in this dataset from Alibaba itself, so the restrictive-license reading remained unresolved within these tweets
+For engineers, this matters more than the marketing label. “Open weights” can still mean:
+no OSI-style open-source rights,
+use-case restrictions,
+export/jurisdiction limits,
+or no legal permission for commercial deployment in key regions.
+That licensing ambiguity is one of the main reasons some of the reaction was more cautious than celebratory.
+Why the launch matters strategically
+This was widely read as a strategic shift by Alibaba, not just a routine product update.
+ZhihuFrontier explicitly framed the move as Alibaba choosing ecosystem influence over exclusivity , arguing that earlier Max models stayed closed while the open line had previously topped out around Qwen3-235B @ZhihuFrontier
+In that reading, DeepSeek , Kimi , and other Chinese open models weakened the premium of keeping top-tier systems API-only, pushing Alibaba to compete on ecosystem adoption as well as model quality @ZhihuFrontier
+Multiple observers connected Qwen3.8-Max to a broader Chinese-model surge:
+“Top three spots in front-end design are now
+d between two Chinese and one Western model” @kimmonismus
+“Remember when China was 2 years behind?” @matvelloso
+“The open weights frontier has been consistently dominated by labs from China for the last two years” @_micah_h
+Some posters escalated this into a geopolitical concern that US labs cannot rely on closed-model leads forever, especially if Chinese labs keep pushing frontier-ish systems into open-weight channels @kimmonismus
+A subtext here is that the moat may be shifting:
+not just raw pretraining,
+but post-training , agent harnesses , inference infra , distillation pipelines , and developer lock-in .
+That is exactly why an open-weight flagship at 2.4T is strategically valuable even if relatively few teams ever self-host it.
+Model architecture and sparsity implications
+The technical profile suggests Alibaba is leaning harder into sparse MoE than some rivals.
+If the 95B active / 2.4T total number quoted by ZhihuFrontier is accurate, Qwen3.8-Max activates only about 4% of total parameters per token @ZhihuFrontier
+ZhihuFrontier contrasted this to Qwen3-235B-A22B , which they say activates closer to 10% @ZhihuFrontier
+Elie Bakouch’s broader comment—“the two biggest OSS models in the world use linear attention?”—captures another architectural thread in the ecosystem conversation, though it was not directly tied to Qwen3.8-Max with a cited source in-thread @eliebakouch
+The wider thread around sparse MoE and Switch Transformers reflects why people care about these parameter numbers: frontier open models can look “huge to store yet still cheap to run” by only activating a narrow expert slice per token @ProfTomYeh
+This is likely part of how Alibaba can cut API pricing while scaling total parameter count upward: bigger expert pool, lower active footprint, lower effective inference cost , assuming routing and systems optimizations hold up in production.
+Long-horizon agents, cowork, and benchmark fit
+Qwen3.8-Max was pitched less as a chatbot and more as a model-harness substrate for long-running work.
+Alibaba’s own language emphasized “coding and cowork” rather than generic assistant use @Alibaba_Qwen
+The launch claims map unusually well to the current “long-horizon agents” discourse:
+10+ day autonomous coding
+500+ turns in chip optimization
+365-day business strategy @Alibaba_Qwen
+ZhihuFrontier’s benchmark picks— PaperBench , CoWorkBench , WideSearch —all emphasize persistent objective maintenance, tool use, and trajectory coherence rather than one-shot Q&A @ZhihuFrontier
+Omar Sar0 explicitly linked the release to agent harnesses, saying using Qwen3.8-Max in Hermes Agent makes it hard to deny how much open frontier models have closed the gap with closed frontier systems @omarsar0
+Cline’s separate thread about open-weight models is relevant context: they argue many open models are RL-trained to spend more tokens on verification and work best when the harness lets them lean into that behavior, producing ~ 20% gains from harness changes alone @cline
+That fits Qwen3.8-Max’s launch narrative unusually well. The implication is not simply “model is smarter,” but “model may be especially competitive when paired with a harness designed for long-running verification-heavy work.”
+Different perspectives in the reaction
+Supportive
+Strong enthusiasm from open-model developers and infra providers:
+“Qwen 3.8 Max and a new local 27B Qwen 3.8 is coming” @Teknium
+“Yes, we will have Qwen3.8-Max” @baseten
+“Try Qwen3.8-Max on Hermes Agent…” @omarsar0
+“Nice! An open source max model” @NerdyRodent
+Several commenters treated the release as proof that open models are at or near frontier parity on meaningful workloads @JonathanRoss321 @kimmonismus
+Neutral / analytical
+Jamin Ball’s thread was the main “yes, but” reaction:
+pricing gap may be overstated,
+token efficiency matters,
+infra burden remains extreme for >2T open models @jaminball
+Nrehiew questioned whether performance gains might come disproportionately from post-training rather than novel pretraining, essentially asking how much of the delta is recipe vs scale @nrehiew_
+Vals added an important methodological note: Alibaba’s reported Terminal Bench results modify benchmark timeouts , whereas Vals preserved original timeouts @ValsAI
+Skeptical / opposing
+License concern was the clearest substantive criticism: if usage is restricted in major markets, “open” becomes a narrower claim @ostrisai
+Some of the strongest skepticism was indirect: if these giant open-weight models require supernodes and careful harness engineering, then their practical competitive effect may be less dramatic than leaderboard headlines suggest @jaminball
+There was also broader ecosystem skepticism that benchmark jumps alone prove full parity with the strongest closed models; e.g. some users argued open source is “very close” but not actually there yet on top-end agentic coding @scaling01
+Context: Qwen3.8-Max inside the 2026 open-model cycle
+The launch sits in a dense cluster of giant open or quasi-open releases from Chinese labs.
+The comparison set repeatedly mentioned in the discussion:
+Kimi K3 at 2.8T
+GLM-5.2
+DeepSeek V4 Flash / Pro
+MiniMax H3 on the multimodal/video side @jaminball @kimmonismus
+Artificial Analysis commentary cited in-thread said Chinese frontier models have generally trailed top US models by about 3–9 months , while the open-weight frontier itself has been dominated by Chinese labs for roughly two years @_micah_h
+This helps explain why the release drew such outsized attention: it is not just another model launch, but part of a visible realignment where:
+China is strongest in open-weight frontier scale
+US labs still often lead in top closed-model performance
+the gap is narrowing on select domains like coding, design, and some multimodal tasks @_micah_h @kimmonismus
+Practical implications for engineers
+For engineers, the most important questions are less about marketing claims and more about deployment shape.
+If you want frontier-ish open-weight quality, Qwen3.8-Max suggests the tradeoff space is now:
+very strong eval performance
+aggressive token pricing
+huge serving footprint
+possible license/jurisdiction constraints
+The 1M context and 128k output numbers make it viable for repository-scale and workflow-scale tasks where transcript reuse and cache pricing matter @ValsAI @Alibaba_Qwen
+The cached-token price of $0.25/M is especially relevant for agents repeatedly replaying codebases, tool traces, and large instruction prefixes @Alibaba_Qwen
+The announcement of Qwen3.8-27B may be just as consequential as the flagship, because it is the tier likeliest to become actually usable across broader open-source stacks and local-serving ecosystems @Alibaba_Qwen @kimmonismus
+Several developers already framed the release in terms of downstream harnesses and agents, not just chat UX: Hermes Agent , Command Code , Baseten , and likely any provider supporting OpenAI/Anthropic-compatible protocols can slot it into existing workflows quickly @Alibaba_Qwen @Alibaba_Qwen @baseten
+One notable interpretation from TeortaxesTex was that Qwen 3.8 Max may be:
+exceptionally strong on image recognition/labeling
+potentially sample efficient
+and distillable/OPD-able into Qwen 3.8 27B for task-specific parity, implying a route from flagship capability to laptop-deployable specializations @teortaxesTex
+Other Topics
+Agent infrastructure, harnesses, and long-horizon systems
+A detailed survey summary argued that long-horizon capability is a model × harness property, not just a model property; it breaks failures into goal drift, context corruption, and sparse-reward/irreversible-action issues, and frames the control plane as shifting from prompt engineering to runtime harnesses @ZhihuFrontier
+Cloudflare launched @cloudflare/computer , an agent runtime that dynamically routes between isolates and Linux containers so each agent gets “a computer of its own” @Cloudflare
+Cursor reported 20–30% better token efficiency for cloud agents and 80% better efficiency on computer-use runs , plus launched plugins for Google Workspace access across Gmail, Drive, Calendar, Docs, and Sheets @cursor_ai @cursor_ai
+LangChain signaled managed Deep Agents moving to public beta, with built-in evals, memory, OAuth tool access, channel integrations, and sandboxing @hwchase17
+Several posts emphasized that harness choice materially changes benchmark outcomes and production behavior:
+endpoint choice changed Kimi K3 results dramatically on CEO-Bench @tonychenxyz
+Cline says open-weight models often benefit when allowed to spend extra tokens on verification, yielding ~ 20% gains in their runs @cline
+a new paper organized 41 agent failure modes by interaction edge rather than single component, with automated labeling reaching κ = 0.76 vs humans @omarsar0
+Benchmarks, evals, and automated research/post-training
+RSIBench-Data results put Kimi K3 + Kimi Code at 27.317% weighted score across six benchmarks, including 50% SWE-bench Verified and 17% SWE-bench Pro @FanqingMengAI
+Intology said its automated AI research system Locus is SOTA on PostTrainBench , and that Locus-post-trained Qwen3 1.7B Base variants surpassed the official human post-trained Qwen3 1.7B release; on live Kaggle comps it reached the 4th highest average rank after 16 days @intology
+Epoch updated MirrorCode with Claude Fable 5 at 64% solve rate and GPT-5.6 Sol at 20% , using 15 Medium/Large programs , 2 languages each , and 10B tokens per attempt @EpochAIResearch
+Shahules argued benchmarks should release trajectories , not just scores, because task defects and brittle verifiers can dominate failures; they also highlighted ITSMBench as an open benchmark with trajectories @Shahules786
+New eval/benchmark artifacts included:
+MerchantBench : 365-day e-commerce simulation with 98,843 product records , 26 tools , score on cumulative net assets @dair_ai
+One Layer Deeper : adaptive-computation challenge based on repeated modular squaring @SolidlySheafy
+Artifacts Hub / Adoption Dashboard tracking 792 open models,
+s, intelligence, and geography @natolambert
+Open models, inference, and systems engineering
+Multiple posts stressed the open frontier is now dominated by giant MoEs from China, with Kimi K3, Qwen3.8-Max, GLM, and DeepSeek frequently compared on scale/cost/perf @_micah_h
+Databricks claimed #1 Kimi K3 inference speed/latency on Artificial Analysis, quoting 239 tok/s in one post and separate single-node numbers from Casper Hansen of 947 tok/s batch-32 decode and 152 tok/s single-user on a single B300 node @Yuchenj_UW @casper_hansen_
+Vikhyat announced Photon 2.0 , compiling Moondream, Qwen 3.5, and Gemma 4 into megakernels spanning the full forward pass @vikhyatk
+A systems paper thread on TokTier argued tokenization can consume up to 64% of TTFT in cached-agent workloads, with stateful tokenization reducing TTFT by 16–34% and incremental repair 437× faster than HF tokenizers in some settings @omarsar0
+DSPy 3.3.0 shipped:
+dspy.Flex for optimizing code + prompts
+ReActV2 with native/parallel tool calling
+typed provider-neutral LM interface @isaacbmiller1
+Multimodal, video, and vision models
+MiniMax H3 dominated discussion outside Qwen:
+described as a 33B video model with text/image/video/audio references, up to 15s clips, runnable on one RTX 5090 with ComfyUI stack around 40GB and 5s generations in ~ 5.5 min in early tests @kimmonismus
+later ranked #1 open model in Video Arena , + 280 pts over next-best open, and tied near the top overall in image-to-video @arena
+There was an active license debate around H3 too: one side said it cannot legally be used in the US/EU/UK/Korea under the public license @kimmonismus , while another clarified formal authorization is available via MiniMax and that “cannot legally be used” is too strong @VictorSuOrtiz
+Jina released jina-reranker-v3.5 , a 0.6B listwise reranker scoring 63.20 nDCG@10 on BEIR , beating Qwen3-Reranker-4B at roughly 7× fewer parameters @JinaAI_
+Qwen3.8-Max also drew attention for vision/object detection use cases, including documents, infrared, satellite, and crowded scenes, with claimed per-image cost around $0.007 @skalskip92
+Frontier labs, policy, safety, and competition
+A large meta-thread in the timeline concerned US vs China and whether Chinese labs are catching up or already ahead in some open/frontier segments:
+Hugging Face CEO coverage said China is winning/dominating open models @CNBC
+Artificial Analysis data was cited saying Chinese leaders historically trail top US models by 3–9 months @_micah_h
+some posters argued Chinese aggregate research capability may already exceed US labs despite resource asymmetries @teortaxesTex
+The White House reportedly invited OpenAI, Anthropic, Google, and Meta to review a new voluntary AI framework and finalized new cybersecurity tests/hacking benchmarks @steph_palazzolo @AndrewCurran_
+Cybersecurity remained a major subtheme:
+Epoch reported roughly 2,500 high/critical CVEs disclosed in July across 21 major tech orgs , about 5× the prior monthly record before Anthropic’s autonomous vuln-finding disclosure @EpochAIResearch
+Hugging Face interviews argued open-weight models were part of the defensive response after the OpenAI-linked hack @BloombergTV @BusinessInsider
+OpenAI announced an internal next model found 10 new results on long-standing open problems in math/theory CS for roughly $2,000 in token cost at GPT-5.6 Sol rates, prompting both excitement and skepticism about total attempt cost vs solved-cost accounting @OpenAI @NickEMoran
+OpenAI also published a technical deep dive on GPT-Live , noting a dedicated low-latency audio path, async reasoning/tool use, and startup reduced from 6 round trips to 1 @OpenAI @gdb
+Product and ecosystem notes
+Google rolled out Gemini Spark auto browse using Chrome to act in logged-in accounts for errands with user confirmation on sensitive steps @Google
+Google AI Studio prompted developers for current “vibe coding” projects, while Gemini-side product messaging emphasized business-building workflows in Notebooks/Canvas @GoogleAIStudio @Google
+Sakana launched Namazu API , described as a Japanese-focused LLM built on Kimi and tuned for Japanese language/culture/business, with reduced unnecessary refusals and bias @SakanaAILabs @SakanaAILabs
+LiteParse added direct structured PDF extraction for form fields, checkbox states, annotations, embedded images, vector graphics, tagged structure, and word-level bounding boxes in ms/page for simple pages @llama_index
+The Hermes Agent ecosystem shipped a substantial “Herald” release with voice chats, plugin-based desktop features, A2A protocol, outbound webhooks, research and productivity skills, and token-efficiency improvements @Teknium
+China’s open-model surge: Kimi, DeepSeek, GLM, and the narrowing gap
+Open-weight frontier now looks China-led : Across the digest, the dominant meta-story is that Chinese labs are setting the pace in open models . Posts from @kimmonismus , @JonathanRoss321 , and @_micah_h all point to the same pattern: Kimi, Qwen, DeepSeek, GLM, and MiniMax now define much of the open frontier, while US labs retain lead positions mainly in select closed offerings. @ClementDelangue and related coverage amplified the broader claim that China is dominating the open-weight lane.
+Kimi K3 and harness sensitivity : K3 continued to post strong downstream and infra results. RSIBench-Data reported Kimi K3 + Kimi Code at 27.317% weighted score across six automated-research benchmarks, including 50% SWE-bench Verified and 17% SWE-bench Pro . But @tonychenxyz noted a key engineering caveat: inference provider materially changed leaderboard outcomes , with one provider producing degraded looping behavior while Modal’s endpoint yielded #1 results on CEO-Bench. On the serving side, @Yuchenj_UW said Databricks now delivers 239 tok/s and top latency for K3, while @casper_hansen_ cited 947 tok/s decode throughput at batch 32 on a single B300 node.
+DeepSeek V4 Flash as the cost/performance disruptor : DeepSeek’s latest Flash checkpoint emerged as the day’s strongest cost-adjusted agent model story. @htihle reported 57.1% / 63.0% on WeirdML for Flash-0731 high/max and argued the harness may understate true ability. Vals called DeepSeek V4 Flash (0731) the cheapest model on the Vals Index above 60 , and 35× cheaper than the next best model at that threshold, with most of the advantage coming from coding and agentic tasks. Together AI immediately positioned it as a production endpoint for long-running agents.
+GLM and what’s next : Multiple posts suggested GLM-5.3 is imminent , including @AiBattle_ and @arena , which reminded readers that GLM-5.2 Max already sits #2 overall and #1 open in Frontend Code Arena.
+Agent harnesses, long-horizon systems, and why model quality alone is no longer enough
+Harnesses have become the control plane : A recurring theme across technical tweets is that long-horizon performance is now best understood as model × harness , not model alone. A detailed survey summary from @ZhihuFrontier frames long-horizon capability as emerging from co-evolution between base models and runtime systems handling memory, planning, tool use, verification, orchestration, and recovery. This aligns with @omarsar0 , who highlighted a paper categorizing 41 agent failure modes by interaction edges between model, user, harness, tools, memory, and environment rather than blaming a single component.
+Production runtimes are shipping fast : Cloudflare introduced @cloudflare/computer , an agent runtime that dynamically switches between lightweight isolates and full Linux containers. Cursor said its cloud agents are now 20–30% more token efficient and 80% more efficient on computer-use runs , then followed with direct Google Workspace plugins for Gmail, Drive, Calendar, Docs, and Sheets launch . LangChain said Managed Deep Agents will move to public beta with built-in evals, memory, OAuth, channels, and sandboxing.
+Open-model harness co-optimization is starting to matter : Cline offered one of the sharper practitioner observations of the day: many open models appear RL-trained to spend extra tokens verifying work —rerunning tests, checking builds, rereading diffs—and Cline deliberately lets them “work how they were trained to work,” claiming roughly 20% gains from harness changes alone. That theme also appears in posts around Hermes Agent from @Teknium , which shipped voice activation, plugin/API expansions, A2A protocol support, outbound webhooks, research skills, and major token-efficiency improvements.
+Memory and parsing are being de-LLM-ified where possible : @dair_ai highlighted Zero-Mem , which removes LLM calls from memory maintenance and only invokes an LLM at final answer time, cutting memory-op cost by 57.6% versus the fastest baseline at matched budget. LlamaIndex similarly shipped richer structured PDF extraction in LiteParse , exposing fields, checkboxes, annotations, graphics, and page complexity signals without requiring a vision model for every page.
+Automated research, post-training, and benchmark design are becoming more serious engineering disciplines
+Automated post-training is yielding real wins : @intology claimed its Locus system is SOTA on PostTrainBench and can post-train Qwen3 1.7B-Base variants that surpass the official human-tuned Qwen3 1.7B Instruct model under expanded compute budgets. The same post says Locus generalized to live Kaggle competitions, reaching the 4th highest average rank after 16 days. Separately, @mervenoyann pointed to public tooling for coding-agent RL pipelines based on sandboxed tasks, TRL, and verifiers.
+Research automation benchmarks are exposing harness effects : The terse but high-signal RSIBench-Data result and @gneubig ’s reaction underscore that very-long-horizon automated research tasks are increasingly measuring specialized research harnesses , not just model intelligence. That also surfaced in a critique from @Shahules786 , arguing benchmarks should open-source full trajectories , since scores alone obscure whether failures stem from weak models, brittle verifiers, or under-specified tasks.
+Noise, verification, and held-out reality still bite : @ddkang pushed back on the idea that RLVR with 100% noisy data matches clean-data training, reporting >9% lower MATH accuracy under more rigorous noisy-data construction. @ArmenAgha
+d a smaller but instructive result where optimizing a proxy objective improved selected velocity MSE but made actual rollout inference worse on held-out data. This is a useful reminder that a lot of “self-improvement” headlines still collapse if evaluation is not robust.
+Multimodal and video systems: MiniMax H3, world models, and local generation
+MiniMax H3 is the standout multimodal/video release : The community response suggests MiniMax H3 is a major step forward for open-weight video generation. @arena ranked it the #1 open model in Video Arena across both text-to-video and image-to-video, with +280 points over the next-best open model; in image-to-video it was effectively tied for #1 overall . @MiniMax_AI said H3 is now the SOTA open video generation model on both Arena and Artificial Analysis benchmarks.
+Why H3 matters technically : Multiple posts emphasized that H3 is not just another T2V model but a general-purpose multimodal generation model with text, image, video, and audio in a single context, plus usable local deployment pathways. @kimmonismus summarized the key caveat clearly: open weights, strong local video potential, but not a fully open-source stack , since context orchestration, 2K regeneration, and sparse attention remain server-side or otherwise restricted. @ComfyUI , @victormustar , and @MiniMax_AI all highlighted practical local workflows, including RTX 5090-class usage.
+Licensing remains messy : There was confusion around H3’s geography restrictions. @ostrisai initially read the license as forbidding usage in the US/EU/UK/Korea , and that concern spread. Later, @VictorSuOrtiz clarified that those regions require a formal authorization process rather than being outright impossible to license, which is an important distinction for teams evaluating deployability.
+World models and multimodal simulation remain an emerging thread : Several lower-engagement but technically substantive posts pointed toward unsupervised latent simulators and world-model-style systems as a growing area, including @soniajoseph_ and @taiuti .
+Inference systems, compilers, realtime voice, and other infra worth tracking
+Realtime voice stack redesign at OpenAI : OpenAI detailed a new GPT-Live architecture that supports full-duplex conversation—listening while speaking—by separating a dedicated fast audio path from slower asynchronous reasoning/tool-use paths. They also cut session startup from six network round trips to one and discussed async compaction for long-context voice sessions in the linked engineering writeup and follow-on thread from @juberti .
+Compilers are eating hand-tuned inference kernels : @vikhyatk announced Photon 2.0 , a compiler that turns models like Moondream, Qwen 3.5, and Gemma 4 into megakernels representing the whole forward pass as a single GPU program. The thread describes a tracer DSL for dataflow specification and a CPU cost model to prune scheduling candidates before compilation. That pairs well with the broader discussion from @waterloo_intern , arguing that classical hand-optimized GPU kernel work is being progressively automated and commoditized.
+Tokenization and serving bottlenecks are now first-class : @omarsar0 highlighted TokTier , a stateful tokenization service that reuses and repairs tokenized prefixes for agent sessions, reporting 16–34% TTFT reductions under vLLM and up to 437× speedups over standard Hugging Face tokenization in incremental repair scenarios. This is exactly the kind of “non-model” bottleneck that matters once agent transcripts get long and cache hit rates are high.
+Smaller but notable tools : Jina AI released jina-reranker-v3.5 , a 0.6B listwise reranker claiming 63.20 nDCG@10 on BEIR and beating Qwen3-Reranker-4B at roughly 7× fewer params ; DSPy 3.3.0 added code-and-prompt optimization via dspy.Flex , improved tool use with ReActV2 , and a provider-neutral LM interface.
+Top tweets (by engagement)
+Qwen3.8-Max release : Alibaba’s announcement of a 2.4T flagship with open weights next week was the biggest technical launch of the set @Alibaba_Qwen .
+OpenAI math result : OpenAI said an internal version of its next major model produced 10 new results on long-standing open problems in math and TCS for roughly $2,000 in GPT-5.6 Sol-equivalent token cost @OpenAI .
+GPT-Live architecture : OpenAI’s new realtime voice stack supports continuous listening while speaking and asynchronous tool/reasoning execution @OpenAI .
+Source code abstraction debate : Elon Musk argued that source code is on the verge of becoming like assembly , with AI eventually compiling intent straight to binaries @elonmusk .
+Cursor workspace integration : Cursor shipped agent access to Google Workspace apps, moving coding agents closer to general work automation @cursor_ai .
+AI Reddit Recap
+/r/LocalLlama + /r/localLLM Recap
+1. Qwen3.8-Max and 27B Open-Weight Launch
+Keep reading with a 7-day free trial
+to Latent.Space to keep reading this post and get 7 days of free access to the full post archives.
+Start trial
+Already a paid
+r? Sign in
+Previous
+© 2026 Latent.Space · Privacy ∙ Terms ∙ Collection notice
+Start your Substack Get the app
+Substack is the home for great culture
