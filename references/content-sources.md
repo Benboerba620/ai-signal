@@ -36,10 +36,10 @@ Naval Ravikant
 
 ### Twitter/X (19 accounts)
 **Analysts:** Karpathy, Swyx, Dylan Patel (SemiAnalysis), Irrational Analysis, Naval Ravikant,
-Leopold Aschenbrenner, Jim Keller
-**Executives:** Sam Altman, Dario Amodei, Demis Hassabis (Google DeepMind), Tang Jie (Z.ai)
-**Infrastructure:** NVIDIA (Jensen Huang / AI infrastructure signal)
-**Builders:** Amanda Askell, Boris Cherny (Claude Code), Cat Wu, Alex Albert, Guillermo Rauch (Vercel), Amjad Masad (Replit), Josh Woodward (Google Labs)
+Leopold Aschenbrenner, Jim Keller, Gavin Baker (Atreides Management)
+**Executives:** Sam Altman, Dario Amodei, Demis Hassabis (Google DeepMind), Tang Jie (Z.ai),
+Jensen Huang (NVIDIA CEO)
+**Builders:** Amanda Askell, Boris Cherny (Claude Code), Cat Wu, Alex Albert, Guillermo Rauch (Vercel), Josh Woodward (Google Labs)
 
 ### arXiv Papers (daily, up to 30)
 cs.AI (Artificial Intelligence), cs.CL (Computation and Language), cs.LG (Machine Learning)

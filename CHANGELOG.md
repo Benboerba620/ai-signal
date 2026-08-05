@@ -2,6 +2,21 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-08-05
+
+### 新增
+
+- X/Twitter 信源新增 @JensenHuang（黄仁勋，NVIDIA CEO）：本人账号于 7 月 24 日开通并开始发声，发帖频率低但每条都是一手表态，信噪比远高于公司官号。
+- X/Twitter 信源新增 @GavinSBaker（Gavin Baker，Atreides Management）：AI 算力与半导体方向少见的、既做深度研究又用真金白银下注的买方视角，归入 `invest` 域。
+
+### 移除
+
+- X/Twitter 信源移除 @nvidia（NVIDIA 官方账号）：内容以公司市场公关为主，一手判断有限；黄仁勋本人账号开通后由 @JensenHuang 承接该方向的信号。
+
+### 文档
+
+- 修正 README 与 `references/content-sources.md` 的 X 账号清单：此前仍列着已在 7 月 29 日移除的 @amasad，账号数与 `config/sources.json` 对不上。
+
 ## 2026-07-29
 
 ### 修复
