@@ -74,6 +74,8 @@ DEFAULT_TWEET_PLATFORM_KEYWORDS = [
     "vercel", "replit", "cursor", "copilot", "next.js", "react",
 ]
 
+DEFAULT_JUDGMENT_TIERS = ["analyst", "exec"]
+
 DEFAULT_TWEET_EXCLUDE_KEYWORDS = [
     "independence day", "july 4", "4th of july", "fourth of july",
     "🇺🇸", "🦅", "freedom 250", "holiday", "happy birthday",
@@ -208,14 +210,43 @@ def keyword_match(text, keywords):
     return False
 
 
+def is_excluded_tweet(text, twitter_cfg):
+    """Drop pure social noise (holidays, birthdays, meals) regardless of account tier."""
+    text = normalize_text(text)
+    if not text:
+        return True
+    exclude_keywords = twitter_cfg.get("exclude_keywords") or DEFAULT_TWEET_EXCLUDE_KEYWORDS
+    return keyword_match(text, exclude_keywords)
+
+
+def uses_relevance_filter(account, twitter_cfg):
+    """Whether an account's tweets must clear the topic keyword gate.
+
+    Accounts whose value is their judgment rather than their announcements
+    (analysts, executives) are exempt: they write in plain language and the
+    keyword gate silently drops their best posts. Measured on 2026-08-05,
+    the gate rejected 100% of @jimkxa's and 67% of @GavinSBaker's original
+    posts, including a DRAM pricing call and a market-structure warning.
+    Announcement-style accounts keep the gate — they always name products,
+    so it costs them nothing and holds back their high volume.
+    """
+    explicit = account.get("relevance_filter")
+    if explicit is not None:
+        return bool(explicit)
+    judgment_tiers = twitter_cfg.get("judgment_tiers")
+    if judgment_tiers is None:
+        judgment_tiers = DEFAULT_JUDGMENT_TIERS
+    tier = (account.get("tier") or "").strip().lower()
+    return tier not in {str(t).strip().lower() for t in judgment_tiers}
+
+
 def is_relevant_tweet(text, twitter_cfg):
     """Keep AI/devtools/investing signal, drop pure social or holiday posts."""
     text = normalize_text(text)
     if not text:
         return False
 
-    exclude_keywords = twitter_cfg.get("exclude_keywords") or DEFAULT_TWEET_EXCLUDE_KEYWORDS
-    if keyword_match(text, exclude_keywords):
+    if is_excluded_tweet(text, twitter_cfg):
         return False
 
     custom_keywords = twitter_cfg.get("relevance_keywords")
@@ -253,6 +284,38 @@ def tweet_author_handle(tweet):
     except Exception:
         pass
     return ""
+
+
+def quoted_tweet_payload(tweet):
+    """Return the referenced post of a quote tweet, or None.
+
+    Quote tweets are how several analysts publish: they retweet someone else
+    and add one line of judgment ("Underappreciated risk imo"). All of the
+    substance lives in the quoted post, so reading only ``rawContent`` both
+    misjudges relevance and ships an unreadable one-liner to the digest.
+    """
+    quoted = getattr(tweet, "quotedTweet", None)
+    if quoted is None:
+        return None
+    text = normalize_text(getattr(quoted, "rawContent", "") or "")
+    if not text:
+        return None
+    payload = {"text": text}
+    handle = tweet_author_handle(quoted)
+    if handle:
+        payload["handle"] = handle
+    url = str(getattr(quoted, "url", "") or "")
+    if url:
+        payload["url"] = url
+    return payload
+
+
+def tweet_filter_text(tweet, quoted=None):
+    """Text used for relevance and noise decisions: the post plus what it quotes."""
+    text = getattr(tweet, "rawContent", "") or ""
+    if quoted and quoted.get("text"):
+        return f"{text}\n{quoted['text']}"
+    return text
 
 
 def tweet_engagement_score(tweet):
@@ -504,7 +567,8 @@ async def fetch_twitter(sources):
         handle = account["handle"]
         min_engagement = int(account.get("min_engagement", twitter_cfg.get("min_engagement", 0)))
         include_replies = bool(account.get("include_replies", twitter_cfg.get("include_replies", False)))
-        log(f"📥 @{handle}...")
+        apply_relevance = uses_relevance_filter(account, twitter_cfg)
+        log(f"📥 @{handle}..." + ("" if apply_relevance else " (judgment tier, no keyword gate)"))
         try:
             raw = await gather(api.search(f"from:{handle}", limit=max_per_user * 3, kv={"product": "Latest"}))
         except Exception as e:
@@ -542,10 +606,16 @@ async def fetch_twitter(sources):
                 continue
             seen_ids.add(tid)
             global_seen_ids.add(tid)
-            if not is_relevant_tweet(t.rawContent, twitter_cfg):
+            quoted = quoted_tweet_payload(t)
+            filter_text = tweet_filter_text(t, quoted)
+            if apply_relevance:
+                keep = is_relevant_tweet(filter_text, twitter_cfg)
+            else:
+                keep = not is_excluded_tweet(filter_text, twitter_cfg)
+            if not keep:
                 filtered_count += 1
                 continue
-            tweets.append({
+            entry = {
                 "id": tid,
                 "text": t.rawContent,
                 "created_at": t.date.isoformat() if t.date else "",
@@ -554,7 +624,10 @@ async def fetch_twitter(sources):
                 "reply_count": t.replyCount or 0,
                 "engagement_score": engagement,
                 "url": t.url or "",
-            })
+            }
+            if quoted:
+                entry["quoted"] = quoted
+            tweets.append(entry)
 
         tweets.sort(key=lambda x: x["engagement_score"], reverse=True)
         tweets = tweets[:max_per_user]

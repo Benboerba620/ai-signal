@@ -41,6 +41,13 @@ Leopold Aschenbrenner, Jim Keller, Gavin Baker (Atreides Management)
 Jensen Huang (NVIDIA CEO)
 **Builders:** Amanda Askell, Boris Cherny (Claude Code), Cat Wu, Alex Albert, Guillermo Rauch (Vercel), Josh Woodward (Google Labs)
 
+Analysts and Executives are *judgment tiers* (`judgment_tiers` in
+`config/sources.json`): their posts skip the topic keyword gate and only social
+noise is dropped, because judgment is written in plain language. Builders keep
+the keyword gate — they post product announcements, which always name a product.
+Quote tweets are fetched together with the post they quote, and the quoted text
+participates in both filtering and rendering.
+
 ### arXiv Papers (daily, up to 30)
 cs.AI (Artificial Intelligence), cs.CL (Computation and Language), cs.LG (Machine Learning)
 

@@ -103,6 +103,10 @@ AI_KEYWORDS = (
 )
 AI_WORD_KEYWORDS = ("ai", "agi", "llm", "llms", "gpt", "gpu", "tpu")
 
+# Accounts whose value is judgment, not announcements; kept in sync with
+# DEFAULT_JUDGMENT_TIERS in generate_feed.py.
+JUDGMENT_TIERS = ("analyst", "exec")
+
 NOISE_PATTERNS = (
     r"^agree$",
     r"^haha",
@@ -333,6 +337,19 @@ def target_chars_for(profile: dict[str, Any], kind: str) -> int:
     return int(profile.get(key) or profile.get("target_chars") or 1400)
 
 
+def quoted_block(item: dict[str, Any]) -> str:
+    """Render the quoted post inside the untrusted block, or nothing.
+
+    Stays within <untrusted_source_data> on purpose: a quoted post is external
+    content and must not be readable as instructions.
+    """
+    quoted = item.get("quoted")
+    if not isinstance(quoted, dict) or not quoted.get("text"):
+        return ""
+    source = f"@{quoted['handle']}" if quoted.get("handle") else "unknown account"
+    return f"\n--- quoted post by {source} ---\n{quoted['text']}\n"
+
+
 def build_x_prompt(item: dict[str, Any], profile: dict[str, Any]) -> str:
     return f"""You are preparing a cached X/Twitter item for AI Signal.
 
@@ -350,6 +367,10 @@ Rules:
 - The tracked account may be sharing, quoting, or discussing another post.
   Do not say the tracked account "announced" or "launched" something unless
   the original post itself makes that attribution clear.
+- When a "quoted post" section is present, the tracked account's own line is a
+  comment on it. Convey what is being commented on, then the comment, and
+  attribute the quoted claims to the quoted account rather than to the tracked
+  account.
 - Do not infer resharing/retweeting behavior from metadata. In the summary body,
   translate or explain the content directly. Avoid meta phrases like
   "This post says..." / "这条内容介绍...".
@@ -365,7 +386,7 @@ Post metadata:
 
 <untrusted_source_data kind="x_post">
 {item.get("text", "")}
-</untrusted_source_data>
+{quoted_block(item)}</untrusted_source_data>
 """
 
 
@@ -386,6 +407,10 @@ Rules:
 - The tracked account may be sharing, quoting, or discussing another post.
   Do not say the tracked account "announced" or "launched" something unless
   the original post itself makes that attribution clear.
+- When a "quoted post" section is present, the tracked account's own line is a
+  comment on it. Convey what is being commented on, then the comment, and
+  attribute the quoted claims to the quoted account rather than to the tracked
+  account.
 - Do not infer resharing/retweeting behavior from metadata. In the summary body,
   translate or explain the content directly. Avoid meta phrases like
   "This post says..." / "This item introduces...".
@@ -401,7 +426,7 @@ Post metadata:
 
 <untrusted_source_data kind="x_post">
 {item.get("text", "")}
-</untrusted_source_data>
+{quoted_block(item)}</untrusted_source_data>
 """
 
 
@@ -696,6 +721,22 @@ def is_ai_related_text(text: str, extra: str = "") -> bool:
     return any(re.search(rf"(?<![a-z0-9]){re.escape(keyword)}(?![a-z0-9])", combined) for keyword in AI_WORD_KEYWORDS)
 
 
+def quoted_tweet(tweet: dict[str, Any]) -> dict[str, Any]:
+    quoted = tweet.get("quoted")
+    return quoted if isinstance(quoted, dict) else {}
+
+
+def tweet_gate_text(tweet: dict[str, Any]) -> str:
+    """A quote tweet carries its meaning in the post it quotes, not in its own line."""
+    text = tweet.get("text", "")
+    quoted = quoted_tweet(tweet).get("text", "")
+    return f"{text}\n{quoted}" if quoted else text
+
+
+def is_judgment_account(account: dict[str, Any]) -> bool:
+    return (account.get("tier") or "").strip().lower() in JUDGMENT_TIERS
+
+
 def is_relevant_podcast(item: dict[str, Any]) -> bool:
     transcript = read_local_transcript(item)
     text = " ".join(
@@ -770,13 +811,14 @@ def x_tasks(
     for account in feed.get("x", []):
         if not item_matches_domains(account, profile):
             continue
+        skip_topic_gate = is_judgment_account(account)
         for tweet in account.get("tweets", []):
             if len(tasks) >= item_limit:
                 return tasks
-            text = tweet.get("text", "")
-            if is_noise_tweet(text):
+            gate_text = tweet_gate_text(tweet)
+            if is_noise_tweet(gate_text):
                 continue
-            if not is_ai_related_text(text):
+            if not skip_topic_gate and not is_ai_related_text(gate_text):
                 continue
             tweet_id = str(tweet.get("id", "") or stable_id(account.get("handle", ""), tweet.get("text", "")))
             item = {
@@ -793,6 +835,9 @@ def x_tasks(
                 "reply_count": tweet.get("reply_count", 0),
                 "url": tweet.get("url", ""),
             }
+            quoted = quoted_tweet(tweet)
+            if quoted.get("text"):
+                item["quoted"] = quoted
             source_hash = sha256_text(
                 json.dumps(
                     {

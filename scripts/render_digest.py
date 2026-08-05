@@ -27,6 +27,11 @@ AI_KEYWORDS = (
 )
 AI_WORD_KEYWORDS = ("ai", "agi", "llm", "llms", "gpt", "gpu", "tpu")
 
+# Accounts whose value is judgment, not announcements. They write in plain
+# language, so the keyword gate below drops their best posts; kept in sync with
+# DEFAULT_JUDGMENT_TIERS in generate_feed.py.
+JUDGMENT_TIERS = ("analyst", "exec")
+
 NOISE_PATTERNS = (
     r"^agree$",
     r"^haha",
@@ -161,15 +166,32 @@ def simple_paper_summary(text, abstract=""):
     return short_text(abstract, 220)
 
 
+def quoted_text(tweet):
+    quoted = tweet.get("quoted") or {}
+    return quoted.get("text", "") if isinstance(quoted, dict) else ""
+
+
+def tweet_gate_text(tweet):
+    """A quote tweet carries its meaning in the post it quotes, not in its own line."""
+    text = tweet.get("text", "")
+    quoted = quoted_text(tweet)
+    return f"{text}\n{quoted}" if quoted else text
+
+
+def is_judgment_account(account):
+    return (account.get("tier") or "").strip().lower() in JUDGMENT_TIERS
+
+
 def selected_tweets(data):
     accounts = data.get("x") or []
     selected = []
     for account in accounts:
+        skip_topic_gate = is_judgment_account(account)
         for tweet in account.get("tweets", []):
-            original = tweet.get("text", "")
-            if is_noise_tweet(original):
+            gate_text = tweet_gate_text(tweet)
+            if is_noise_tweet(gate_text):
                 continue
-            if not is_ai_related_text(original):
+            if not skip_topic_gate and not is_ai_related_text(gate_text):
                 continue
             selected.append((account, tweet))
     return selected
@@ -307,6 +329,14 @@ def render_tweets(data, lines):
             lines.append("")
             lines.append("原文：")
             lines.append(f"> {original.replace(chr(10), chr(10) + '> ')}")
+            quoted = tweet.get("quoted") or {}
+            if isinstance(quoted, dict) and quoted.get("text"):
+                source = f"@{quoted['handle']}" if quoted.get("handle") else "被引用推文"
+                lines.append("")
+                lines.append(f"引用（{source}）：")
+                lines.append(f"> {short_text(quoted['text'], 400).replace(chr(10), chr(10) + '> ')}")
+                if quoted.get("url"):
+                    lines.append(f"引用链接：{quoted['url']}")
             if url:
                 lines.append(f"链接：{url}")
             lines.append("")
@@ -320,14 +350,19 @@ def render_tweets(data, lines):
     for account in active[:8]:
         name = account.get("name") or account.get("handle")
         lines.append(f"### {name}")
+        skip_topic_gate = is_judgment_account(account)
         for tweet in account.get("tweets", [])[:2]:
-            if is_noise_tweet(tweet.get("text", "")):
+            gate_text = tweet_gate_text(tweet)
+            if is_noise_tweet(gate_text):
                 continue
-            if not is_ai_related_text(tweet.get("text", "")):
+            if not skip_topic_gate and not is_ai_related_text(gate_text):
                 continue
             text = short_text(tweet.get("text", ""), 260)
             url = tweet.get("url", "")
             lines.append(f"- 原文：{text}")
+            quoted = quoted_text(tweet)
+            if quoted:
+                lines.append(f"  引用：{short_text(quoted, 260)}")
             lines.append(f"  发布时间：{format_source_time(tweet.get('created_at'), timezone_name)}")
             if url:
                 lines.append(f"  {url}")
