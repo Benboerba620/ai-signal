@@ -34,9 +34,9 @@ Naval Ravikant
 **China AI:** 闫俊杰 (MiniMax), 杨植麟 (Moonshot), 梁文锋 (DeepSeek), 唐杰 (智谱),
 罗福莉, 李广密 (拾象), 肖弘 (Manus)
 
-### Twitter/X (19 accounts)
+### Twitter/X (18 accounts)
 **Analysts:** Karpathy, Swyx, Dylan Patel (SemiAnalysis), Irrational Analysis, Naval Ravikant,
-Leopold Aschenbrenner, Jim Keller, Gavin Baker (Atreides Management)
+Jim Keller, Gavin Baker (Atreides Management)
 **Executives:** Sam Altman, Dario Amodei, Demis Hassabis (Google DeepMind), Tang Jie (Z.ai),
 Jensen Huang (NVIDIA CEO)
 **Builders:** Amanda Askell, Boris Cherny (Claude Code), Cat Wu, Alex Albert, Guillermo Rauch (Vercel), Josh Woodward (Google Labs)

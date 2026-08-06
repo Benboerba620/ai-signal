@@ -2,6 +2,12 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-08-06
+
+### 移除
+
+- X/Twitter 信源移除 @leopoldasch（Leopold Aschenbrenner）：该账号最后一条推文停在 2025-10-08，近十个月没有更新，每次抓取都是空转。handle 本身有效，后续恢复更新可随时加回。
+
 ## 2026-08-05
 
 ### 新增
