@@ -2,6 +2,13 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-08-18
+
+### 修复
+
+- 播客信源将旧 `Lightcone Podcast` RSS 替换为当前 `Y Combinator Startup Podcast` RSS，恢复 YC 最新节目抓取。
+  之所以这样改：旧 feed 最后一期停在 2025-12-03，而 YC 已在新节目入口持续发布，导致 2026 年的 Boris Cherny、Jeff Dean、Chelsea Finn 等访谈全部漏抓。新 feed 不增加评分或额外筛选，按普通频道直接进入中央 feed。
+
 ## 2026-08-06
 
 ### 移除

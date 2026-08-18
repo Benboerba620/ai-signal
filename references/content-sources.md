@@ -4,7 +4,7 @@ Central feed is updated daily at 6am Beijing time (UTC 22:00) with:
 
 ### Podcasts (14 channels)
 Dwarkesh Patel, Lex Fridman, Latent Space, All-In Podcast, a16z, Naval, No Priors,
-SemiAnalysis (Dylan Patel), Google DeepMind, Lightcone (YC), Lenny's Podcast,
+SemiAnalysis (Dylan Patel), Google DeepMind, Y Combinator Startup Podcast, Lenny's Podcast,
 Invest Like the Best, Capital Allocators, The Acquirers Podcast
 
 ### People tracking (28 people, YouTube-wide guest search)
