@@ -2,6 +2,15 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-08-19
+
+### 新增
+
+- 全线新增 Ben Thompson（Stratechery）四个通道：X 账号 [@benthompson](https://x.com/benthompson)（analyst 档）、播客 `Sharp Tech with Ben Thompson`、人物搜索 `Ben Thompson Stratechery interview`、博客 `stratechery.com` RSS。
+  之所以补齐四条而不是只订一个：他的产出天然分散在四处——长文在博客、周度讨论在 Sharp Tech、上别人节目在 YouTube、短评在 X，只订一处会漏掉大半。
+- 两处已知边界，日报里不掩饰：**Sharp Tech 公开 feed 只有正片前 20-35 分钟**（标题带 `(Preview)` 前缀，正片在付费墙后），只对命中 AI 关键词的集子做 ASR；**Stratechery 的付费 Daily Update 只有一句话导语**，日报按"他在谈什么 + 链接"呈现，不替他展开论点。
+- 文章摘要 prompt 相应改写：博客源不再假定全是官方公告，独立分析一律按"Ben Thompson 认为……"归属，不当既定事实。
+
 ## 2026-08-18
 
 ### 修复

@@ -10,6 +10,7 @@
 
 ## 最近更新
 
+- `2026-08-19`：新增 Ben Thompson（Stratechery）四通道——X [@benthompson](https://x.com/benthompson)、Sharp Tech 播客、人物访谈搜索、Stratechery 博客 RSS；付费墙后的内容只呈现标题导语和链接，不替他展开论点
 - `2026-08-18`：接入 Y Combinator Startup Podcast 当前 RSS，替换已停在 2025 年的旧 Lightcone feed，恢复 YC 最新播客抓取
 - `2026-08-05`：X 主题过滤按账号性质分档——分析师/决策者不再要求命中技术关键词（实测此前丢掉 @jimkxa 100%、@GavinSBaker 67% 的原创内容），引用推文连同被引用原推一起抓取和展示
 - `2026-08-05`：X 信源换血——移除 NVIDIA 官方账号，改追黄仁勋本人 [@JensenHuang](https://x.com/JensenHuang)（7/24 开通）；新增买方视角 [@GavinSBaker](https://x.com/GavinSBaker)（Atreides Management）
@@ -59,7 +60,7 @@
 
 ## 信息源
 
-### 播客（14 个频道）
+### 播客（15 个频道）
 
 | 频道 | 为什么选 |
 |------|----------|
@@ -71,6 +72,7 @@
 | [Naval](https://nav.al/) | Naval Ravikant 对 AI、技术、创业和资本形成的长线判断 |
 | [No Priors](https://www.youtube.com/@NoPriorsPodcast) | Sarah Guo + Elad Gil，AI infra 创始人密度最高 |
 | [SemiAnalysis](https://www.youtube.com/@SemiAnalysis) | Dylan Patel，半导体与 AI 基础设施最深度的独立分析 |
+| [Sharp Tech with Ben Thompson](https://sharptech.fm) | Stratechery 的 Ben Thompson，用聚合理论看大厂与 AI 的商业模式。公开 feed 只有正片前 20-35 分钟（`(Preview)` 前缀），正片在付费墙后 |
 | [Google DeepMind](https://deepmind.com/podcast) | DeepMind 官方，前沿研究视角 |
 | [Y Combinator Startup Podcast](https://www.youtube.com/@ycombinator) | YC 合伙人、创业者和技术负责人讲 AI 与创业实践 |
 | [Lenny's Podcast](https://www.lennysnewsletter.com/) | AI 产品落地的一线反馈 |
@@ -78,19 +80,19 @@
 | [Capital Allocators](https://capitalallocators.com/podcast/) | 机构投资者视角 |
 | [The Acquirers Podcast](https://acquirersmultiple.com/podcast/) | 价值投资方法论 |
 
-### 人物追踪（28 人，全网搜索）
+### 人物追踪（29 人，全网搜索）
 
 频道订阅之外，每天在 YouTube 全网搜索这些人作为**嘉宾**出现的访谈（RSS 只覆盖主持人自己的节目，这里补他们上别人节目的场合），搜索用 YouTube 服务端"本周上传"过滤器限定，只收最新的：
 
-**海外**：Sundar Pichai、Greg Brockman、Sam Altman、Demis Hassabis、Jensen Huang、Satya Nadella、Mark Zuckerberg；Anthropic 全线（Dario / Daniela Amodei、Krishna Rao、Mike Krieger、Sholto Douglas、Amanda Askell、Boris Cherny、Cat Wu、Alex Albert）；Kevin Weil（OpenAI CPO）、Ivan Zhao（Notion）、Dylan Patel（SemiAnalysis）、Gavin Baker（Atreides）、Naval Ravikant
+**海外**：Sundar Pichai、Greg Brockman、Sam Altman、Demis Hassabis、Jensen Huang、Satya Nadella、Mark Zuckerberg；Anthropic 全线（Dario / Daniela Amodei、Krishna Rao、Mike Krieger、Sholto Douglas、Amanda Askell、Boris Cherny、Cat Wu、Alex Albert）；Kevin Weil（OpenAI CPO）、Ivan Zhao（Notion）、Dylan Patel（SemiAnalysis）、Ben Thompson（Stratechery）、Gavin Baker（Atreides）、Naval Ravikant
 
 **中国 AI**：闫俊杰（MiniMax）、杨植麟（月之暗面）、梁文锋（DeepSeek）、唐杰（智谱）、罗福莉、李广密（拾象）、肖弘（Manus）
 
 > 过滤规则：只收本周上传（YouTube 服务端过滤）、标题必须含人名（去同名假阳性）、时长 ≥ 15 分钟（去切片/shorts）、频道订阅数 ≥ 5 万（去小搬运号）、海外人物剔除非拉丁文字频道名/标题（去大号外语搬运/二创，如中文配音、印地语二创、韩语搬运）、海外人物要求视频有英文字幕轨（挡住英文标题的外语综艺，如韩综 You Quiz 上的 Jensen Huang 只有韩语字幕；只要英文原版）、剔除例行盘面播报和影视剧合集噪音；与频道订阅命中的同一期节目自动去重；每天最多新收 5 条，日报不会被人物命中刷屏。名单在 `config/sources.json` 的 `podcasts.people`。
 
-### Twitter/X（18 个账号）
+### Twitter/X（19 个账号）
 
-**分析师/研究者**：[@karpathy](https://x.com/karpathy)、[@swyx](https://x.com/swyx)、[@dylan522p](https://x.com/dylan522p)（SemiAnalysis）、[@insane_analyst](https://x.com/insane_analyst)（Irrational Analysis，半导体投资）、[@naval](https://x.com/naval)（Naval Ravikant）、[@jimkxa](https://x.com/jimkxa)（Jim Keller）、[@GavinSBaker](https://x.com/GavinSBaker)（Gavin Baker，Atreides Management）
+**分析师/研究者**：[@karpathy](https://x.com/karpathy)、[@swyx](https://x.com/swyx)、[@dylan522p](https://x.com/dylan522p)（SemiAnalysis）、[@insane_analyst](https://x.com/insane_analyst)（Irrational Analysis，半导体投资）、[@benthompson](https://x.com/benthompson)（Ben Thompson，Stratechery）、[@naval](https://x.com/naval)（Naval Ravikant）、[@jimkxa](https://x.com/jimkxa)（Jim Keller）、[@GavinSBaker](https://x.com/GavinSBaker)（Gavin Baker，Atreides Management）
 
 **决策者**：[@sama](https://x.com/sama)、[@DarioAmodei](https://x.com/DarioAmodei)、[@demishassabis](https://x.com/demishassabis)（Google DeepMind）、[@jietang](https://x.com/jietang)（Z.ai / Tsinghua）、[@JensenHuang](https://x.com/JensenHuang)（黄仁勋，NVIDIA CEO）
 
@@ -104,15 +106,16 @@
 >
 > 引用推文（quote tweet）会连同被引用的原推一起抓取和判定：分析师常用「转发 + 一句短评」的方式发表看法，实质内容全在被引用的那条里，只读本人正文既会误判相关性，也会让日报里只剩一句「Yep」。
 
-### 官方博客（3 家）
+### 博客（4 家：3 家官方 + 1 家独立分析）
 
 | 来源 | 抓取方式 |
 |------|----------|
 | [Anthropic](https://www.anthropic.com/news) | 官方 sitemap（Anthropic 无 RSS）+ 文章页真实发布日期过滤 |
 | [OpenAI](https://openai.com/news/) | 官方 RSS |
 | [Google DeepMind](https://deepmind.google/blog/) | 官方 RSS |
+| [Stratechery](https://stratechery.com)（Ben Thompson） | 公开 RSS。免费周文给全文，付费的 Daily Update 只给一句话导语——日报按"他今天在谈什么 + 链接"呈现，不替他展开论点 |
 
-> 模型发布、产品上线、研究成果、安全框架，第一时间从官方渠道进日报，不等二手转述。每家每天最多 5 条，48 小时窗口。
+> 模型发布、产品上线、研究成果、安全框架，第一时间从官方渠道进日报，不等二手转述。Stratechery 是唯一的非官方源，日报里按"Ben Thompson 认为……"归属，不当作既定事实。每家每天最多 5 条，48 小时窗口。
 
 ### arXiv 论文（每日最多 30 篇）
 
