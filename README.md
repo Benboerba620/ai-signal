@@ -10,6 +10,7 @@
 
 ## 最近更新
 
+- `2026-08-21`：SemiAnalysis 改为日常自动匹配官方 YouTube 字幕；Latent Space 与 Lenny 切换到 podcast-only RSS，避免把 newsletter 文章封面误当音频；维护者可在 Mac 上用共享 Whisper 引擎补齐无公开字幕的节目
 - `2026-08-19`：新增 Ben Thompson（Stratechery）四通道——X [@benthompson](https://x.com/benthompson)、Sharp Tech 播客、人物访谈搜索、Stratechery 博客 RSS；付费墙后的内容只呈现标题导语和链接，不替他展开论点
 - `2026-08-18`：接入 Y Combinator Startup Podcast 当前 RSS，替换已停在 2025 年的旧 Lightcone feed，恢复 YC 最新播客抓取
 - `2026-08-05`：X 主题过滤按账号性质分档——分析师/决策者不再要求命中技术关键词（实测此前丢掉 @jimkxa 100%、@GavinSBaker 67% 的原创内容），引用推文连同被引用原推一起抓取和展示
@@ -56,7 +57,9 @@
 
 字幕从最后一次出现在最近更新 feed 起保留 14 天。播客退出主 feed 后，仍可通过字幕索引展开；超过 14 天后全文缓存自动过期，只保留日报中的标题、链接和已有摘要。
 
-仓库维护者可以在 GitHub Actions 的 `Generate Daily Feed` 手动运行页把 `transcribe_semianalysis` 设为 `true`，为最新一期 SemiAnalysis 节目补全文字幕。该选项默认关闭，每次最多处理 1 期；系统优先读取官方 YouTube 同期视频的公开字幕，匹配不到时才尝试火山 ASR。
+SemiAnalysis 已进入日常自动全文流程：系统优先匹配官方 YouTube 同期视频的公开字幕，匹配不到时才尝试 ASR。仓库维护者仍可在 GitHub Actions 的 `Generate Daily Feed` 手动运行页把 `transcribe_semianalysis` 设为 `true`，单独重试最新 1 期。
+
+没有公开字幕时，维护者也可以在 macOS 上运行 `python3 scripts/transcribe_missing_podcasts.py --backend local --only-channel a16z --force-channel a16z --limit 1`，调用本地 Whisper 逐集转录。该模式默认寻找上级工作区中的共享 `workspace/scripts/podcast_rss_transcribe.py`；其他目录结构可用 `AI_SIGNAL_LOCAL_TRANSCRIBER` 指定脚本路径。音频只保存在临时目录，单集完成后自动删除。
 
 ## 信息源
 

@@ -693,7 +693,19 @@ def parse_rss(xml_text):
         link = item.findtext("link", "")
         desc = item.findtext("description", "")
         content = item.findtext("content:encoded", "", ns)
-        enc = item.find("enclosure")
+        # Substack's regular feed may attach a cover image as an enclosure.
+        # Treat only audio enclosures as podcast media; otherwise a PNG/JPEG
+        # can be submitted to ASR and reported as an "invalid audio format".
+        enc = None
+        for candidate in item.findall("enclosure"):
+            enclosure_url = candidate.get("url", "")
+            enclosure_type = candidate.get("type", "").lower()
+            path = urlparse(enclosure_url).path.lower()
+            if enclosure_type.startswith("audio/") or path.endswith(
+                (".mp3", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".flac")
+            ):
+                enc = candidate
+                break
         audio = enc.get("url", "") if enc is not None else ""
         try:
             audio_bytes = int(enc.get("length", "0") or 0) if enc is not None else 0

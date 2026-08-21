@@ -2,6 +2,17 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-08-21
+
+### 修复
+
+- Latent Space 与 Lenny 改用 Substack 的 podcast-only RSS 作为主源；RSS 解析器只接受音频 MIME 或音频扩展名的 enclosure，不再把 newsletter 文章封面的 PNG/JPEG 当成音频提交给 ASR。
+- SemiAnalysis 默认进入自动全文流程，优先按标题匹配官方 YouTube 同期视频的公开字幕。真实最新一期已验证可直接取得 42,959 字符字幕，不需要 ASR。
+
+### 新增
+
+- 缺少公开字幕的节目可用 `--backend local` 调用工作区共享 Whisper 引擎转录。音频采用逐集临时下载并在完成后删除，避免 Mac mini 长期堆积音频缓存。
+
 ## 2026-08-19
 
 ### 新增

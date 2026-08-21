@@ -8,17 +8,21 @@ text back into the feed.
 Usage:
     python scripts/transcribe_missing_podcasts.py --limit 2
     python scripts/transcribe_missing_podcasts.py --dry-run
+    python scripts/transcribe_missing_podcasts.py --backend local --limit 1
 
 Env:
-    VOLC_ASR_API_KEY - required unless --dry-run is used
+    VOLC_ASR_API_KEY - required for the default Volc backend
+    AI_SIGNAL_LOCAL_TRANSCRIBER - optional shared podcast_rss_transcribe.py path
 """
 
 import argparse
+import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
 from pathlib import Path
@@ -126,6 +130,66 @@ def resolve_audio_url(item):
         return ""
     urls = [line.strip() for line in proc.stdout.splitlines() if line.strip().startswith("http")]
     return urls[0] if urls else ""
+
+
+def load_local_transcriber():
+    """Load the workspace's shared Mac/Windows podcast Whisper engine.
+
+    ai-signal is nested at github/ai-signal in Yibo's workspace. Keeping the
+    actual MLX/PyAV implementation in the shared podcast module avoids a second
+    Mac-only transcription fork. An explicit path can be supplied for another
+    checkout with AI_SIGNAL_LOCAL_TRANSCRIBER.
+    """
+    configured = os.environ.get("AI_SIGNAL_LOCAL_TRANSCRIBER", "").strip()
+    module_path = (
+        Path(configured).expanduser()
+        if configured
+        else ROOT_DIR.parent.parent / "workspace" / "scripts" / "podcast_rss_transcribe.py"
+    )
+    if not module_path.is_file():
+        raise RuntimeError(
+            "shared local transcriber not found; set AI_SIGNAL_LOCAL_TRANSCRIBER "
+            "to podcast_rss_transcribe.py"
+        )
+    spec = importlib.util.spec_from_file_location("ai_signal_local_transcriber", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"could not load local transcriber: {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def download_audio(client, item, destination):
+    audio_url = resolve_audio_url(item)
+    if not audio_url:
+        raise RuntimeError("No usable audio URL")
+    with client.stream("GET", audio_url, headers={"User-Agent": UA}) as response:
+        response.raise_for_status()
+        with Path(destination).open("wb") as output:
+            for chunk in response.iter_bytes(chunk_size=1024 * 1024):
+                output.write(chunk)
+
+
+def transcribe_local(client, item, model_name="medium", language="en"):
+    """Download one episode to a temporary directory and transcribe locally.
+
+    The temporary audio is deleted as soon as the episode finishes, which is
+    important on the Mac mini where free disk space is limited.
+    """
+    transcriber = load_local_transcriber()
+    suffix = f".{audio_format(item.get('audio_url') or item.get('link'))}"
+    with tempfile.TemporaryDirectory(prefix="ai-signal-asr-") as temp_dir:
+        audio_path = Path(temp_dir) / f"episode{suffix}"
+        download_audio(client, item, audio_path)
+        result = transcriber.transcribe_audio(
+            audio_path,
+            model_name=model_name,
+            language=language or None,
+        )
+    text = str(result.get("text") or "").strip()
+    if not text:
+        raise RuntimeError("local Whisper returned an empty transcript")
+    return text, str(result.get("backend_label") or "local Whisper")
 
 
 SPONSOR_MARKERS = (
@@ -412,6 +476,14 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Print candidates without calling ASR")
     parser.add_argument("--poll-interval", type=int, default=None)
     parser.add_argument("--max-wait", type=int, default=None)
+    parser.add_argument(
+        "--backend",
+        choices=("volc", "local"),
+        default="volc",
+        help="ASR fallback after public transcripts: Volc AUC or shared local Whisper",
+    )
+    parser.add_argument("--local-model", default="medium")
+    parser.add_argument("--local-language", default="en")
     parser.add_argument("--force-channel", action="append", default=[])
     parser.add_argument("--only-channel", action="append", default=[])
     args = parser.parse_args()
@@ -459,25 +531,39 @@ def main():
             if not asr_ok:
                 log(f"  ⏭️ ASR skipped: {asr_reason}")
                 continue
-            if not api_key:
+            if args.backend == "volc" and not api_key:
                 log("  ⏭️ VOLC_ASR_API_KEY is not set; ASR fallback skipped")
                 continue
             try:
-                request_id = submit_task(client, api_key, item)
-                log(f"  request_id={request_id}")
-                text = query_task(client, api_key, request_id, poll_interval, max_wait)
+                if args.backend == "local":
+                    text, backend_label = transcribe_local(
+                        client,
+                        item,
+                        model_name=args.local_model,
+                        language=args.local_language,
+                    )
+                    request_id = None
+                else:
+                    request_id = submit_task(client, api_key, item)
+                    log(f"  request_id={request_id}")
+                    text = query_task(client, api_key, request_id, poll_interval, max_wait)
+                    backend_label = "volc_asr_auc"
             except Exception as exc:
-                feed["podcasts"][index]["transcript_error"] = f"volc_asr_auc: {exc}"
+                feed["podcasts"][index]["transcript_error"] = f"{args.backend}_asr: {exc}"
                 log(f"  ❌ {exc}")
                 continue
 
             feed["podcasts"][index]["transcript"] = text
             feed["podcasts"][index]["transcript_available"] = True
-            feed["podcasts"][index]["transcript_source"] = "volc_asr_auc"
+            feed["podcasts"][index]["transcript_source"] = (
+                "local_whisper" if args.backend == "local" else "volc_asr_auc"
+            )
+            feed["podcasts"][index]["transcript_backend"] = backend_label
             feed["podcasts"][index]["transcript_url"] = None
             feed["podcasts"][index]["transcript_video_id"] = None
             feed["podcasts"][index]["transcript_error"] = None
-            feed["podcasts"][index]["transcript_request_id"] = request_id
+            if request_id:
+                feed["podcasts"][index]["transcript_request_id"] = request_id
             changed += 1
             log(f"  ✅ transcript ({len(text)} chars)")
 

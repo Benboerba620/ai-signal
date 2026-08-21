@@ -117,7 +117,7 @@ class SemiAnalysisConfigTests(unittest.TestCase):
             channel["transcript_rss_url"],
             "https://www.youtube.com/feeds/videos.xml?channel_id=UCf_KhBXw5TIV0A7butjgFhg",
         )
-        self.assertFalse(channel["transcribe_missing"])
+        self.assertTrue(channel["transcribe_missing"])
         self.assertTrue(channel["require_direct_audio"])
         self.assertEqual(channel["min_transcription_duration_minutes"], 10)
         self.assertEqual(channel["min_transcription_audio_bytes"], 5000000)
@@ -131,6 +131,17 @@ class SemiAnalysisConfigTests(unittest.TestCase):
         episode = generate_feed.parse_rss(xml)[0]
 
         self.assertEqual(episode["audio_bytes"], 48741563)
+
+    def test_rss_parser_ignores_image_enclosure(self):
+        xml = """<rss><channel><item><title>Newsletter article</title>
+        <guid>article-1</guid>
+        <enclosure url="https://example.com/cover.png" length="12345" type="image/png" />
+        </item></channel></rss>"""
+
+        episode = generate_feed.parse_rss(xml)[0]
+
+        self.assertEqual(episode["audio_url"], "")
+        self.assertEqual(episode["audio_bytes"], 0)
 
     def test_spotify_catalog_page_is_not_accepted_as_transcript(self):
         url = "https://podcasters.spotify.com/pod/show/jordan-nanos/episodes/example"
