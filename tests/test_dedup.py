@@ -1,7 +1,11 @@
+import io
+import json
 import os
 import sys
+import tempfile
 import types
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -236,6 +240,54 @@ class FeedValidationTests(unittest.TestCase):
 
         self.assertTrue(any("still inline" in failure for failure in failures))
         self.assertTrue(any("missing or empty" in failure for failure in failures))
+
+    def test_arxiv_scope_ignores_unrelated_stale_transcript_state(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            feeds_dir = Path(temp_dir)
+            (feeds_dir / "feed-arxiv.json").write_text(
+                json.dumps({"papers": [{"arxiv_id": "2608.00001"}]}),
+                encoding="utf-8",
+            )
+            (feeds_dir / "feed-podcasts.json").write_text(
+                json.dumps({"podcasts": [{"guid": "inline", "transcript": "full text"}]}),
+                encoding="utf-8",
+            )
+            (feeds_dir / "feed-transcripts-index.json").write_text(
+                json.dumps(
+                    {
+                        "transcripts": [
+                            {
+                                "guid": "expired",
+                                "expires_at": "2026-01-01T00:00:00+00:00",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with mock.patch.object(validate_feeds, "FEEDS_DIR", feeds_dir):
+                with redirect_stdout(io.StringIO()):
+                    self.assertTrue(validate_feeds.validate(scope="arxiv"))
+
+    def test_arxiv_scope_still_rejects_duplicate_paper_ids(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            feeds_dir = Path(temp_dir)
+            (feeds_dir / "feed-arxiv.json").write_text(
+                json.dumps(
+                    {
+                        "papers": [
+                            {"arxiv_id": "2608.00001"},
+                            {"arxiv_id": "2608.00001"},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with mock.patch.object(validate_feeds, "FEEDS_DIR", feeds_dir):
+                with redirect_stderr(io.StringIO()):
+                    self.assertFalse(validate_feeds.validate(scope="arxiv"))
 
 
 class SummaryPromptSafetyTests(unittest.TestCase):

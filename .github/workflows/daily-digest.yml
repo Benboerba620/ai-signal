@@ -105,7 +105,18 @@ jobs:
           fi
 
       - name: Validate feed uniqueness
-        run: python scripts/validate_feeds.py
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          FEED_SCOPE: ${{ inputs.feed_scope }}
+        run: |
+          if [ "$SCHEDULE" = "30 1 * * 1-5" ]; then
+            scope="arxiv"
+          elif [ "$FEED_SCOPE" = "podcasts" ]; then
+            scope="podcasts"
+          else
+            scope="all"
+          fi
+          python scripts/validate_feeds.py --scope "$scope"
 
       - name: Generate central summaries
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.generate_summaries == 'true' }}

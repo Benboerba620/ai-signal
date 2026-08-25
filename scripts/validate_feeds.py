@@ -1,5 +1,6 @@
-"""Fail fast when generated feeds contain duplicate stable identifiers."""
+"""Fail fast when generated feeds violate their data contracts."""
 
+import argparse
 import json
 import sys
 from collections import Counter
@@ -15,6 +16,7 @@ FEEDS_DIR = ROOT_DIR / "feeds"
 # (e.g. the arXiv-only schedule) must not fail on freshly expired entries,
 # so only treat entries expired beyond this grace window as errors.
 TRANSCRIPT_EXPIRY_GRACE = timedelta(hours=24)
+VALIDATION_SCOPES = ("all", "twitter", "podcasts", "arxiv", "blogs")
 
 
 def load_items(filename, key):
@@ -89,47 +91,77 @@ def transcript_index_failures(podcasts, index_items, now=None):
     return failures
 
 
-def validate():
-    tweets = [
-        tweet
-        for account in load_items("feed-x.json", "x")
-        for tweet in account.get("tweets", [])
-    ]
-    podcasts = load_items("feed-podcasts.json", "podcasts")
-    papers = load_items("feed-arxiv.json", "papers")
-    articles = load_items("feed-blogs.json", "articles")
-    transcript_index = load_optional_items("feed-transcripts-index.json", "transcripts")
+def validate(scope="all"):
+    if scope not in VALIDATION_SCOPES:
+        raise ValueError(f"Unknown validation scope: {scope}")
 
-    checks = {
-        "tweet IDs": duplicate_values(tweet.get("id") or tweet.get("url") for tweet in tweets),
-        "podcast keys": duplicate_values(
+    checks = {}
+    counts = {}
+    if scope in ("all", "twitter"):
+        tweets = [
+            tweet
+            for account in load_items("feed-x.json", "x")
+            for tweet in account.get("tweets", [])
+        ]
+        checks["tweet IDs"] = duplicate_values(
+            tweet.get("id") or tweet.get("url") for tweet in tweets
+        )
+        counts["tweets"] = len(tweets)
+
+    if scope in ("all", "podcasts"):
+        podcasts = load_items("feed-podcasts.json", "podcasts")
+        transcript_index = load_optional_items("feed-transcripts-index.json", "transcripts")
+        checks["podcast keys"] = duplicate_values(
             episode.get("guid") or episode.get("link") or episode.get("title")
             for episode in podcasts
-        ),
-        "arXiv IDs": duplicate_values(paper.get("arxiv_id") for paper in papers),
-        "blog IDs": duplicate_values(article.get("id") or article.get("url") for article in articles),
-        "podcast transcript sidecars": transcript_sidecar_failures(podcasts),
-        "transcript index IDs": duplicate_values(
+        )
+        checks["podcast transcript sidecars"] = transcript_sidecar_failures(podcasts)
+        checks["transcript index IDs"] = duplicate_values(
             item.get("guid") or item.get("link") or item.get("title") for item in transcript_index
-        ),
-        "transcript retention index": (
+        )
+        checks["transcript retention index"] = (
             transcript_sidecar_failures(transcript_index)
             + transcript_index_failures(podcasts, transcript_index)
-        ),
-    }
+        )
+        counts["podcasts"] = len(podcasts)
+
+    if scope in ("all", "arxiv"):
+        papers = load_items("feed-arxiv.json", "papers")
+        checks["arXiv IDs"] = duplicate_values(paper.get("arxiv_id") for paper in papers)
+        counts["papers"] = len(papers)
+
+    if scope in ("all", "blogs"):
+        articles = load_items("feed-blogs.json", "articles")
+        checks["blog IDs"] = duplicate_values(
+            article.get("id") or article.get("url") for article in articles
+        )
+        counts["articles"] = len(articles)
+
     failures = {name: values for name, values in checks.items() if values}
     if failures:
         for name, values in failures.items():
             print(f"Invalid {name}: {', '.join(values)}", file=sys.stderr)
         return False
 
-    print(
-        "Feed uniqueness OK: "
-        f"{len(tweets)} tweets, {len(podcasts)} podcasts, "
-        f"{len(papers)} papers, {len(articles)} blog articles"
-    )
+    if scope == "all":
+        print(
+            "Feed uniqueness OK: "
+            f"{counts['tweets']} tweets, {counts['podcasts']} podcasts, "
+            f"{counts['papers']} papers, {counts['articles']} blog articles"
+        )
+    else:
+        count_key, label = {
+            "twitter": ("tweets", "tweets"),
+            "podcasts": ("podcasts", "podcasts"),
+            "arxiv": ("papers", "papers"),
+            "blogs": ("articles", "blog articles"),
+        }[scope]
+        print(f"Feed validation OK ({scope}): {counts[count_key]} {label}")
     return True
 
 
 if __name__ == "__main__":
-    raise SystemExit(0 if validate() else 1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--scope", choices=VALIDATION_SCOPES, default="all")
+    args = parser.parse_args()
+    raise SystemExit(0 if validate(scope=args.scope) else 1)
