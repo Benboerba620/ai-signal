@@ -1931,6 +1931,13 @@ async def main():
     parser.add_argument("--blogs-only", action="store_true")
     parser.add_argument("--people-only", action="store_true",
                         help="refresh person-appearance searches only; keep channel episodes as-is")
+    # X 对 GitHub Actions 的机房 IP 段返回 403（2026-09-06 对照实验确认：同一份
+    # 全新 cookie，住宅 IP 能抓 20 条，云端连跑两次都是 403，变量只剩出口 IP）。
+    # 云端定时班因此永久跳过 X，改由住宅 IP 上的机器跑 `--twitter-only` 后
+    # 单独提交 feed-x.json。留着让云端每晚白撞一次没有好处：拿不到数据，
+    # 还让那个账号每天从机房 IP 吃一次 403。
+    parser.add_argument("--skip-twitter", action="store_true",
+                        help="run every source except Twitter/X (X blocks datacenter IPs)")
     args = parser.parse_args()
 
     sources = load_sources()
@@ -1940,7 +1947,7 @@ async def main():
     run_all = not (args.twitter_only or args.podcasts_only or args.arxiv_only
                    or args.blogs_only or args.people_only)
 
-    if run_all or args.twitter_only:
+    if (run_all and not args.skip_twitter) or args.twitter_only:
         log("\n━━━ Twitter/X ━━━")
         # X 是四个源里唯一会被对方主动拒绝的（403 / 锁号 / 封 IP），而且它的拒绝
         # 方式历史上是"卡住"不是"报错"。所以这里两道闸（2026-09-06 加）：

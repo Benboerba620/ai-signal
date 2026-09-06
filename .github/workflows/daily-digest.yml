@@ -73,9 +73,13 @@ jobs:
       - name: Run tests
         run: python -m unittest discover -s tests -p 'test_*.py'
 
+      # X 不在云端抓：X 对 GitHub Actions 的机房 IP 段返回 403（2026-09-06 确认，
+      # 同一份新 cookie 住宅 IP 能抓、云端连跑两次都 403）。feed-x.json 改由
+      # Mac mini 上的 launchd 任务跑 `--twitter-only` 后单独提交，本 workflow
+      # 既不抓也不提交它（见下面 Commit feeds 的 git add 清单）。
+      # TWITTER_COOKIES 因此不再注入 —— 云端没有任何一步需要它。
       - name: Generate feeds
         env:
-          TWITTER_COOKIES: ${{ secrets.TWITTER_COOKIES }}
           SCHEDULE: ${{ github.event.schedule }}
         run: |
           if [ "$SCHEDULE" = "30 1 * * 1-5" ]; then
@@ -83,7 +87,7 @@ jobs:
           elif [ "${{ inputs.feed_scope }}" = "podcasts" ]; then
             python scripts/generate_feed.py --podcasts-only
           else
-            python scripts/generate_feed.py
+            python scripts/generate_feed.py --skip-twitter
           fi
 
       - name: Transcribe selected missing podcast transcripts
@@ -160,10 +164,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add feeds/feed-x.json feeds/feed-podcasts.json feeds/feed-arxiv.json feeds/feed-blogs.json feeds/feed-transcripts-index.json feeds/transcripts -f
+          # feeds/feed-x.json 故意不在这个清单里：它归 Mac mini 那条通路写。
+          # 两个写者同时 add 同一个文件 = 每天一次 rebase 冲突，而云端这边
+          # 根本没有 X 数据可写（--skip-twitter）。删这一项是承重的，不是清理。
+          git add feeds/feed-podcasts.json feeds/feed-arxiv.json feeds/feed-blogs.json feeds/feed-transcripts-index.json feeds/transcripts -f
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.generate_summaries }}" = "true" ]; then
             [ -f feeds/feed-summaries.json ] && git add feeds/feed-summaries.json -f
             [ -d content/summaries ] && git add content/summaries -f
           fi
           git diff --staged --quiet || git commit -m "Feed update $(date -u +%Y-%m-%d)"
+          # mini 可能在 checkout 之后、push 之前提交了 feed-x.json，那样裸 push 会被拒。
+          # rebase 而不是 merge，保持线性历史；两边改的文件不重叠所以不会有冲突。
+          git pull --rebase origin main
           git push
