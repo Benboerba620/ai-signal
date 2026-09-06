@@ -46,6 +46,13 @@ MIN_TRANSCRIPT_CHARS = 600
 MAX_TRANSCRIPT_CHARS = int(os.environ.get("MAX_TRANSCRIPT_CHARS", "500000"))
 MIN_TRANSCRIPT_CHARS_PER_MIN = int(os.environ.get("MIN_TRANSCRIPT_CHARS_PER_MIN", "150"))
 
+# Twitter/X 抓取的总时间上限。正常整轮跑完不到 2 分钟，这个数是给故障态兜底的。
+# 由来：2026-09-04 与 09-05 两次云端跑，X 对 feed_bot 返回 403 → twscrape 锁账号
+# 15 分钟并**阻塞轮询**等解锁 → 循环耗尽 workflow 的 75 分钟 job 上限被 cancel →
+# Commit feeds 步骤压根没跑到，podcasts / arXiv / blogs 三个跟 X 无关的源
+# **跟着一起断更两天**。单个源的故障不允许再占用整轮预算。
+TWITTER_BUDGET_SEC = int(os.environ.get("TWITTER_BUDGET_SEC", "900"))
+
 DEFAULT_TWEET_CORE_KEYWORDS = [
     "ai", "artificial intelligence", "agi", "agent", "agents", "agentic",
     "llm", "llms", "language model", "foundation model", "models", "world model",
@@ -551,7 +558,13 @@ async def fetch_twitter(sources):
             pass
 
     db_path = str(SCRIPT_DIR / "twitter_accounts.db")
-    api = API(db_path, proxy=proxy) if proxy else API(db_path)
+    # raise_when_no_account=True 是这里的承重参数（2026-09-06 加）。
+    # twscrape 收到 403 会把账号锁 15 分钟，默认行为是在 get_for_queue_or_wait 里
+    # **阻塞轮询等它解锁**——不抛异常，所以下面每个账号的 try/except 永远不触发。
+    # 只有一个 feed_bot 账号，锁住就等于没账号，等下去没有意义。改成立即抛
+    # NoAccountError，交给下面 per-account 的 except 记进 errors 后继续。
+    api = (API(db_path, proxy=proxy, raise_when_no_account=True) if proxy
+           else API(db_path, raise_when_no_account=True))
     acc = await api.pool.get_account("feed_bot")
     if acc is None:
         await api.pool.add_account_cookies("feed_bot", cookies)
@@ -666,9 +679,12 @@ async def fetch_twitter(sources):
         })
 
     if accounts and accounts_with_raw_results == 0:
+        # 把前两条底层错误拼进消息里：全军覆没时唯一想知道的就是"被 403 了"
+        # 还是"网络挂了"，光说 returned no raw results 等于把原因藏起来。
+        detail = f" (first errors: {'; '.join(errors[:2])})" if errors else ""
         raise RuntimeError(
             f"Twitter health check failed: all {len(accounts)} account queries "
-            "returned no raw results"
+            f"returned no raw results{detail}"
         )
 
     return {"x": results, "errors": errors if errors else None}
@@ -1926,11 +1942,31 @@ async def main():
 
     if run_all or args.twitter_only:
         log("\n━━━ Twitter/X ━━━")
-        twitter_feed = await fetch_twitter(sources)
-        twitter_feed["generated_at"] = now.isoformat()
-        write_json(FEEDS_DIR / "feed-x.json", twitter_feed)
-        active = sum(1 for a in twitter_feed["x"] if a["tweets"])
-        log(f"✅ feed-x.json ({active}/{len(twitter_feed['x'])} accounts with content)")
+        # X 是四个源里唯一会被对方主动拒绝的（403 / 锁号 / 封 IP），而且它的拒绝
+        # 方式历史上是"卡住"不是"报错"。所以这里两道闸（2026-09-06 加）：
+        #   ① asyncio.wait_for 总上限 —— 不管卡在哪一层都能回到主流程，保证脚本
+        #      一定跑到最后、workflow 的 Commit feeds 一定执行；
+        #   ② 失败时**不碰 feed-x.json** —— 保留旧文件连同旧 generated_at，
+        #      让下游按"x 桶陈旧"如实标红。不能写一份时间新鲜但零条的 feed，
+        #      那比标红更糟：消费端会以为今天 X 上真的没内容。
+        # 另外三桶照常写盘，单源故障不再拖垮整轮。
+        # `--twitter-only` 是人工调试通路，失败照旧抛出去、退出码非零。
+        try:
+            twitter_feed = await asyncio.wait_for(
+                fetch_twitter(sources), timeout=TWITTER_BUDGET_SEC)
+        except Exception as exc:
+            if args.twitter_only:
+                raise
+            reason = (f"exceeded {TWITTER_BUDGET_SEC}s budget"
+                      if isinstance(exc, asyncio.TimeoutError)
+                      else f"{type(exc).__name__}: {exc}")
+            log(f"⚠️ Twitter fetch failed ({reason})")
+            log("   keeping existing feed-x.json; other feeds continue")
+        else:
+            twitter_feed["generated_at"] = now.isoformat()
+            write_json(FEEDS_DIR / "feed-x.json", twitter_feed)
+            active = sum(1 for a in twitter_feed["x"] if a["tweets"])
+            log(f"✅ feed-x.json ({active}/{len(twitter_feed['x'])} accounts with content)")
 
     if run_all or args.podcasts_only or args.people_only:
         log("\n━━━ Podcasts ━━━")
