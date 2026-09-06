@@ -549,11 +549,27 @@ async def fetch_twitter(sources):
         try:
             import twscrape.xclid as _xclid
             from twscrape.http import make_client as _mc
-            _xclid._make_client = lambda cookies=None: _mc(
-                proxy=proxy,
-                headers={"user-agent": "@chrome"},
-                cookies=cookies,
-            )
+
+            def _make_client_via_proxy(proxy=None, cookies=None, **kwargs):
+                """强制让 xclid 的签名请求走我们探测到的代理。
+
+                签名必须跟上 twscrape 的契约（2026-09-06 修）：0.19.2 起 xclid 会把
+                **账号 cookie 连同 proxy** 一路传进来（`_make_client(proxy=..., cookies=...)`）。
+                这里原来是 `lambda cookies=None:`，收到 proxy 关键字就
+                `TypeError: got an unexpected keyword argument 'proxy'`，
+                x-client-transaction-id 生成不出来 → 每个账号都报
+                "No account available"，看起来像 cookie 失效，其实是签名挂了。
+                云端一直没暴露是因为它 proxy=False 走不到这个分支。
+
+                收下 proxy 但忽略它 —— 这个函数存在的意义就是强制换出口。
+                cookies 必须原样透传：X 对登录态和匿名态发的是不同的前端构建，
+                只有登录态那份可靠含有签名 indices。
+                """
+                return _mc(proxy=forced_proxy, cookies=cookies,
+                           headers={"user-agent": "@chrome"}, **kwargs)
+
+            forced_proxy = proxy
+            _xclid._make_client = _make_client_via_proxy
         except Exception:
             pass
 
