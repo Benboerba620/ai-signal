@@ -2,7 +2,16 @@ name: Generate Daily Feed
 
 on:
   schedule:
-    - cron: '0 22 * * *'  # UTC 22:00 = Beijing 06:00
+    # 2026-09-07: moved 2h earlier (was '0 22', Beijing 06:00) and off the top of
+    # the hour. Consumers on the Mac read this feed at Beijing 06:15; GitHub's
+    # scheduled-trigger queue delay on this repo has been measured at +14~19 min
+    # (late Aug) and +83~110 min (since Aug 29), so a nominal 06:00 release was
+    # consistently landing at 07:20-07:45 — after the consumer had already run,
+    # i.e. the Mac was reading a day-old digest every single day.
+    # Nominal Beijing 04:13 + worst observed delay (110 min) = 06:03, still ahead
+    # of the 06:15 consumer. The ':13' is deliberate: on-the-hour slots are the
+    # most congested and take the longest to dequeue.
+    - cron: '13 20 * * *'  # UTC 20:13 = Beijing 04:13
     - cron: '30 1 * * 1-5'  # arXiv follow-up: Beijing 09:30, after the daily release
   workflow_dispatch:
     inputs:
