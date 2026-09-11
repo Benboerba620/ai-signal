@@ -1,0 +1,595 @@
+AI researchers debate how close we are to recursive self-improvement
+Dwarkesh Podcast
+Sign in
+Playback speed
+×
+post
+post at current time
+from 0:00
+0:00
+/
+Generate transcript
+A transcript unlocks clips, previews, and editing.
+48
+9
+3
+AI researchers debate how close we are to recursive self-improvement
+“We're nowhere near the ceiling.”
+Dwarkesh Patel
+Sep 11, 2026
+48
+9
+3
+Transcript
+New episode with John Schulman , Beren Millidge and Charlie O’Neill .
+I got together with some of the most insightful AI researchers I know who are at the openish companies, because I wanted to hear the details of what's actually happening at the frontier and what comes next.
+Watch on YouTube ; listen on Apple Podcasts or Spotify .
+Sponsors
+Antithesis helps you trust your code. As agents generate more and more of your software, the bottleneck shifts from your engineers actually writing code to verifying it. Antithesis does that testing for you. Ron Minsky, who co-leads Jane Street’s tech group, told me that Antithesis was able to help his team shake out bugs in software that had already undergone heavy review. If you want to see how it fits into your development process, go to antithesis.com/dwarkesh
+Grok Bot has been a great way to hand off tasks. My team uses it as a producer: whenever my editor posts a rough cut of an interview in Slack, Grok Bot opens the transcript on its own computer, matches my notes to the exact moments they refer to, and uses a file of my preferences to suggest edits. Then it sends me its top clip candidates so I can review everything from my phone, which saves my editors from sorting through hours of footage. Try Grok Bot for yourself at x.ai/bot
+Jane Street just launched its most ambitious competition yet: design a protocol-emulator ASIC. Basically, if you have a chip you want to test outside of a live system, you should be able to connect it to your design and have it simulate realistic traffic. Jane Street wants general-purpose, reprogrammable designs that can work across multiple protocols and remain useful as new ones emerge. The most novel submissions will actually get taped out, and the winners will receive a physical copy! The competition is open until January 18, 2027, and teams are encouraged. To get started
+the template code at janestreet.com/dwarkesh
+Timestamps
+(00:00:00) – Steelmanning the case against RSI
+( 00:18:39 ) – What’s driving the Chinese labs’ progress
+( 00:28:06 ) – How will automated AI researchers be trained
+( 00:33:51 ) – Will long-horizon RL elicit AGI?
+( 00:45:24 ) – The sim-to-real gap
+( 01:00:33 ) – How much progress is explained by data?
+( 01:18:03 ) – Why is RL working so well?
+( 01:24:54 ) – Move 37 and entropy collapse
+( 01:28:32 ) – Rapid-fire timelines
+Transcript
+00:00:00 – Steelmanning the case against RSI
+Dwarkesh Patel
+Today, I’m chatting with three of my AI researcher friends from whom I learn a lot every time we talk. They also happen to be at somewhat open-ish labs and companies, so you guys can actually say things on the record. I’m joined by Beren Millidge , who is the CTO of Zyphra , which is developing open source models. John Schulman is the chief scientist at Thinking Machines , previously a co-founder of OpenAI, and led the RLHF work that led to ChatGPT. And Charlie O’Neill is head of model training at Baseten .
+The first question I have: If we’re in 2036 and we don’t have billions of crazy superintelligence s running around that have radically transformed the world, what is the most likely reason that doesn’t end up being the case? Other than exogenous political shocks, or there’s a war, or they ban AI or something. What is the most likely technical reason that 2036 isn’t a crazy alien superintelligence world?
+Beren Millidge
+There’s been a classic thing, almost like Moravec’s paradox , where we think of the AI as, “If it can do this, it’s going to be amazing.” If it can solve these hard maths problems, if it can win at chess, blah, blah, blah… Then it solves these things, and it’s not that impactful. Obviously, it’s somewhat impactful, but not everything.
+If somehow that continues, and there’s never the true spark of generalization that occurs, I think that could lead to the AI just being extremely good at everything that people put into a benchmark or put into an environment. But there’s still some persistent sim-to-real gap which is somehow blocking everything. I think this is unlikely. We do actually see this kind of generalization even from RL in practice already. But if it is just ridiculously hard to generalize meta-learning, plus we don’t solve continual learning and it’s just super hard and impossible… This would be my default scenario in that case.
+John Schulman
+I agree with that. Humans have a lot of advantages over models now. Each time a new model comes out, it’ll catch up in some of these areas. But you end up getting bottlenecked by the places where the model is weaker and where it has worse judgment, or the models can’t check themselves well enough.
+There’s this cycle that keeps repeating where a new model comes out and people are blown away and they’re like, “This is it. This is AGI.” But then they use it a bit, and it starts to feel dumb after a month or so. That cycle just might keep going. It’s hard to predict how many times it’s going to repeat.
+Right now, you don’t get explosive growth in capabilities because you still get bottlenecked enough when you’re trying to do research and engineering. Even if the model can write way more code than a person, it doesn’t make you 100X more productive. So maybe there are just more of these cycles than we would expect.
+Charlie O’Neill
+For me, it’s a question of how far off the global optimum of “a learner you could have on a chip” is from the transformer + RL, basically the current recipe. People imagine that once you have an agent which is better than all humans at AI research, even if it’s 0.1% better than all humans, then the fact that you can run hundreds of thousands, if not millions, of these in parallel — and you can run them much faster as chips speed up — is going to outweigh every other bottleneck. You’re eventually going to hit this very fast takeoff with regards to self-improvement .
+I could imagine that if we continue along the trajectory that we’re currently on with that paradigm, where it’s basically self-attention, RL, scaling up RL environments … Think about what happened with Moore’s law . We had this very nice straight line and that held for a really, really long time. But there were so many discrete discontinuities and innovations that had to happen to keep that scaling law going . The same thing has happened with LLMs . We had this pre-training scaling law , and then that was hitting diminishing returns. Then we came up with RL and solved that, and then we got this new diminishing returns curve to hit that made it keep looking like a straight line going up.
+So if it requires another one of those discontinuities to solve, I’m not sure that the current method of training LLMs with these RL environments, even RSI -targeted RL environments, would be able to discover that discontinuity. If not, we’re probably going to hit this asymptotic curve.
+Dwarkesh Patel
+But do you think the discontinuity will be harder than anything that’s come since 2012?
+Charlie O’Neill
+If we had the answer to that, we’d kind of have the ability to implement it. But maybe we should distinguish between a discontinuity which adds to the current paradigm, which is cumulative — there’s something beyond the RL that we have to discover, and maybe they’re capable of connecting the dots in that straight line — or, again, how far off the global optimum are we? Do we have to go back and throw out gradient descent and neural nets in general? I don’t think, if you continue to scale up the current paradigm, an LLM, no matter how many LLMs you’re running, is necessarily capable of discovering that if it’s too far away.
+Dwarkesh Patel
+The only hope really is if deep learning just can’t get us to an AI which can at least dominate human research and human development, including the human ability to come up with new paradigms and so forth. Or, I don’t know, maybe humans would also never have discovered the next learning architecture. But to the extent humans could have discovered it eventually… But it just seems like… If you just look at the progress that’s happened since 2012 till now, and you just continue that on —I know it’s just been powered by huge amounts of compute scaling and so forth— it would be weird if it just didn’t get to the point where it could dominate humans, at least in R&D, especially over the next few years.
+Ryan Greenblatt was on the podcast recently. He made this point that I’d be curious to get your thoughts on. You could imagine, as AIs get more and more capable, that they’re capable of making progress on simulations which incentivize getting better at not only AI R&D, but at science generally. This is a thing that all the labs are targeting and many startups are targeting.
+Another intuition pump is if you look at the Elo score of chess bots since the ’80s. There’s a very linear increase in Elo over time. But there’s this huge discontinuity as they cross the human range, from human experts always winning against AIs to human experts never winning against AIs, as this linear increase in Elo happens.
+I agree with your point that so far, AI capabilities have not been that big of a deal in terms of their end economic impact in the world. But that is because they’re slowly rising in Elo relative to humans.
+Beren Millidge
+I agree it would be very surprising. The only way for this to not happen is if, as you said, it somehow asymptotes just before. Because we’re already pretty close, in my opinion, to where we’ll start crossing the human Elo score. So we’ll need to asymptote before that. That’s the only way — in this scenario you pose where somehow we’re sitting here in 2035 and everything is normal — for this to happen, I think. The only other way is there’s some dramatic regulation on AI. This is what I see as the most likely way for this scenario to happen, actually, rather than a technical thing.
+Charlie O’Neill
+I think there’s different kinds of research. There’s research in the autoresearch style where the objective is already specified very cleanly and you’re optimizing that objective. I think everyone is picturing that if we continue along this path of making pre-training loss go down and making our environments have the reward on them go up, that’s going to lead to improvement.
+But maybe what Ryan is talking about is this much more open-ended type of science which is required for paradigm shifts, where we can’t specify the objective, and the AIs are definitely not able to specify that objective either. We have to be really, really careful about how we specify objectives for any of these things.
+Dwarkesh Patel
+Maybe your point is that the nature of the breakthroughs that have happened since 2012 is that we have found… In 2012, people weren’t saying… I’m assuming, I don’t know, you guys were there. Or at least John, you were there. But I was not.
+Charlie O’Neill
+I was in primary school.
+Dwarkesh Patel
+Actually, John, I’m curious for your wisdom of the ages, or wisdom of being in the trenches way back when. Presumably, a big breakthrough was realizing that next token prediction is the… You wouldn’t have thought that the nanoGPT speed run is the thing to be optimizing for in 2014. But now that we have come to this new paradigm, you would think to do a speed run on that and have AIs get really good at that.
+But maybe there’s a next inner loop to optimize that the AIs wouldn’t anticipate. There’s an outer loop of revenue or something that eventually should be strong, but it’s a very slow outer loop.
+John Schulman
+In fact, I remember in the early OpenAI days having the intuition that just minimizing log loss wasn’t going to get you to intelligence. Because the important bits are accounting for such a small fraction of the loss that it was going to be overwhelmed by noise. So just training a language model on next token prediction wasn’t going to learn the interesting things you want it to learn. We needed to craft better objectives that would put more emphasis on the important things.
+You can make all sorts of arguments for this. You could say, “Oh, humans probably don’t learn how to model everything in our environment. Most people can’t create a photorealistic reproduction of some kind of scene they’ve looked at. So we must need a better objective.” But then it turned out that it just worked anyway.
+Dwarkesh Patel
+As you were pointing out, the inner loop, even in current AI research, of post-training benchmarks or whatever, doesn’t necessarily translate into what users like.
+John Schulman
+Oh, yeah. The whole field relies a lot on generalization and it’s very hard to predict when you’re going to get generalization, or when you’re going to get some kind of out-of-distribution generalization . We know that if you train on the task you care about, you’re going to do better. But the most important advances are often types of generalization that we have no right to expect.
+For example, from just pre-training on this very naive next-token-prediction objective to various tasks of interest that require understanding of the input in some deep way, or learning some skill from pre-training that’s very rare and not heavily represented. Then also generalization from these verifiable tasks to less verifiable ones, this is also a type of generalization that there’s no reason a priori to expect.
+Dwarkesh Patel
+This is an interesting question, because one intuition pump you could have for why you would see some sort of singularity very rapidly — without even scaling up the inputs to AI progress that are not just AI labor — is that before every single 7-figure experiment you run, you spend an equivalent amount of compute on AI labor. So you just have automated versions of you guys spending a century thinking about what is the optimal experiment to run, doing small-scale ablations , developing literally a century’s worth of theory, going back even before deep learning.
+Before you decide what experiment to run, you’re doing extremely optimal setting up of the experiment. Then you do a century of thinking after the experiment is over, where you’re analyzing what happened and what the next experiment to run is.
+John Schulman
+If you think hard enough, you probably could have expected some of these things beforehand. There is probably some very clever way to do a small-scale experiment that’ll let you build the theory that then will generalize to the large-scale experiment. So I would expect that we’re nowhere near the ceiling of how well you can do research.
+I would imagine a future where AI is doing a lot of analysis and theory building, spending a comparable amount of compute to the amount that you’re spending on the experiments themselves, doing various kinds of analysis and building a theory around what we’ve seen so far.
+Charlie O’Neill
+I think there are really concrete examples of this when the objective is well specified. All thinking can do is update your posterior based on the bits that you’ve gotten since you formed your prior. You can’t gain any new bits from just thinking. But when the objective is well specified and there is this data sitting around, I imagine there will be this big speed-up in the current paradigm we’re in.
+A good example of this is if you got an AI to think about the Kaplan scaling laws . An AI at this point would have noticed, “Oh, they’ve just taken these intermediate checkpoints and didn’t account for the annealing , and so this is wrong.” That would have been caught years earlier. We would have cut off a year or two of progress just from that observation from an AI.
+Again, once the objective is well specified, which is lower pre-training loss or whatever, there are many, many good examples where if you just thought about it a bit more, you would have been able to cut down significantly on things that you’ve done. So muP , and how learning rate scales with model size, and realizing that model width is important in that as well. I feel like you can really back out a lot of these things and cut off a lot of low-hanging fruit. I would imagine a 10x speed-up if our thing is just, “Maximize the objective we’re currently on.”
+But I don’t see how that generalizes at all to coming up with the right objective in the first place. Just thinking doesn’t necessarily buy you the right objective in the first place.
+Beren Millidge
+I think this is really the key question for any kind of very rapid RSI from current AIs. How well can AIs generalize to learning their own objectives? To have any kind of self-propelling automated loop, we need the AI to propose objectives, optimize them, figure that out, propose a new objective, and have this not go off the rails at any point for a long, long time.
+To come back to Moravec’s paradox, there might be a case of Moravec’s paradox where we think this kind of autonomy and being self-encapsulated — so we can think of what we should do ourselves and then go do it and have this loop — is super easy because we always do this. Obviously, evolution needs to create creatures that can survive by themselves for long periods of time. And this just might be something that for some reason is really hard for the AI, in the same way that locomotion stuff is really hard but math is super easy despite being super hard for us.
+Dwarkesh Patel
+But doesn’t the time horizon increasing suggest that that’s—
+Beren Millidge
+Yeah, exactly. This is another possibility, but I agree, there’s no obvious evidence for this. In fact, the fact that our agents are now super persistent and it’s quite easy to do this is kind of evidence against this. But this would potentially be one of the reasons why we just don’t get this immediate takeoff, if this is hard.
+Dwarkesh Patel
+If you look back from 2012 till now — or maybe from when you started doing your research till now — what part of all the innovations that have happened since that time, including purely engineering ones, including purely conceptual ones, seems like the thing that would be the last thing humans would have to do before AI totally automates AI R&D?
+Beren Millidge
+Probably just iteratively asking the right questions. If you can get the AI to do any experiment, you still need to decide what experiments to do. Right now I think AIs are not very good at this compared to coding the experiment. Whenever we talk about research, they propose a bunch of miscellaneous things which are very, very tiny steps.
+Charlie O’Neill
+Or even going from DeepMind ’s approach of, “We’re going to solve intelligence by learning to play games at a superhuman level,” to one random researcher like Radford being, “I’m going to try and just predict the next token of a very wide swath of data”… Even once Radford had discovered that, it took a while before people decided to scale it up, because we had to come up with the idea of scaling laws and the fact that you could very reliably predict these things.
+John Schulman
+I would say that the last job for humans, or the role for humans that’ll last the longest, is defining the objective and deciding what we actually want. In that vein, something like deciding how the AI assistants should behave, or what it means to be helpful, or what the objective is when we’re doing RL from human feedback, is one such thing. Then later, defining constitutions and model specs is another one. Even if the AIs can do all the technical work, we’ll still have to do a lot of that and decide what we actually want.
+Dwarkesh Patel
+Alignment is the final job.
+John Schulman
+Alignment is sort of the answer. But alignment itself can be decomposed into specification of the objective, or figuring out what the right objective should be, and then actually achieving or optimizing the objective you’ve defined. I think the first one is not going to go away anytime soon.
+If I think about a post-training team and why you need a lot of people on the team, it’s just because there are a lot of different areas where you have to figure out how the model should behave. It would be very hard to automate the whole thing, just because someone has to think about how the model should behave in this area.
+00:18:39 – What’s driving the Chinese labs’s progress
+Dwarkesh Patel
+What is the story for why there isn’t huge consolidation in model providers? There are just so many things that point to centralization here. If you step back over the course of years, is there something that is going to prevent that?
+John Schulman
+I think distillation is the main thing that fights against the centralizing force. Basically anything that can be learned through RL can be distilled very easily, because it’s a small number of bits. It’s something that you can learn from a small amount of data. If you can get trajectories from the model that show a behavior, you can easily distill it. I think distillation is one of the things that fights centralization.
+There is also a possibility that there’ll be company-specific models, that it’ll be possible to learn from deployment and have a company continually improving its own model. Such a system could be provided by the current oligopoly of model providers or some other currently smaller company. But I think that’ll change the game a bit.
+Beren Millidge
+I also want to point out that continual learning, honestly, doesn’t stop distillation. Even if your model is improving every day, people could be distilling it every day. The loops could just operate at the same pace.
+Dwarkesh Patel
+That makes sense. So copying model behavior… I guess you need to know yourself what the right distribution to prompt is in order to get the relevant model behavior?
+John Schulman
+Oh, yeah. For just distilling with supervised learning , the prompt distribution is extremely important. It’s very non-trivial to distill a model, even if you have full access to it and have the chain of thought and everything. It’s non-trivial to distill all of the useful capabilities from it, because you need to prompt the model with something. You need to prompt it with realistic prompts. You need to have a really wide distribution of realistic prompts.
+One thing that’s been coming out recently is that some of the Chinese companies are probably using these router services which are designed to allow people in China to use the US frontier models, which would otherwise be blocked in China. There are all these router or proxy services that allow people in China to use these models, mostly for coding. And these router services are collecting and selling some of the data. This is a very useful data set for distillation because it gives you the perfect prompt distribution.
+Beren Millidge
+I think this is one of those things where AIs help a lot. If you actually look at the frontier pipelines, or the Chinese models that they’ve actually put in their papers, they get seed prompts from somewhere, which is some combination of humans and this kind of data. Then they synthesize a vast coverage from those seed prompts using their existing models or the other frontier models. You can automate an awful lot of this prompt distribution gathering and environment creation. Humans need to provide increasingly fewer bits as the models get better.
+Dwarkesh Patel
+But it still seems you’re bottlenecked by having a service which has users going through it.
+Beren Millidge
+Not necessarily. That’s obviously very helpful, but theoretically, you can just think about what users want.
+Dwarkesh Patel
+But the whole point is that the user says, “Make me an application like this. Oh, that didn’t work. I actually want you to make this new feature. But actually, let’s step back and do this other thing.” Capturing that whole trace is the thing. Or to the extent you could have done that anyway, then you just have RSI.
+Beren Millidge
+Ultimately, if you have this fully automated loop, that is basically RSI. The AI is deciding the data, it’s deciding the training. That is the loop. But it depends how much human information you need. At some point, if you’re just like, “I want traces that look like this,” you prompt that to the model. The model will be able to come up with a pretty good approximation.
+Dwarkesh Patel
+But what if you want to do, “Make me a really good politician,” and then it has to anticipate de novo how a discussion in the Senate halls would go or something? I just feel like there are going to be a lot of things which are—
+Beren Millidge
+Ironically, this is actually easier for the distillers than the frontier labs. The distiller’s just like, “I want a good politician.” They go to the frontier model. The frontier model already knows how to be a good politician, so it just generates those traces. Whereas if you actually want to build the first model that does this, you have to actually somehow get data on what politicians do every day and build that. It’s actually much easier to say, “I want something like this,” and then get the AI to produce a billion variations, than to actually create the thing like this to begin with.
+Charlie O’Neill
+I think you can actually make a really concrete prediction based off this observation that the Chinese labs have this router data. The thing that started this originally was I was saying, “Isn’t it weird how Sonnet 5 and Opus 5 are almost objectively worse models than GLM-5.3 and Kimi K3 , even though they’ve had access to not only distillation but logit distillation from Mythos ?” The counter was that the prompt distribution really, really matters. You need to see what users are doing so that you can distill these behaviors and things in.
+I think the prediction from this is that the frontier labs don’t necessarily have much of an advantage, if at all, in RL environments now. Yes, user distribution matters for general behavior and so on, but the best measure of a capability is the very, very hard RL environments you’ve made at the frontier. If you have access to those RL environments as Anthropic, and you have access to logit distillation, and you’ve still made a worse model, then maybe—
+Dwarkesh Patel
+Then real-world deployment matters more than the environment. That’s really interesting.
+But they had to incentivize those capabilities in the first place in Fable , or the frontier model. So it’s weird that they can’t incentivize them again with a smaller model or something.
+Charlie O’Neill
+Maybe we’re just in this weird uncanny valley where trying to copy that frontier model too much, the student-teacher gap, whatever it is, is just too large. People have made this point with Opus. The difference between Opus 4.6 and Opus 5 is that Opus 5 really feels like it’s got this AI-as-a-judge checking every possible thing it’s done. That’s why it uses so many tokens. It tries to think about all these things, but it doesn’t necessarily have the big model smell of Fable to know when to stop doing that, or when’s a good path to go down.
+Dwarkesh Patel
+The reach exceeds the grasp.
+John Schulman
+I would offer a slightly different hypothesis. I would say there are a couple of different axes for the environments you can create. One of them is difficulty and the other is realism.
+It’s comparatively easy to create a lot of difficult environments that involve doing a much more complicated task or doing something that requires a lot more cleverness. You could say this is the benchmaxxing distribution, because a lot of the most prominent benchmarks just involve doing some very hard puzzle-like task that’s easy to verify. Then there’s the realism axis, where you want the model to be good in the realistic coding agent setting where there’s multiple back-and-forths with the human and there’s multiple objectives.
+The labs who are crafting the model behavior for the first time need to push in both directions. To get good model behavior, you need to really push on the realism axis and have rubrics or some kind of human feedback that’s informing the reward function you use there. But if you try to do distillation naively, you end up just matching the teacher on the benchmaxxing distribution. If you don’t have enough of the environments that really exercise the capabilities in these trickier realistic settings, then you’re not going to get those into your student model.
+I think maybe one thing that’s happening is the big models generalize better from the tricky narrow tasks to these more realistic tasks. If you have a really good realistic prompt distribution for distillation, you can match the big model really well. But if you only have this distribution of easily verifiable tasks, then you can match the big model on all the benchmarks, but you do worse on this broader distribution.
+That might even explain something about the smaller Anthropic models, like Sonnet 5, though it’s hard to predict exactly what they’re doing to post-train those models. It could also be that they’re always changing their post-training stack, and they just got a few things wrong in some of these models. I don’t know… they turned something up too high and created some quirks that people really don’t like. It’s really easy to screw up post-training in some way that doesn’t show up in benchmarks.
+Beren Millidge
+Just one other very basic point is that the frontier AI labs buy all their data from big data companies. The Chinese can also just buy the same data from data companies .
+Dwarkesh Patel
+And they are, right?
+Beren Millidge
+And they are. Exactly. There’s a lot of people being annoyed about this, but if they have exactly the same data and they can buy that, they can also distill. It means it’s quite easy to keep up, really.
+00:28:06 – How will automated AI researchers be trained
+Dwarkesh Patel
+The other question I had is how the first models that are capable of automating AI R&D will actually be trained. There’s a toy version, which is this thing that Ryan was talking about. You just have GPT-8 try to build GPT-3 size models that are really good at inner loop type challenges: beating video games that require continual learning, or just getting to a certain loss with the least amount of compute, et cetera.
+But John, I think you had an interesting point that maybe that’s not the way it actually will happen in practice. So I’m curious, by the point at which you have AIs that are actually capable of automating AI R&D, how are they probably trained?
+John Schulman
+We’ll probably do some combination of learning from human feedback to absorb the researchers’ taste, and just creating a lot of practice environments which involve doing multi-step research projects. People will in practice do some combination of those two things and, each iteration, patch whatever seems to be most broken in the last iteration. Researchers will be using the AIs a lot and will notice that they have some consistent weaknesses. Those things will either be patched by collecting human feedback or creating environments.
+Charlie O’Neill
+Maybe a useful way to think about this is how much of the lineage we roll back and then let self-play from there. In the limit, you’re picturing just giving them a GPU and maybe neural nets or something and saying, “Okay, figure out how to train a model to do these particular tasks.” The way it currently works is we go up to the very edge of the lineage and say, “Okay, here are the bugs Anthropic has found in their training stack in the last few months. We’ll turn those into environments.” You need to train and get better on the frontier. So you obviously lock in all the previous history of the lineage.
+But you could imagine a world in which you roll back to before GRPO or something. Then you have environments which try to get it to discover the best form to RL models on, and then maybe you roll further and further back… But I think we will still be so compute bottlenecked that people will just keep staying at the frontier and essentially diffing the bugs and whatever improvements they found since the last model version, turning those into training environments.
+Dwarkesh Patel
+Which is also really good for having non-stale, new data between model generations. Again, this is basically continual learning within the AI lab, of distilling the last three months of AI research progress through environments and RLHF-type stuff back into the model itself.
+Charlie O’Neill
+And it is distilling. That’s maybe why some of us feel like it’s asymptotic. You’re always just trying to get the last three months of progress. That progress is being contributed to by AIs, of course, but it also still has humans in the loop. It feels like you’re just constantly inching closer and closer to what the human researchers are finding and capable of doing.
+Beren Millidge
+The one thing I will say, though, is obviously if you’re just distilling on trajectories, you can never go above it. But environments can go quite a far way above what a human can do. It’s very easy to design an environment that no human can solve, but the AI can obviously still try and solve it. That would be the path to go ahead of just what the human AI research is.
+Charlie O’Neill
+Do you have an example in terms of RSI, of what kind of training set?
+Dwarkesh Patel
+Nanochat speedrun, but doing it even faster than a human speedrunner.
+Beren Millidge
+I feel like in AI research especially, it’s very easy to define goals. You could say the loss needs to be 1.3 or something, and no human can get that now. But that’s an extremely measurable, verifiable task. If the AI gets that, then great.
+Dwarkesh Patel
+Or I don’t know, building a 100 million parameter model that beats Minecraft. That’s maybe too easy, but beats a much more complicated game or something.
+Charlie O’Neill
+Isn’t it crazy that 100 million parameter models beat Minecraft ? We’re calling that too easy? Imagine if you said that five years ago.
+John Schulman
+I would say a lot of research is not exactly like that, though, where it’s hill climbing on a well-defined goal. It’s more like, here’s an intuition we have about some way models should be better. We also have some idea for an algorithm that seems to go a little bit in this direction. So let’s come up with a task that is designed to show signs of life on this approach, and see if we get those signs of life. If we do, we can make successively more realistic versions of the task.
+Dwarkesh Patel
+It’s a lot more guided by intuition. The inner loop is to test for that intuition rather than the test itself leading to the insight.
+John Schulman
+Right. You’re not directly optimizing for the eventual objective you care about or the practical production objective. You’re relaxing your objective a little bit. You’re saying, “Let’s relax on the realism axis a little bit and find some methods that actually work, and then try to get back to realism later after the method matures a little bit.”
+There’s also research that’s more oriented towards explaining things and developing a theory. Often we don’t have mathematical theories in machine learning that are that predictive. But we have a lot of more informal theories for what’s going on.
+Beren Millidge
+Presumably the models will be trained on some combination of all of these tasks. Some will be very easily verifiable, some will be LLM-as-a-judge or just ask the human, “Does this look reasonable?” The hope would be that these would all generalize to these much harder, more vague, fuzzy kinds of tasks. It probably will to some extent. Whether it generalizes enough that the loop can become self-sealing without humans being in the loop at all is unclear.
+00:33:51 – Will long-horizon RL elicit AGI?
+Dwarkesh Patel
+Maybe taking a step back. Here’s what it seems to me the plan for AI research going forward is. You tell me if you think it’s going to work or if you agree with this characterization. The bet is that we will scale up RLVR training across millions of diverse environments, across hundreds of different kinds of domains. What will emerge at the other end is an agent which has learned these basic skills — or less than basic skills — around being persistent, being able to triage information and context, eventually having end-to-end optimization of working with other agents and things like that.
+Such an agent will be very sample efficient within the context —you’ve done research on how you scale up in-context learning to make it arbitrarily long, but you keep scaling it up. And what comes out the other end will be something that basically functions like a drop-in remote worker over the course of a week or a month.
+First of all, do you agree that that is the bet the labs are making? And second, is that enough? Basically learning how to learn within these simulacra within a data center, and then getting deployed into the real world, but not actually learning from real-world deployment… only learning these meta skills from the simulated environments in the data center.
+Charlie O’Neill
+I think it’s now hard to separate out how much of the labs’ effort is going towards direct RSI versus making generally intelligent models that they can continue to deploy to collect revenue to fund the next big training run.
+For the latter, yes, that’s probably just the bet they’re making. It’s very clear, the pattern of where these environments are going over the last few years. Anthropic’s lineage of environments is a very clear example of this. First, we just focus on coding and we’re going to get really, really good at that. Then, from the task horizon that we’ve got from coding — which is probably the lowest-hanging fruit in terms of data available on the internet to create environments, and their own internal stuff that they can turn into environments — then we’re going to generalize.
+We’re going to go up to finance next, and literally just so much Excel data and all that sort of stuff in the RL training. Then it’s PowerPoints. It’s this long tail of the working economy. That seemed to work really well. A lot of the other labs, even the open source labs, have now realized that that was the correct bet to make.
+Dwarkesh Patel
+But what is the implication from that? When I had Dario on the podcast, the thing I asked him was, if you truly expect models which will be human-like in their ability to learn on the job, why would you try to bake in all these skills of working with PowerPoint or something? Wouldn’t you just expect the model to be able to pick that up while it’s deployed?
+There’s multiple different explanations. One is just that we expect models to get there soon, but they’re not there yet, so why not amortize these skills into the model training? Another is that we’re not concentrated on making it really good at widely deployed work. We just want it really good at RSI. This is just a way for us to get revenue so that we can pour it back into a model that is actually really good at doing RSI development. Then once the singularity happens, the thing that comes out the other end will be really good at all the things which seem like bottlenecks to the current generation of models.
+John, I don’t know if you have takes on how one should construe why there is so much task-specific knowledge in these models if the path is this kind of generalization.
+John Schulman
+If the models were good enough at learning in context, then in theory, you wouldn’t need to train them on finance. They would just be able to read all the books on the fly and figure out how to do everything in the appropriate jurisdiction. You could argue that you need to do a lot of this domain-specific training just to make them more efficient. Even if they were smart enough to figure this out on the fly, you still might want to do a bunch of RL and bake all these intuitions into the weights , so the model would be more efficient at runtime.
+In practice, it does seem like model providers are going domain by domain and trying to strengthen the models in the highest value domains. I’d say that that’s one of the answers to why the models have gotten so much better. It’s just because the model providers have covered a lot of the high-value domains and the most common types of skills.
+Beren Millidge
+Another thing is just that it’s not that expensive to do both at the same time. The models are massive. They can easily afford, in terms of their parameters, to learn everything. There is likely some transfer. Even if finance is not specific, the information is important for RSI. Just the general meta-learning of how to figure out what’s important, how to have taste, how to do long-horizon work is potentially generalizable.
+There’s not that much RSI data in the world as well. It’s hard to generate and requires a lot of effort. So if you can amortize in this other data, you get some transfer from it. You already have masses of compute and masses of parameter space, so why not do that as well as, obviously, the direct commercial intent of selling a model?
+John Schulman
+I’ll add that there’s one question about whether this current paradigm of doing sim-to-real will be the dominant one forever. You look at what the real-world tasks are like. Then you try to create a bunch of environments that can be simulated in the data center, and you can do RL on them. Obviously, this has been very successful. But it has a lot of weaknesses, because a lot of things are just hard to simulate, especially if they involve interacting with a bunch of humans in real time. So there’s some question about whether sim-to-real will be the dominant framework forever.
+Beren Millidge
+I think sim-to-real has to be the dominant framework while sample efficiency is low, because right now you need thousands and thousands of interactions with the humans. No human is going to sit there and be in the loop of RL training. So we have to simulate that now to get the samples you need. But obviously, if sample efficiency improves a lot, you’d expect learning from deployment to become a much bigger part of it.
+John Schulman
+Though there are also other things you could do. You can learn off-policy , so you can take all the traces, and even without resimulating everything, you can potentially learn something from them.
+Dwarkesh Patel
+I want to ask more about this, because it’s weird that you have 50% of compute that’s spent on inference that is not directly helping the model become better. One of the key advantages you’d expect digital minds to eventually have is that, unlike a human who gets to have 50 years of real-world experience, a model will get to experience, through all its instances, millions of years of deployment across all kinds of economically relevant work in the economy. Right now, that data is just not, in a meaningful sense, helping the model get better.
+It seems so obvious that eventually models should be able to learn from this data. Once they do, you would have something that almost feels like a widely deployed intelligence explosion, because the model is assimilating so much information across all these deployed instances. When do you expect this kind of hive-mind, crazy shit to start happening?
+Beren Millidge
+I think broadly, at a very basic level, this is already happening… just in the next generation of models. Right now, you can obviously take your deployment data and put this in the pre-train or the mid-train of future models, especially if you do some kind of filtering or some kind of judgment or annotation or synthesization of that.
+Dwarkesh Patel
+How much do you think that explains the generation-over-generation improvement?
+Beren Millidge
+I think it explains quite a bit. I don’t know whether the labs do this, because theoretically, they claim not to train on people’s data. But the Chinese 100% do. They definitely get this advantage. This is basically what distillation is. They take the models, they get some fraction of their deployment data by pinging the model, and then they train their next generation of models on it. They can certainly do it on their own models as well. There’s no reason not to whatsoever.
+Charlie O’Neill
+I completely agree with this. If you zoom out far enough, this is definitely happening. What we’re all picturing, the holy grail of continual learning, is this very organic, live loop of an individual model getting an experience and live-updating on the spot and learning from that. A lot of things break when you zoom into that level of granularity. But the big labs are doing this. The closed models are doing this.
+There are also early signs of life of people using open-source models doing this at a much faster cadence. A good example is probably Composer . Harvey ’s doing the same thing with legal agents. You have some sort of model, and you are getting very specific environments from the data that you have for that particular task, and things that users are complaining about, and all the feedback that you’re somehow extracting from your specific deployments. A lot of these companies have the advantage over the big labs in that they can use this data really, really well.
+Then they will create environments. They will do a big post-train of Kimi K3. They will go deploy it. They might do some online learning as well, like Composer did online… basically REINFORCE for a long time.
+There’s still a human in the loop. There’s still a human saying, “Okay, these are the signals we care about. Here’s how we’re going to create environments from the data that we have.” It’s still a longer cadence than maybe the one that you’re thinking of, but it really is happening. Eventually that loop will become faster and faster.
+Dwarkesh Patel
+The Composer thing is interesting because this is where, in Cursor , people press Tab or they don’t press Tab on the next completion that the model suggests. Based on that, every single day, Composer gets better at predicting the next—
+Charlie O’Neill
+That was the old Tab model. They actually did the same thing not just for the Tab model, but for the actual generative model.
+Dwarkesh Patel
+Oh, I see. Interesting.
+Charlie O’Neill
+It’s hard because when you do online reinforcement learning , you don’t have groups. You just have one user saying one thing, and then you get one rollout. So you have a big variance-reduction problem.
+Cursor’s fuzzy answer to this was, “We have very good heuristics which are able to estimate how much better than average this response was, or how much worse than average this response was.” Then they would do this big REINFORCE update. Their solution to whether it got worse or not was that if it improved on CursorBench , they would deploy the new model every five hours. If it didn’t, they would throw that version out.
+John Schulman
+I think your biggest problem is actually just not knowing what the reward function should be for natural data. If you use some kind of superficial signal, like did they accept the edit, that might get reward-hacked in some way.
+00:45:24 – The sim-to-real gap
+Dwarkesh Patel
+But isn’t this a bigger issue with the sim-to-real thing, where the longer-horizon tasks get, the harder they are to simulate within a data center? It seems to me that even in coding, we’re already getting to the point where there’s not some year-long coding task that doesn’t eventually require you to talk to a client or interact with the company or interact with users.
+If you think about the gamut of things we would want AI to be capable of, eventually superintelligence should be able to run a business, or start a new business and make it profitable, or have a profitable day trading in the markets, or win a court case. These are all things which are very hard to simulate in a data center. An inherent part of the learning there is interacting with the real world.
+Maybe they learn how to get better at these things from the transfer between sim-to-real. But alternatively, maybe you do need weight updates from these kinds of interactions in order to get better at them. If that is the case — if transfer isn’t strong enough and you do need weight updates — then the fact that the models are quite sample-inefficient is maybe a deeper problem.
+The reason I’m curious about this is that by default, I don’t see how you don’t get some kind of crazy recursive self-improvement within the next 10 years. But the one reason why that might not happen is that in terms of the sample efficiency of weight updates, models just seem way far behind humans. They’re plausibly a millionfold behind humans in terms of how much data a human sees from birth to adulthood versus how much a model sees from cold start to finishing training.
+This is all to say, first of all, is there going to be good transfer between simulations and the extremely long-horizon, really complicated real shit that we want the AI to do in the real world? And if not, does that really mean that the lack of sample efficiency in these models comes to bite us?
+Charlie O’Neill
+Maybe the way I’d break down the two types of tasks — the ones in which models get good and the ones where models will still continue to struggle — is whether the task is cumulative, or whether you have this non-stationary distribution where you have to keep learning and relitigating a bunch of stuff.
+An example of a cumulative task might be RSI. It’s theoretically possible to have a less-than-a-million-token Python file which from scratch trains a model that is capable of recursive self-improvement. Every discovery that you make is a line in the sand that you hold. If it’s true that for RSI we don’t need to discover a new attention variant or whatever, then once you’ve discovered attention , and once you’ve discovered mixture of experts , and once you discover GRPO , you just add that to the training stack and that’s there.
+A good example of this is 5.6 Sol training, 5.6 Terra, or whichever one OpenAI told us it trained. It didn’t have to go back and discover attention. It basically would have called a bunch of scripts, like pre-training.sh and post-training.sh, and just done that. That’s an example of a cumulative task.
+I think the real world — and the reason people are thinking so much about continual learning — is not really a cumulative task. Imagine in a law firm, you have an agent acting as a legal associate. That’s a very non-stationary distribution. You have to be able to fit in your context all the relationships between all the important people at that company, which are also changing all the time. You have all these implicit ways about how things are done, where to find information, et cetera. That’s not as clean an example of a cumulative task as RSI is.
+I think there will be this breakdown between tasks. But if the labs realize that — and they do believe that RSI is cumulative in the sense that we don’t need to go back and discover some brand-new architecture or whatever — then maybe more and more effort and compute gets focused on that versus the other tasks.
+Dwarkesh Patel
+It’s so unfortunate that RSI happened to be easier than being a paralegal.
+John Schulman
+I would say today’s models are weaker than humans in a lot of different ways. Some of them might have to do with sample efficiency in a certain regime. In some regimes, models are very sample-efficient, like learning in context. But then there might be some medium-length regime where they’re less sample-efficient, because humans can do some kind of weight update more efficiently than models. I think being less sample-efficient in certain regimes might be one of the sources of weakness.
+But I think there are other sources of weakness that are completely different from that. For example, having lower diversity of thought than humans, or being bad at certain kinds of long-horizon judgments. I think a lot of what people call taste is something about behavior that works in the long run, and that people have realized works in the long run. Not everything, but some aspect of taste. Especially for something like software engineering, I think a lot of taste is “What are the systems that are going to be maintainable and work well in the long run of this project?”
+There are a variety of weaknesses of models which limit RSI along with other things. Some of them are related to sample efficiency, and some of them aren’t.
+Charlie O’Neill
+Maybe an interesting thought experiment is this. Let’s say you were able to give a model a context window of a trillion tokens, or whatever you would have needed to fit in your experience prior to, let’s say, RLHF. It’s got all that experience in the context window, and it has the same sample efficiency and in-context learning ability as it does at a million tokens. Do you think taste is then solved? Would it be able to make the same judgments that you did? Or is there something fundamentally missing, apart from just a longer context window with the same sample efficiency?
+John Schulman
+It would have to be trained to learn from that context. Either it would have to be trained to learn the right update to make from that context, or it would have to generalize.
+Charlie O’Neill
+So you don’t think you can just dump it all in, your whole life, your research experience?
+Beren Millidge
+You still need the data to train it on long context. Even if you could theoretically get a trillion context, you would need a trillion lengths of data to train it. Right now you have 10k context you can’t just dump in a million.
+Charlie O’Neill
+Yeah, I’m just asking if you had that.
+Beren Millidge
+In theory, I think, yes. This really just comes down to the question of how meta-learnable taste is from shorter-horizon episodes. I feel like there’s no obvious reason it’s super long, because humans somehow developed taste without having many long episodes. We don’t live to be 10,000. We develop pretty quickly.
+If you think about even a PhD, the difference between a first-year PhD student and a final-year student or postdoc, that’s five years maybe. They’ve only done maybe 10-30 research projects in total. But somehow they develop taste quite quickly from a relatively short succession of small things. Theoretically, it’s possible to develop it like that.
+The AI obviously will have vastly more experience in which to develop taste, to meta-learn it. Then the question is how well that generalizes to really long-horizon things, which I think is really unsolved at this point. We don’t know.
+Dwarkesh Patel
+Going back to this question, eventually there should be a regime where AIs are learning a ton from each individual instance of deployment that they have. Currently you could say there’s a fuzzy meta process by which models do improve from deployment. But I feel like it’s a very weak feedback loop. Do you see this on the horizon, where there’s this hive mind kind of learning that’s very rapid, and if so, how exactly does it happen?
+John Schulman
+I would say that whether we get a hive mind that learns from all of its deployment experience is in a big part about incentives, rather than being a technical question. Companies aren’t going to want to have the model provider learn from all of their deployment, because that might just reduce the advantage of their business.
+Charlie O’Neill
+I think the economics of this will pressure, not necessarily weight updates to one big common
+d model, but modules that get subbed in. A very obvious example of this is a LoRA , but it might be something else.
+There’s been a lot of work to try and fit an arbitrary context length into a fixed size. This is all the linear attention stuff. And cartridges , which are essentially KV caches trained to be very, very compressed to fit in a lot of information. That’s another example of something that companies may be willing to sign up for, if that gets subbed into the model and it’s not actually changing the base underlying model itself.
+There are many different versions of learning from your data in real time. The latter ones are not really helping the big labs, because they are just these modules. But I think the economic pressure will force the labs to go down that path first before they can embark on this...
+Beren Millidge
+Which economic pressure, though? I feel like even if you have a bunch of cartridges or LoRAs or whatnot, you can still just take all these traces and dump them into the pre-training of your next generation of models.
+Charlie O’Neill
+Yes. It may be a more indirect form of learning that the big labs are getting. That’s obviously still really valuable to them. But I can’t imagine a world in which we start off with, “We’re going to just directly train this one big model on all the exact data that we’re getting.”
+Beren Millidge
+No, I think it will definitely go through stages, because this is assuming there’s one discontinuous event where suddenly we fix weight updates continuously. In practice, I think it’s much more likely to be that the cartridges and stuff allow you to specialize in deployments. Then you generate traces, you put that in your model, and three months later you come out with a model which is better at this stuff. You specialize it again, you consolidate it again, and then eventually we’ll just make this leap faster and faster.
+Instead of releasing a model every three months, now it’s every week, and then every day, and then every hour, at which point we’ve basically solved it.
+Charlie O’Neill
+I think this is a good point as well, because you asked how far off the current paradigm we are from being able to do this. We’ve done a bit of research into this, and people have done a lot of research. At a really large scale, when you wash out enough noise and you have large enough batches, this outer-loop process of putting data into mid-training and creating our own environments does work in some sort of continual learning regime.
+But the problem is, when you zoom in close enough at a micro level — I’ve got one model and I’m trying to update it again for a law firm or something, and I’m trying to do that very continuously with a relatively small amount of data — all the methods kind of break down a bit. If I SFT the model on just successful traces, off-policy or on-policy, eventually in the very iterative regime, when you’re doing hundreds of these micro-updates, you see catastrophic forgetting . You see forgetting of previous information learned on top of the base model that was much earlier on, and you see degradation of general capabilities.
+On-policy distillation seems to push this horizon out a little bit, but it still eventually succumbs to the same thing. RL is good at getting capabilities in, but it’s not as good at getting knowledge in, this very explicit knowledge of, “Ah, okay, this person does this at this law firm, and this is a very specific process we find.” You have to pour in a lot of compute to create the right environments to get the knowledge in with RL.
+Dwarkesh Patel
+Do you think the fundamental issue here — why you get worse at these other skills or there’s forgetting — is fundamentally an issue of capacity or an issue of techniques?
+Charlie O’Neill
+A little bit of both. I think SFT and even on-policy distillation can be way too destructive. The reason RL is so nice is because it changes a very, very small amount about the model. There’s a lot of evidence for why this is the case. It just tweaks it in this very, very small loss valley to get it into the right point. But that also then limits what you can do with RL, how much you can actually change the model.
+Dwarkesh Patel
+So you’re saying the reason this isn’t a winner-take-all, potentially, is that it is just very hard to distill that much information into the base model?
+Charlie O’Neill
+Without ruining something, in an iterative fashion.
+Beren Millidge
+It’s easy to distill it into a different base model. This is where I think it’s mostly technique. It’s definitely not that there isn’t capacity. If you had some model with all this data, and you take literally the same-size model and pre-train it from scratch with all of the stuff in mid-training, it will be better. I think that’s a lot of what’s happening today.
+There’s very much a bottleneck that stops us from just keeping training the same model forever, versus just getting all the data from the old model and training a new model from scratch. This is exactly as Charlie was saying: some combination of plasticity and catastrophic forgetting. If you just naively train on non-stationary data, because you’re adding new data as you go, this is messing with the data distribution, so the old stuff is just forgotten. We don’t really have good methods to stop that from happening.
+Dwarkesh Patel
+So maybe in the limit you’re just bottlenecked by retraining the model from scratch with all this new information.
+Beren Millidge
+Yes, which of course is very expensive. Training a model from scratch is expensive.
+Dwarkesh Patel
+But you’re going to do that anyways.
+Beren Millidge
+Not necessarily. Maybe eventually, if you have continual learning, you never train a new model. You just have a model and it keeps learning and expanding.
+Dwarkesh Patel
+But there might be some deep technical reason why that’s very difficult.
+Charlie O’Neill
+That’s the question. I think we have pushed back how much from scratch we need to do. It is definitely possible now to take the pre-trained base and do very good mid-training on top of that, kind of continuously, plus some RL from different checkpoints that are later on in the training. That’s looking more like continual learning, but it’s certainly not the case of taking the most recent model, applying a couple of very small updates, and iteratively never losing anything.
+Dwarkesh Patel
+Sorry, but I’m a bit confused, because isn’t this literally what happens during training? During post-training or something, you have a model that’s already gone through so much training, and then you distill some fork that’s been further RL’d. Isn’t that literally what happens?
+Charlie O’Neill
+But it’s still at a large enough scale, I think, that you’re washing out a lot of the noise, and you’re not just focused on one distribution, which, as Beren said, is the issue. If you’re just focusing on one task—
+Dwarkesh Patel
+But in the eventual regime you’d be doing… There are billions of deployed instances. You’re learning from all of them at once, so hopefully there’s some washing out of noise from that.
+Charlie O’Neill
+Maybe at that scale, yeah.
+Beren Millidge
+As Charlie was saying, you can definitely do continual mid-training for a long time, and you can roll back to a checkpoint and give it new mid-training data. But at the same time, you can’t do this indefinitely. If you just keep continually training the same base forever, it asymptotes at some point. You can’t just learn new stuff in that base. This is why people end up training new bases. Otherwise you would just keep mid-training the same base forever.
+01:00:33 – How much progress is explained by data?
+Dwarkesh Patel
+Let’s talk a bit about data now. I’m generally interested in this question of how much of AI progress is just explained by data progress. That doesn’t mean it will necessarily be hard to automate, but that’s a separate question. Is there some data distribution which, if you trained current architectures on it, would result in a superintelligence that totally dominates human experts across every single field?
+Charlie O’Neill
+Are we talking about pre-training plus post-training data, environments as well? I think the existence of this is obvious. It’s just whether we can create the right environment to get there.
+Beren Millidge
+In the trivial case, we could just train it to output the Python file which trains the actual superintelligence. Just have that memorized in the weights.
+Charlie O’Neill
+Yes, there’s probably a ladder of RL environments that is possible to construct such that you would get an AI researcher which is at least as good as a human researcher. But the effort to climb each successive rung grows kind of exponentially. Those are the two things you have to trade off against as to how fast we’re going to hit that final rung where it’s better. I think that’s fairly clear.
+We’re still relatively early in RL environment creation. There are a lot of asymmetries that we exploit in order to create good environments. One of the asymmetries which we’ve talked about before is that there are environments where it’s easier to go backwards than forwards. What I mean by that is, it’s very easy to define this complex data-generating process, and this is the latent variable you keep hidden from the model. You can generate arbitrarily complex environments, and the model has to do a lot of irreducible token spend and irreducible work to figure out what that data-generating process was.
+There are asymmetries in terms of injecting information from the real world. Anthropic finds a bug through tens of thousands of humans and LLMs combined, and turns that into a very, very neat environment which a single LLM could theoretically find within a few million tokens. There are all these asymmetries which we’re cherry-picking, and we’re counting on this kind of task-horizon generalization.
+But I think it’s just going to hit diminishing returns at some point, diminishing returns in how hard it is to create those environments in the first place, coming up with them, because you can’t necessarily just have these processes where it’s easier to go backwards than forwards. You actually have to sit down and construct something that looks like a long enough time horizon with humans, and it’s going to be a really complex task to create. Then there are also going to be the compute and time bottlenecks for the agent to actually do those tasks. I think you’re just going to start seeing this curve flatten out.
+John Schulman
+I saw something about how someone fine-tuned the Talkie model , which is only trained on data up to 1930, on modern coding agent data. It did better than Claude 3 Opus on SWE-bench . So this model that has no knowledge of code whatsoever can be fine-tuned on a moderate amount of data and behave better as a coding agent than this much larger pre-trained model, which is pretty crazy. It kind of shows you that once you have an example of the right expert behavior, it’s actually surprisingly easy to copy that into a relatively weak model.
+Charlie O’Neill
+But a counterexample to that is a paper recently where they trained a model up to fifth-grade maths, and also primary-school English and stuff, so it was a decent language model. They tried to RL it to do late high school and college maths. The gap was just too large. They couldn’t get it to climb at all. But if you did successive rungs of year 7 maths and then year 8 maths… and so on, you could obviously climb to year 12. Again, it’s just what is the distance between the rungs on those ladders, and how hard is it to create?
+Beren Millidge
+This just comes back to the RL signal problem. RL is not very good at exploring right now. If the model can’t get it in 128 rollouts, it’s very unlikely to get signal to progress. This is why in RL we need curricula , whereas in pre-training we don’t, because that’s not a problem for pre-training at all.
+Charlie O’Neill
+Again, pre-training data is different to post-training data. I imagine as we continue on, humans will be involved less and less, but that doesn’t change the fact that you’re bottlenecked on how much signal you can extract from the real world.
+There’s a lot of signal in the world, and that’s true. There’s people doing spreadsheet tasks, there’s people doing legal tasks and all this sort of stuff. But at the capability frontier of where the models are at now, how many bits in the world are actually really relevant to improving the model’s capabilities? How many new maths problems are being solved that are just beyond the reach or grasp of the current models? How many new coding problems are being created or solved that are beyond the reach of the current models?
+I think that’s why the diminishing returns kick in, because even the world as a whole is not giving you the bits that are useful for tipping you into the next basin of capability.
+Beren Millidge
+I totally agree with this. It’s really a question of where the signal is coming from. In pre-training, the signal is already in Common Crawl . For the tasks that you care about in pre-training, the problem is not getting signal at all. It’s filtering out all the noise that exists. That’s quite an automatable process.
+But as the models get better, as we enter mid-training and post-training, the signal just doesn’t exist anywhere in the original data we have. No amount of filtering will get this. There’s no hidden proof of a Millennium Prize problem sitting in Common Crawl that we can just filter until we see it.
+At that point, you have to get bits some other way, either from humans directly, asking them to write out their reasoning, or by creating environments where humans decide what environment should be created and what the objectives of these environments are, or some kind of training on the human data that exists in deployment. You have to get the bits from somewhere.
+Dwarkesh Patel
+There’s a question of how much of the progress in pre-training is being driven by data. I did this investigation with Jerry Han , who’s a student at Princeton, where we trained all the recipes from 2019 till now pairwise with all the data sets from 2019 to now. You’re training GPT-2 on the newest data set, like Ultra-FineWeb . You train Delphi , which is the newest open source training recipe, on the Pile or some old data set. You do the whole grid. You see, getting to some level of capabilities, how much less compute does it take, across this grid?
+You see that the data seems to explain something like a 12.0x compute efficiency gain, but the architecture improvements explain something like a 3.7x compute efficiency gain, at a very small scale. To the extent that that is true at large scale — that most of the pre-training compute efficiency gains are coming from better data — how much can that continue? Can you keep filtering data more and more and building more and more synthetic data ? Do you have a sense of how much this kind of pre-training progress can continue?
+Charlie O’Neill
+My prior is that, again, the low-hanging fruit is somewhat exhausted. We got the internet as this big block, and it’s not like the internet is necessarily growing at the same rate. All the useful stuff on the internet isn’t growing at the same rate. We’ve probably got a bunch of 0.1% loss drops to go, but definitely not as many as have currently occurred.
+But it’s also really interesting that you find this cumulative 33x improvement across both. I think it was Epoch or someone who estimated 3x a year since 2019, which would imply something like 3 7 , over 2,000X improvement. So where’s that missing 100x or whatever coming from? That probably gives you a good signal of how much of this is post-training.
+Dwarkesh Patel
+I think the explanation has to be that a lot of the compute efficiency gains are scale dependent, and we’re starting at extremely small scale. That raises a question of whether the data compute efficiency gains or the algorithmic compute efficiency gains have more scale dependence. I don’t know if you have a prior on that. We just didn’t have enough compute to investigate that question.
+Charlie O’Neill
+Just naively, theoretically, the scale dependence of the architecture is fairly well known, and you can fit a straight line to it. Whereas I would have no idea how to do that for combining pre-training plus post-training data and mid-training data.
+Beren Millidge
+Funnily enough, I feel like data is actually more important with scale. I feel like architectures are kind of a one-time thing.
+Saying just an X% efficiency gain is kind of misleading, because what an architecture does is let you reach a qualitatively new regime which you couldn’t reach with the old architecture. Within that regime, obviously the data is the primary thing determining it.
+But if we didn’t have even GQA , if we were doing full attention all day, it would be ridiculously expensive to do a million context. Because of that, we could never use the data which is actually at a million context, so we couldn’t get these capabilities. Even though if you just do a naive “how much does this do at 2K context”, where the architecture isn’t unlocking anything, then the data will look much more important than in some sense it is. It’s unclear to me that these things are really just multiplicative gains in this way.
+Dwarkesh Patel
+I see. So what’s your take on the scale dependence of data?
+Beren Millidge
+On scale dependence, I think a lot of the mid-training and post-training data we have now actually gets better with scale, because a lot of it — the very long context horizon environment stuff — really requires big models to be able to make use of it. If you try and train your 100 million parameter model on SWE-bench traces, it’s not going to get anywhere. It’s not going to show you the same kind of improvement that you would get if you train an actual sensible size model on it.
+Charlie O’Neill
+It’s hard as well now because so many of the architecture changes — you look at Kimi, for instance, or DeepSeek — they’re doing these architectural modifications not just with dropping the pre-training loss in mind, but with how the models are going to be used in the real world. The inference efficiency, having some form of compressed attention in the DeepSeek models, is not necessarily geared around a fundamental trade-off improvement. It’s just, “Okay, we’re considering how the models are going to be used.”
+Dwarkesh Patel
+One question I’m curious about, to understand the future, is how parameter scaling will go as we’re getting into more of an RL-heavy regime. You can look at open source architectures and see how fast parameters have been scaling. Maybe it’s roughly 2x every year for frontier open source models. To the extent that even frontier closed source models have 100B or 200B active parameters , do you think that keeps 2x-ing year over year?
+Or, now that we’re in an RL regime where you also want to conserve compute on rollouts… Also, maybe there is a threshold effect where you have enough capacity and at that point increasing parameters arbitrarily doesn’t matter as much. Do you guys have a sense of, in 2030, how many active parameters a frontier model will have?
+Charlie O’Neill
+I think for the next few years, because we are so focused on doing longer and longer horizon rollouts for RL, where inference efficiency matters a lot, it feels like the models aren’t necessarily saturated on their ability to do that. The bottleneck is still the environments. So we might see a little bit of a plateau.
+I have a feeling that Mythos and the GPT models are much smaller than the 10 trillion parameter range that people are talking about. Even just naively comparing them to open source models, you can probably back out that conclusion.
+Probably for the next few years, I wouldn’t imagine a huge growth in the number of parameters. But again, there’s so many different things to trade off here. You decide the size of your model based on how much pre-training data you have, and then the difficulty of the RL environments that you’ve got to train on. You ideally want to get to the optimal point where you can get a decent pass@1 or something on the hardest environments you have. It wouldn’t make sense to make a bigger model pass there, because then you’re just paying much more inference than you need to.
+So a lot of it depends on how quickly Mercor and the in-house teams can scale up the complexity of the RL environments they’re training on.
+John Schulman
+I would expect the models to keep getting bigger just because people are scaling up compute and the GPUs are getting bigger. But exactly how much they get bigger depends a bit on the scaling laws in non-obvious ways.
+One thing is that I think data efficiency is going to be a bigger driver than compute efficiency of the exact architectures people use, now that we’re getting to the regime where we’re running low on high quality pre-training data. That might affect how sparse you want to make the model.
+I also think we don’t understand sparsity that well. Parameters are a different resource than active parameters. Sparsity has definitely increased a bit, but it’s not clear that it’s going to keep increasing without bound. There might be some kind of sweet spot.
+There’s an argument that sparsity should make data efficiency worse, because you might have to learn the same thing on multiple experts, though that’s debatable. I don’t think we have a good enough theory of scaling laws that we really understand why sparsity is helping, how much it’ll help, and if that’ll plateau at some point at a certain level of sparsity.
+Dwarkesh Patel
+Sorry, can you spell out exactly what the implication of data efficiency would be on parameters? It sounds like you’d say there should be less sparsity, but what are the other implications on parameter scaling?
+John Schulman
+Just that with the scaling law, you’re not trying to optimize compute efficiency. You have all your choices you can make on the architecture. Each of these gives you a different scaling law. Traditionally, you would look at some kind of envelope based on compute. You would look at performance versus compute and take the envelope of the best models.
+But if we’re making that decision based on data — we’re assuming we can spend a lot of compute, so data is on our x-axis instead of compute — then we just get a different set of optima, or a different set of models that are on that frontier.
+Charlie O’Neill
+I also don’t think that we’ve necessarily doubled the size of the models every year for the last few years. People have been training 1 trillion parameter models for at least a few years. There was even an open source one called Falcon . Liam from Periodic Labs , I think, posted yesterday on Twitter about how an early experiment was training a 1 trillion parameter model that was very, very sparse.
+John Schulman
+That was what they did before OpenAI, at Google, the Switch Transformer .
+Charlie O’Neill
+It was very, very good at knowledge but terrible at reasoning because it was so sparse. It feels like we’ve been playing in this 100 billion up to 2 trillion parameter range for at least a little bit. It certainly hasn’t been this nice linear increase.
+Beren Millidge
+I feel like there’s two things. As Charlie was saying, inference efficiency is super important for RL rollouts. This will really push down active parameters quite a lot.
+I think the total parameters really depends a lot on the hardware as well. You really need very high memory bandwidth and VRAM size to actually be able to serve multi-trillion parameter models. Right now, people are still using a lot of H100s and stuff. As everyone moves to GBs and then Vera Rubins , we’ll get more of the ability to scale and actually serve and do large RL inference at larger scales.
+The data question I think is interesting, because naively, larger models are much more sample efficient in the actual data points. Even if you’re not saturating the model, it’s still better to go bigger, because larger models generalize better and get to a better loss for the same amount of data. Right now I think we have a lot of data, and that’s not the constraint. Compute is. So we’re having smaller models which are very inference efficient. But if compute is no longer the bottleneck, it might come back to larger models which are undersaturated, but have this generalization ability because they’re much larger.
+Dwarkesh Patel
+If you just look at the basic Chinchilla scaling law and you just maximize out parameters, it actually decreases the amount of data you need to get to the same loss very little. If you go to infinity on parameters, the amount of data you need I think goes down less than 10X, just because of the nature of the power law.
+Beren Millidge
+But we’re now on the way-too-much-data side of the Chinchilla laws. Right now we over-train models according to Chinchilla. So we could easily get back to a point where, as we’re running out of data, we move back to the Chinchilla optimal point, or even a bit on the under-training model side.
+Charlie O’Neill
+But surely, even with these new chips that come online, we’re just going to be so compute bottlenecked for the next few years that that won’t necessarily be the case.
+Beren Millidge
+This depends on the ratio you have of training and inference compute, really. If you’re super bottlenecked on data, not on compute, you should go bigger. If you’re super bottlenecked on compute, you should always go smaller. You can also use computer-generated synthetic data, so it’s one of these very hard things to predict.
+John Schulman
+I think part of the reason it took people so long to figure out the scaling laws in the first place was that if you don’t get all these things right, then you don’t get such a clean relationship. The beautiful straight lines on graphs hide a lot of complexity in how you have to make sure to scale every hyperparameter the right way, or parameterize your optimizer in a way that scales and where you don’t have to change your hyperparameters as you change the model size.
+Charlie O’Neill
+Bugs have their own clean scaling laws as well. Like with Kaplan forgetting the cosine annealing thing, or even just not considering embedding parameters , I think. That messed up the estimate at smaller models because embedding parameters are a decent size of the model.
+01:18:03 – Why is RL working so well?
+Dwarkesh Patel
+A bit on RL. A year ago, a lot of people were making this argument that RL will not be super successful at scaling for models. John, you wrote a research paper where you were pointing out that models learn one bit per episode when you RL. They learn, “Did I get the answer right or did I get it wrong?” Then I wrote some blog posts earlier this year where I was like, “It’s even worse than that,” because when the pass rate is low and the model is very unlikely to get the answer right, it learns almost nothing at all from an RL episode.
+But I look at the models today, and they seem pretty smart. It seems to be the result of scaling up RL. Beren, you had a post a few weeks ago where you were trying to explain what’s going on. Why has RL been more successful than one would have naively thought?
+Beren Millidge
+I think the success of RL comes down to a bunch of different things. First, what is slightly underestimated is the mid-training. An awful lot of what we see as successes of RL actually comes from very, very good mid-training data, which is where we’re essentially doing pre-training but on synthetic reasoning data and the kind of environments that get the model warm-started for RL. This takes the model almost 80% of the way to the final RL checkpoint often.
+Then what RL does on top of that is essentially tweaking the policy. This is one of the reasons why it doesn’t need as many bits as you would naively think. It doesn’t have to learn all of these behaviors from scratch. It needs just a few bits from these episodes, which you do get. The other thing that I point out in my blog is that these bits are extremely high signal compared to regular pre-training, which is why you need RL at all versus just SFT-ing on successful reasoning traces.
+Dwarkesh Patel
+Because it’s exactly the bits about how to get the answer right.
+Beren Millidge
+There’s two things. Yes, one, it’s exactly the bits about how to get the answer right. But this is not exactly how you think of it, because in SFT, you have a trace. You have, say, a bunch of math reasoning and then the answer at the end. The bit is still there. You still SFT on the answer token.
+What’s important is that the objective ignores all the other bits. In SFT, you have to try and match the exact reasoning tokens that the model produces. You’re essentially getting too many bits about the exact way this other model you’re training on reasons. For RL, you only get the one bit. That means that signal is not drowned out in the noise of all the other bits the model has.
+It’s really a super dramatic increase in the signal-to-noise ratio during training, which is why RL is so dramatically efficient in terms of steps.
+Charlie O’Neill
+There’s been so much debate about what RL does to the model versus mid-training or SFT or whatever. Everyone talks about how pass@1 will go up, but pass@256 will go down. Very rare correct reasoning traces will be down-weighted and outweighed by a gradient signal from easier reasoning traces.
+I think the simple way to view RL now is that if you have a large enough amount of compute to sample a large enough group size — such that your probability of getting a bunch of correct answers is past some not insignificant probability — then it will be up-weighted. To Beren’s point, mid-training and more pre-training — the pass@1, the starting point for RL — scales in a log number of pre-training tokens.
+Dwarkesh Patel
+Can I ask some very basic questions? That answer makes sense, and maybe there’s empirical research which shows that this is what’s happening. But then I just look at the models themselves… I don’t know what’s happened. Maybe you can give me a sense of what is the basis of the AI progress over the last year.
+Maybe it’s just up-weighting the policies which were going to do the correct thinking anyways. But it just seems like qualitatively, the models have gotten so much more capable. Maybe there’s no inherent contradiction there. But how do we square the relatively small impact this take would imply that RL would have with the actual qualitative capabilities the models seem to be gaining?
+Beren Millidge
+One thing I want to point out here is that it doesn’t necessarily imply that RL has a small effect. Even if you have a few bits and you only change the parameters a small amount, the actual impact on function space — the input-to-output mapping the model learns — can still be super dramatic. Even one bit can change your function space a lot. It can rule out half the hypothesis space, which is huge.
+I don’t think it’s necessarily the case that small amounts of bits, small amounts of RL, once you’re starting from a really good point, means that you don’t have dramatic impacts in behavior. At least… not necessarily.
+Charlie O’Neill
+I think it comes down to two things. The first thing is that everyone was hoping that RL would generalize this reasoning across all these different domains. I don’t think we necessarily got this horizontal generalization. Just training on math doesn’t necessarily make you the greatest coder. You do have to do RL on code environments.
+I think what we did get, though, is horizon generalization. The models just learned how to use more tokens for longer and still make progress on some sort of task. You can train on environments where they get longer and longer and then put them into a completely new environment. Yes, they may not have generalized the reasoning patterns which allow them to do well in that environment, but they’ve at least generalized the ability to continue on that task for longer, which is correlated with success. There was a paper called EdgeBench which showed that the rate at which models can work for longer is doubling every three months. That’s clear evidence of generalization.
+The final way to think about it is, in pre-training, there’s this idea of quanta. You have this very smooth pre-training loss curve. When you look at what’s happening in the model, the model is learning all these very discrete tasks, and there’s all these emergent points where there’s a phase transition. It didn’t have induction heads , now it has induction heads. There’s tens of thousands, millions, probably hundreds of millions of these things. You average them all together and you get this very smooth loss curve.
+To an extent, a similar thing is happening for RL. There is this very slow outer loop, as Beren mentioned. We will train a model and then RL it, and then in the next model iteration of training, we will dump a bunch of these synthetic reasoning traces into the mid-training data. We’re kind of hitting all these quanta for all these different tasks, and on an individual task level, it may look like a phase transition. You’re suddenly going from a 0.5% pass rate to a 90% pass rate on a particular finance task or Excel task or whatever.
+But you average all these things together, plus the horizon generalization, and you kind of go, “Wow, we’ve got qualitatively better models.”
+Beren Millidge
+I think a lot of this as well is just… RL does generalize a bit. You get some transfer between math and code, or puzzles and math and this kind of stuff. Also, the sheer amount of environments people are targeting is just vastly greater. Before, when you tried to do some task which you do in your daily life, two years ago, the labs wouldn’t really care about this. They wouldn’t train the model for it. Now it’s just so much broader. They have a lot of environments targeting this specific thing.
+01:24:54 – Move 37 and entropy collapse
+Dwarkesh Patel
+Earlier in the conversation we were talking about RL in the context of causing this entropy collapse , or just concentrating probability on solutions the base model had already done, and causing relatively sparse updates in the policy.
+But I think there’s also another story about RL, which is going back to the Atari games and then AlphaGo coming up with move 37 , the super creative move. Because it was never initialized on human data, it can think in ways that humans are not even thinking and come up with extremely creative solutions.
+Do you have a sense of when we should expect, or if we should expect, RL on LLMs to result in things like move 37, extreme creativity even beyond human creativity, because there’s just de novo initialization of intelligence?
+Beren Millidge
+A couple of things here. First off, I think that AlphaGo is using MCTS , which obviously does more exploration and stuff than regular policy gradients . But I also think that RL doesn’t necessarily reduce the creativity.
+This is obviously qualitative, but if we look at the OpenAI-Hugging Face incident , these models were coming up with multiple zero-days at a time to break out of the sandbox . This is clearly some level of move 37 creativity already, which we just get from the general generalization properties of the LLMs. It’s definitely not the case that RL is totally destroying entropy, especially on long horizons.
+John Schulman
+One thing that people call creativity is just solving hard search problems. Move 37 is obviously an example of that, or writing some kind of poem that satisfies a ton of different constraints. That’s something AI is obviously going to be extremely good at, if trained for it.
+Then there’s another way in which the diversity of the models’ outputs is a lot lower after RL, and they develop these tics. Even though the models seem like they’re good at writing, when you do some kind of distributional analysis, you find that they’re reusing certain themes all the time and they’re using the same character names all the time. You’re not getting the same kind of diversity that you get from human authors. You’re getting one really good style. So I think that kind of diversity has definitely been cut down by RL a lot.
+In fact, since we were talking about distillation earlier, one thing that’s happening is that so many people are distilling, mostly from Claude, that all the open-weight model s write the same way as Claude and have the same tics. This seems kind of concerning to me, that we’re having this monoculture emerge.
+Beren Millidge
+Again, I don’t think this is fundamental to RL as a method, though. The same with distillation. Even with distillation, you’re just training on the data. Just because your data is not super broad, that doesn’t mean the training method itself is somehow wrong. It’s a problem with the data.
+I think a lot of the RL entropy collapse, for instance, is basically due to exploitation of fairly simple verifiers when you don’t have a huge diversity of environments. The writing, for instance, is presumably graded by some judge. The judge has some specific tics, and the model is learning to reward hack the judge, and that’s why it collapses. But this is really a problem with the judge. It’s not a problem with RL in general.
+01:28:32 – Rapid-fire timelines
+Dwarkesh Patel
+Okay, super rapid-fire predictions about the future. I want timelines on the following couple of questions. By when do we have models which… Here’s what it feels like to a user. You basically hire it as a drop-in remote worker for all kinds of white-collar work? Not just coding, but video editing, law, paralegal, et cetera. It’s literally an actual remote worker, with full computer use, with literally a month of seamless learning and operation, executing on complex projects that require interacting with other people, et cetera. Everything a human worker could do over a month.
+Charlie O’Neill
+If you mandate it to use a browser or whatever — rather than the firm setting up the information to be programmatically accessible — maybe a couple of years. But if it’s not browser-based — it can send Slack messages, it can do all this stuff — I’d still probably say around a year.
+Beren Millidge
+I would say maybe three years for the full generality. But to Charlie’s point, we will end up with a lot of people making their organizations easier for the AIs to use, and so you get 80-90% of the way there before that.
+Dwarkesh Patel
+Sorry, but the diff between one year and three years there is just literally…
+Beren Millidge
+I think there’s going to be a long tail of miscellaneous stuff which some human can do, which will take the models quite a while to do.
+Dwarkesh Patel
+Are you thinking of computer stuff or basic cognitive capabilities?
+Beren Millidge
+I think this really comes down to a question of how quickly we can solve this kind of online learning, and whether we can get 80-90% of the way there with compaction and writing files to yourself and stuff. That’s my big uncertainty. I really don’t know.
+Charlie O’Neill
+An example of something that it wouldn’t be good at is if I have to yell at someone to get something at work, or really push someone to get something done. The model just isn’t going to do that. It’s going to be too nice.
+John Schulman
+I’d say there’s a wide variation in quality of human remote workers. If you try to hire someone off of Upwork to do a software engineering project, there’s going to be a huge variation. It’s often quite hard to get them to do a good job or pay attention to all the feedback you’re giving. I would guess that in some cases, the pre-AI version of this was worse than what you can get now from existing AI.
+I think it might end up being a little complicated, because to some extent we already have this for some not-so-high-quality work. But then obviously we’re not matching human level in certain higher-quality forms of work. But I basically agree with Charlie and Beren that maybe we’ll have some version of this in a year or so that’s okay. We’ll have that form factor, and it’ll be able to do some things really well, some things not so well, and things will be improving from there.
+Charlie O’Neill
+We shift the goalposts based on the very long tail all the time. I feel like you’ve used this example before of doing your taxes or something. This year, I literally just told Codex to go get everything I needed and send it to the accountant. There was this massive list of stuff it had to use computers to click through and
+. It did it. It was perfect. A lot of this stuff it can already do.
+Dwarkesh Patel
+Okay: give you 10x total productivity uplift. Basically, if it takes you a year to make a breakthrough now, you make a breakthrough every month.
+John Schulman
+I think I would just refuse to give you a scalar on this. We might already be past that in some types of work. Let’s say you’re trying to do certain types of math, and—
+Dwarkesh Patel
+Oh, sorry. But for you as AI researchers trying to advance the state of AI research. How much are AI researchers sped up or uplifted?
+Charlie O’Neill
+Somewhere between 5-10 years?
+Dwarkesh Patel
+Oh, really? Okay, that’s far away.
+Beren Millidge
+Really, you think it’s longer than for a general remote worker? Interesting.
+Dwarkesh Patel
+I’m realizing you probably have a very different definition of a fully general remote worker. I could have specified that earlier.
+Beren Millidge
+This is true, because obviously an AI researcher can be a remote worker.
+Charlie O’Neill
+I’m picturing normal white-collar work over the period of a month. I think it starts to diverge a little bit past two months.
+Dwarkesh Patel
+A very competent white-collar worker, but not necessarily a super creative researcher.
+John Schulman
+I would say two years.
+Dwarkesh Patel
+Two years? 10x? Okay. How about you, Beren?
+Beren Millidge
+I can kind of see that, actually, because right now it’s already definitely more than 10X for coding stuff. So if it can do even one or two loops of experimental feedback, that would actually be massive already.
+Dwarkesh Patel
+So 10x uplift of AI researchers within two years. If you plug that into a very naive model of AI progress and how much is coming from AI researchers, and there’s a 10x increase in their productivity, you have a radically accelerated pace of AI progress starting two years from now.
+Beren Millidge
+I think this will mean that AI progress doesn’t get bottlenecked on AI researchers’ ability to run small experiments. It gets bottlenecked on other things.
+Dwarkesh Patel
+Of course. But it just happens 10x faster, which is a huge deal. That also helps the next thing, which gives you a 100x speedup, happen sooner, et cetera.
+Charlie O’Neill
+I’m happy to just take a bit longer on that one.
+Dwarkesh Patel
+What’s the crux?
+Charlie O’Neill
+My capacity to absorb information and make the Bayesian optimal decision on the next experiment.
+Beren Millidge
+I’m assuming that you can delegate some of this to the AI. The AI is becoming decent at deciding. It’s run this experiment, it’s got this result, it runs the next experiment. If it can run two or three experiments in a row without crashing, then that is actually a big uplift.
+Dwarkesh Patel
+Okay, final question. An AI which dominates top human experts across every single field of work that can be done over a computer. So not only AI research, but all cognitive work. Not just short-horizon work, but literally, if it takes three years or something, the AI will still do better than humans.
+Beren Millidge
+This is basically just ASI?
+Dwarkesh Patel
+Yeah.
+John Schulman
+I would say 3-4 years.
+Dwarkesh Patel
+The fuck? I mean that doesn’t seem wrong, but—
+John Schulman
+AI is obviously getting more attention. It’s one of the harder things, but a lot of energy is being put into it. It’s also not one of the hardest things for AI, because it involves a lot of code and math, which models are really good at.
+For things that involve 3D and spatial stuff and physical stuff, I think that will take a little longer. If it’s mechanical engineering or something, and it’s not getting the most attention right now, that might take a little longer.
+Dwarkesh Patel
+But it also does include fields where there is relatively little data because of the nature of the field, and it has to learn that data on the fly. For example, it has to become superhuman at being an engineer at TSMC or something.
+John Schulman
+So you would have to assume that you can give the AI the same onboarding material. Then something has to be solved about longer-horizon learning.
+Charlie O’Neill
+I’d say 5 to 10.
+Dwarkesh Patel
+So basically, you think automating AI research is ASI-complete or something?
+Charlie O’Neill
+Yeah, I think so. I think there are so many things in the world where, even if you have some sort of memory system external to the model, and even if context length grows a little bit, there are just fundamentally things where, even if you could research the information or write notes yourself, you’d need more than a million-token context window today.
+Beren Millidge
+I kind of agree on the 5-year range, at least for the stuff that labs are focusing on. But I think there’s going to be a long tail of stuff which the AI could theoretically go out and learn about, but no one has bothered to do it and the compute hasn’t been allocated to that. So that might take longer for literally every single human expert.
+Dwarkesh Patel
+Sorry, but by this I also included the ability to learn a new domain as fast as a human.
+Beren Millidge
+I think that’s not necessarily necessary, because the AI will have vastly greater experience than any human.
+Dwarkesh Patel
+Thanks so much for doing this, guys. I feel like this was a great format for getting different experts to disagree and debate and discuss things together. It was very productive.
+John Schulman
+Thanks for having us.
+Discussion about this video
+Comments Restacks
+Dwarkesh Podcast
+Deeply researched interviews
+Deeply researched interviews
+Listen on
+Substack App
+Apple Podcasts
+Spotify
+YouTube
+RSS Feed
+Appears in episode
+Dwarkesh Patel
+Recent Episodes
+Ajeya Cotra – Inside the OpenAI agent swarm that hacked Hugging Face
+Sep 1 • Dwarkesh Patel
+The rise and fall of agent civilizations
+Aug 31 • Dwarkesh Patel
+Dylan Patel – Anthropic & OpenAI will have most of the world’s compute by 2028
+Aug 25 • Dwarkesh Patel
+Ryan Greenblatt – What happens once AI can automate AI research?
+Aug 11 • Dwarkesh Patel
+8 Predictions for the Era of Continual Learning
+Aug 7 • Dwarkesh Patel
+Why smarter AI models could drive up compute prices 10x
+Aug 3 • Dwarkesh Patel
+Adam Brown – A deep but accessible introduction to general relativity
+Jul 10 • Dwarkesh Patel
+Ready for more?
+© 2026 Dwarkesh Patel · Privacy ∙ Terms ∙ Collection notice
+Start your Substack Get the app
+Substack is the home for great culture
