@@ -7,7 +7,7 @@
 ### 企业 AI 落地追踪
 
 - 加入 Salesforce、ServiceNow、SAP、Microsoft、Palantir 官方访谈/客户演示频道，以及 Microsoft WorkLab、SAP Autonomous Enterprise 两档音频播客；官方频道按 AI 产品主题筛选，已取得但过短的宣传字幕不收录。
-- 补入 14 位核心高管的人物搜索，保留原有 Nadella 条目。企业来源单独标明，摘要关注正式部署、付费使用、实施成本及可验证效果，区分厂商宣传与客户证据。
+- 人物搜索按每家公司一人精简为 Marc Benioff、Amit Zavery、Philipp Herzig、Satya Nadella（原有）、Alex Karp，共五人；移除本轮多加的十人，减少低产出的重复搜索。企业来源单独标明，摘要关注正式部署、付费使用、实施成本及可验证效果，区分厂商宣传与客户证据。
 - WorkLab 当前最新发布为 2026-06-24，作为季播来源保留，未声称近期有更新。
 
 ### 新增

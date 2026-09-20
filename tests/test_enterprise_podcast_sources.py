@@ -12,7 +12,7 @@ class EnterprisePodcastTests(unittest.TestCase):
     def test_executives_unique_and_company_sources_tagged(self):
         d=json.loads((gf.ROOT_DIR/'config/sources.json').read_text())['podcasts']
         people=[x['person'] for x in d['people']['searches']]
-        for name in ['Marc Benioff','Amit Zavery','Philipp Herzig','Satya Nadella','Shyam Sankar']:
+        for name in ['Marc Benioff','Amit Zavery','Philipp Herzig','Satya Nadella','Alex Karp']:
             self.assertEqual(people.count(name),1)
         for name in ['Salesforce','ServiceNow','SAP','Microsoft','Palantir']:
             ch=next(x for x in d['channels'] if x['name']==name)

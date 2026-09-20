@@ -4,11 +4,13 @@
 
 | 公司 | 访谈人物 watchlist | 公司内容 |
 |---|---|---|
-| Salesforce | Marc Benioff、Joe Inzerillo、Rohan Kumar | 官方频道，Agentforce / Slackbot / Agent Fabric |
-| ServiceNow | Bill McDermott、Amit Zavery、Chris Bedi | 官方频道，Now Assist / agents / 企业流程 |
-| SAP | Christian Klein、Muhammad Alam、Philipp Herzig | 官方频道 + Autonomous Enterprise 播客，Joule / ERP |
-| Microsoft | Satya Nadella（原有）、Judson Althoff、Charles Lamanna | 官方频道 + WorkLab，Copilot / agents / 企业部署 |
-| Palantir | Alex Karp、Shyam Sankar、Ryan Taylor | 官方频道，AIP / AIPCon 客户展示 |
+| Salesforce | Marc Benioff | 官方频道，Agentforce / Slackbot / Agent Fabric |
+| ServiceNow | Amit Zavery | 官方频道，Now Assist / agents / 企业流程 |
+| SAP | Philipp Herzig | 官方频道 + Autonomous Enterprise 播客，Joule / ERP |
+| Microsoft | Satya Nadella（原有） | 官方频道 + WorkLab，Copilot / agents / 企业部署 |
+| Palantir | Alex Karp | 官方频道，AIP / AIPCon 客户展示 |
+
+每家公司只保留一位人物，共五人。SAP 选 Philipp Herzig 是为了贴近企业 AI 产品与部署，不表示其近期播客出场频率较高。公司频道和两档音频播客保持订阅。
 
 这里的 watchlist 是人物访谈搜索，不是股票仓位或 X 账号名单。公司频道属于视频访谈/演示/主题演讲，不冒充五档独立音频播客。官方频道有宣传属性，元数据以 speaker_type=company 标记。两档音频 RSS 已检查可解析；WorkLab 最近更新 2026-06-24，SAP Autonomous Enterprise 最近更新 2026-09-14（均截至本次检查）。WorkLab 为季播跟踪，当前无新节目不是抓取成功的证据。
 
@@ -19,7 +21,7 @@
 - Salesforce：https://www.salesforce.com/company/leadership/
 - ServiceNow：https://www.servicenow.com/in/company/leadership.html
 - SAP：https://www.sap.com/about/company/leadership.html ，Philipp Herzig：https://www.sap.com/documents/2025/01/70a3f86e-f17e-0010-bca6-c68f7e60039b.html
-- Microsoft：https://news.microsoft.com/source/leadership/ ，Charles Lamanna：https://www.microsoft.com/en-us/copilot/blog/author/charles-lamanna/
+- Microsoft：https://news.microsoft.com/source/leadership/
 - Palantir：https://investors.palantir.com/management.html
 - WorkLab 官方播客入口：https://www.microsoft.com/en-us/worklab/podcast
 - SAP 播客介绍：https://news.sap.com/2026/06/introducing-autonomous-enterprise-podcast-series/
