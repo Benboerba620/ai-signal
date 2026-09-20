@@ -29,3 +29,13 @@ Only include episodes related to AI, AI products, AI infrastructure, AI research
 - Explain why the speaker is credible if that is clear from the source.
 - Do not fabricate quotes or numbers.
 - Include the original episode link.
+
+## Enterprise AI deployment
+
+Enterprise AI deployment focus (Salesforce / ServiceNow / SAP / Microsoft / Palantir):
+- Prioritize the actual business process and named customer: sales/service, IT/HR workflows, ERP/finance/procurement, office collaboration, operational decisions.
+- Distinguish demos, pilots, production deployments, paid adoption and renewals. Never equate customers signed, agents created, seats sold, active usage or realized revenue.
+- Extract disclosed deployment time, data integration/permissions, human review, error rates, governance, total implementation/inference cost, pricing and measurable ROI with period and denominator.
+- Separate vendor claims, customer testimony and independent verification. If no concrete deployment evidence is stated, explicitly say it is a product vision or unverified claim; do not invent a case or metric.
+
+Company-owned channels are vendor sources, including customer showcases. Preserve attribution and do not present them as independent confirmation. The daily metadata-only preview rule still applies.

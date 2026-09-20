@@ -1083,6 +1083,10 @@ def fetch_channel(channel, lookback_hours, transcript_cache):
         if ep["pub_date"] and ep["pub_date"] < since:
             continue
 
+        topics = channel.get("topic_keywords")
+        if topics and not keyword_match(ep.get("title", "") + " " + ep.get("description", ""), topics):
+            continue
+
         cached = transcript_cache.get(ep["guid"]) or transcript_cache.get(ep["link"])
         if cached is not None:
             log(f"  ♻️ {ep['title'][:60]} (transcript reused)")
@@ -1095,6 +1099,10 @@ def fetch_channel(channel, lookback_hours, transcript_cache):
 
         fetched = get_podcast_transcript(ep)
         transcript = fetched["text"]
+        minimum_chars = int(channel.get("min_transcript_chars", 0))
+        if transcript and len(transcript) < minimum_chars:
+            log(f"    ⏭️ short corporate clip ({len(transcript)} chars)")
+            continue
         if transcript:
             log(f"    ✅ transcript ({len(transcript)} chars, {fetched['source']})")
         else:
@@ -1102,6 +1110,7 @@ def fetch_channel(channel, lookback_hours, transcript_cache):
 
         results.append({
             "channel": name,
+            "speaker_type": channel.get("speaker_type", "channel"),
             "domain": channel.get("domain", "ai"),
             "guid": ep["guid"],
             "title": ep["title"],
