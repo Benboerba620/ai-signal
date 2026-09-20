@@ -30,6 +30,23 @@ class EnterprisePodcastTests(unittest.TestCase):
         self.assertEqual(len(result),1);self.assertEqual(fetch.call_count,1)
         self.assertEqual(result[0]['speaker_type'],'company')
 
+    def test_a16z_ai_only_before_cache_or_transcription(self):
+        config=json.loads((gf.ROOT_DIR/'config/sources.json').read_text())
+        ch=next(c for c in config['podcasts']['channels'] if c['name']=='a16z')
+        titles=['Building AI for Creators: Luma & Phota Labs',
+                'Enterprise agents and customer deployment',
+                'How Bitcoin Rewired a Classic Computer Science Problem',
+                "Don’t Follow Your Passion | Ben Horowitz’s Advice for New Graduates",
+                'Adam Neumann: This Is How You Build Iconic Companies',
+                'Retail infrastructure and training']
+        base=dict(pub_date=datetime.now(timezone.utc),description='a16z covers AI and technology',audio_url='',duration='',audio_bytes=0)
+        episodes=[dict(base,title=t,guid=str(i),link='https://example.com/'+str(i)) for i,t in enumerate(titles)]
+        cache={e['guid']:dict(e) for e in episodes}
+        with patch.object(gf,'fetch_rss_with_fallback',return_value=('<rss/>','https://example.com',None)),patch.object(gf,'parse_rss',return_value=episodes),patch.object(gf,'get_podcast_transcript') as fetch:
+            result,error=gf.fetch_channel(ch,72,cache)
+        self.assertEqual([e['title'] for e in result],titles[:2])
+        fetch.assert_not_called()
+
     def test_corporate_short_clips_rejected(self):
         ch={'name':'Example','min_transcript_chars':1800}
         ep=dict(pub_date=datetime.now(timezone.utc),title='AI',guid='1',link='https://example.com')

@@ -1084,7 +1084,10 @@ def fetch_channel(channel, lookback_hours, transcript_cache):
             continue
 
         topics = channel.get("topic_keywords")
-        if topics and not keyword_match(ep.get("title", "") + " " + ep.get("description", ""), topics):
+        topic_text = ep.get("title", "")
+        if not channel.get("topic_title_only"):
+            topic_text += " " + ep.get("description", "")
+        if topics and not keyword_match(topic_text, topics):
             continue
 
         cached = transcript_cache.get(ep["guid"]) or transcript_cache.get(ep["link"])

@@ -73,7 +73,7 @@ SemiAnalysis 已进入日常自动全文流程：系统优先匹配官方 YouTub
 | [Lex Fridman](https://lexfridman.com/podcast/) | 覆盖面最广的 AI 长对话 |
 | [Latent Space](https://www.latent.space) | AI 工程师生态的脉搏，Swyx 主理 |
 | [All-In Podcast](https://www.allinpodcast.co) | 四个顶级 VC 的周度辩论，AI + 宏观 |
-| [a16z](https://a16z.com/podcasts/) | 硅谷最大 VC 的一手投资视角 |
+| [a16z](https://a16z.com/podcasts/) | 仅收录标题明确涉及 AI 的节目 |
 | [Naval](https://nav.al/) | Naval Ravikant 对 AI、技术、创业和资本形成的长线判断 |
 | [No Priors](https://www.youtube.com/@NoPriorsPodcast) | Sarah Guo + Elad Gil，AI infra 创始人密度最高 |
 | [SemiAnalysis](https://www.youtube.com/@SemiAnalysis) | Dylan Patel，半导体与 AI 基础设施最深度的独立分析 |
