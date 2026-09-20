@@ -36,6 +36,7 @@ from urllib.parse import quote_plus, urljoin, urlparse
 import httpx
 
 from podcast_transcripts import externalize_transcripts, hydrate_transcripts
+from local_podcast_import import load_local, merge_local
 
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
@@ -1584,6 +1585,8 @@ def fetch_podcasts(sources, people_only=False):
     transcript_cache = {}
     existing = load_feed("feed-podcasts.json") or {}
     hydrate_transcripts(existing)
+    local_episodes = load_local(ROOT_DIR)
+    existing = merge_local(existing, local_episodes)
     for entry in existing.get("podcasts", []):
         if not entry.get("transcript"):
             continue
@@ -1616,7 +1619,7 @@ def fetch_podcasts(sources, people_only=False):
     errors.extend(people_errors)
 
     all_episodes.sort(key=lambda x: x.get("pub_date", ""), reverse=True)
-    return {"podcasts": all_episodes, "errors": errors if errors else None}
+    return merge_local({"podcasts": all_episodes, "errors": errors if errors else None}, local_episodes)
 
 
 # ── arXiv fetching ───────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@
 
 ## 最近更新
 
+- `2026-09-20`：三档播客试点复用本地已有转录，公开 RSS 校验后由云端去重合并；[维护说明](docs/local-podcast-pilot.md)。
 - `2026-08-21`：SemiAnalysis 改为日常自动匹配官方 YouTube 字幕；Latent Space 与 Lenny 切换到 podcast-only RSS，避免把 newsletter 文章封面误当音频；维护者可在 Mac 上用共享 Whisper 引擎补齐无公开字幕的节目
 - `2026-08-19`：新增 Ben Thompson（Stratechery）四通道——X [@benthompson](https://x.com/benthompson)、Sharp Tech 播客、人物访谈搜索、Stratechery 博客 RSS；付费墙后的内容只呈现标题导语和链接，不替他展开论点
 - `2026-08-18`：接入 Y Combinator Startup Podcast 当前 RSS，替换已停在 2025 年的旧 Lightcone feed，恢复 YC 最新播客抓取
