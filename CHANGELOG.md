@@ -2,6 +2,14 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-09-21
+
+### 企业 AI 落地追踪
+
+- 撤除昨日加入的 Salesforce、ServiceNow、SAP、Microsoft、Palantir 官方频道，以及 Microsoft WorkLab、SAP Autonomous Enterprise 两档官方音频播客。本追踪只保留五位高管的人物访谈搜索。
+- 撤除原因是官方频道在厂商大会期间会把整场会议的视频一次性推入 feed：9/20 的播客 feed 共 51 条，其中 Salesforce 16 条、ServiceNow 9 条，内容多为明星站台、颁奖与品牌宣传片。五家共用同一份关键词且包含裸的 `ai` / `agent`，几乎不构成筛选；相关性打分也未能拦截（17 条中仅 3 条判为不相关）。ServiceNow Knowledge、SAP Sapphire、Microsoft Ignite / Build、Palantir AIPCon 会重复这一形状，调整关键词无法解决。
+- 企业 AI 的一手内容继续由人物搜索覆盖：9/18 收录的 Benioff × Sam Altman、Dario Amodei、黄仁勋相关内容均来自人物搜索，与官方频道无关。
+
 ## 2026-09-20
 
 ### 企业 AI 落地追踪
