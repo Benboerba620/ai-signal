@@ -14,10 +14,14 @@ class EnterprisePodcastTests(unittest.TestCase):
         people=[x['person'] for x in d['people']['searches']]
         for name in ['Marc Benioff','Amit Zavery','Philipp Herzig','Satya Nadella','Alex Karp']:
             self.assertEqual(people.count(name),1)
+        # 2026-09-21 vendor official channels were dropped on purpose (Dreamforce noise);
+        # enterprise coverage now runs only through the executive searches above.
+        names={x['name'] for x in d['channels']}
         for name in ['Salesforce','ServiceNow','SAP','Microsoft','Palantir']:
-            ch=next(x for x in d['channels'] if x['name']==name)
-            self.assertEqual(ch['speaker_type'],'company')
-            self.assertIn('topic_keywords',ch)
+            self.assertNotIn(name,names)
+        for ch in d['channels']:
+            if ch.get('speaker_type')=='company':
+                self.assertIn('topic_keywords',ch)
 
     def test_filter_runs_before_transcript_fetch_and_keeps_attribution(self):
         ch={'name':'Example','speaker_type':'company','topic_keywords':['agentforce'],'rss_url':'https://example.com'}
