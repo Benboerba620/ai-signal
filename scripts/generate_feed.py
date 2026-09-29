@@ -836,7 +836,21 @@ def _youtube_video_id(link):
     return None
 
 
-def _yt_transcript_by_id(vid):
+# Regions whose voices speak Chinese on camera. "cn" = mainland, "tw" = Taiwan
+# supply chain. They skip the foreign-script / English-track gates and ask
+# YouTube for Chinese captions first (Taiwan uploads carry zh-TW / zh-Hant).
+ZH_REGIONS = {"cn", "tw"}
+ZH_CAPTION_LANGS = ("zh-TW", "zh-Hant", "zh", "zh-Hans", "zh-CN", "en")
+
+
+def caption_langs_for(item):
+    """Caption preference for a search entry or channel config."""
+    if item.get("region") in ZH_REGIONS or item.get("language") == "zh":
+        return ZH_CAPTION_LANGS
+    return None
+
+
+def _yt_transcript_by_id(vid, languages=None):
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
         proxy = detect_proxy()
@@ -846,7 +860,7 @@ def _yt_transcript_by_id(vid):
             p = proxy.replace("socks5h://", "socks5://")
             kwargs["proxy_config"] = GenericProxyConfig(http_url=p, https_url=p)
         api = YouTubeTranscriptApi(**kwargs)
-        segs = api.fetch(vid)
+        segs = api.fetch(vid, languages=languages or ("en",))
         text = " ".join(s.text for s in segs)
         if len(text) > 200:
             return {
@@ -909,10 +923,10 @@ def _yt_english_track_status(vid):
         return "no_en" if _no_english_track(str(e)) else "unknown"
 
 
-def get_youtube_transcript(link):
+def get_youtube_transcript(link, languages=None):
     vid = _youtube_video_id(link)
     if vid:
-        result = _yt_transcript_by_id(vid)
+        result = _yt_transcript_by_id(vid, languages)
         if result["text"]:
             return result
         return transcript_result(
@@ -1015,7 +1029,7 @@ def transcript_too_sparse(text, duration):
     return len(text) / minutes < MIN_TRANSCRIPT_CHARS_PER_MIN
 
 
-def get_podcast_transcript(ep):
+def get_podcast_transcript(ep, languages=None):
     errors = []
     duration = ep.get("duration")
 
@@ -1050,7 +1064,7 @@ def get_podcast_transcript(ep):
     if usable(page_result, "episode_page"):
         return page_result
 
-    youtube_result = get_youtube_transcript(ep.get("link"))
+    youtube_result = get_youtube_transcript(ep.get("link"), languages)
     if usable(youtube_result, "youtube"):
         return youtube_result
 
@@ -1089,6 +1103,11 @@ def fetch_channel(channel, lookback_hours, transcript_cache):
             topic_text += " " + ep.get("description", "")
         if topics and not keyword_match(topic_text, topics):
             continue
+        # Segment gate: a title must also hit one of these (e.g. only the
+        # guest-interview segment of a show that mixes in news commentary).
+        required = channel.get("require_title_keywords")
+        if required and not keyword_match(ep.get("title", ""), required):
+            continue
 
         cached = transcript_cache.get(ep["guid"]) or transcript_cache.get(ep["link"])
         if cached is not None:
@@ -1100,7 +1119,7 @@ def fetch_channel(channel, lookback_hours, transcript_cache):
 
         log(f"  🆕 {ep['title'][:60]}...")
 
-        fetched = get_podcast_transcript(ep)
+        fetched = get_podcast_transcript(ep, caption_langs_for(channel))
         transcript = fetched["text"]
         minimum_chars = int(channel.get("min_transcript_chars", 0))
         if transcript and len(transcript) < minimum_chars:
@@ -1168,7 +1187,7 @@ CN_TITLE_SKIP_RE = re.compile(
 # recaps, Korean subs) clear the subscriber gate — some have 1M+ subs — but
 # carry no English transcript and aren't real interviews. They give themselves
 # away by naming the channel or writing the title in a non-Latin script.
-# Applied only to overseas people; region:"cn" voices legitimately appear in
+# Applied only to overseas people; ZH_REGIONS voices legitimately appear in
 # Chinese-titled interviews and are handled by CN_TITLE_SKIP_RE instead.
 FOREIGN_SCRIPT_RE = re.compile(
     r"[一-鿿"      # CJK (Chinese / kanji)
@@ -1376,13 +1395,13 @@ def search_person_appearances(search, people_cfg, since, known_ids):
             log(f"  ⏭️ talked about, not appearing: {title[:60]}")
             continue
         if DAILY_BRIEFING_RE.search(title) or (
-                search.get("region") == "cn" and CN_TITLE_SKIP_RE.search(title)):
+                search.get("region") in ZH_REGIONS and CN_TITLE_SKIP_RE.search(title)):
             log(f"  ⏭️ title blacklist: {title[:60]}")
             continue
         # Foreign-audience re-upload / reaction channel: non-Latin channel name
         # or title on an overseas person. These clear the subscriber gate but
         # carry no English transcript and aren't real interviews.
-        if search.get("region") != "cn" and (
+        if search.get("region") not in ZH_REGIONS and (
                 FOREIGN_SCRIPT_RE.search(v.get("channel") or "")
                 or FOREIGN_SCRIPT_RE.search(title)):
             log(f"  ⏭️ foreign re-upload ({v.get('channel')}): {title[:50]}")
@@ -1489,14 +1508,14 @@ def fetch_people(sources, existing_feed, known_video_ids):
             continue
         if not entry.get("transcript") and entry.get("transcript_video_id"):
             vid = entry["transcript_video_id"]
-            if entry.get("region") != "cn" and _yt_english_track_status(vid) == "no_en":
+            if entry.get("region") not in ZH_REGIONS and _yt_english_track_status(vid) == "no_en":
                 # Foreign original/dub that slipped in before the gate, or that a
                 # network fluke let through on an earlier run — drop it from the
                 # carry set so it stops recurring.
                 log(f"  ⏭️ carried foreign entry dropped (no English track): "
                     f"{entry.get('title','')[:50]}")
                 continue
-            retried = _yt_transcript_by_id(vid)
+            retried = _yt_transcript_by_id(vid, caption_langs_for(entry))
             if retried["text"]:
                 entry = dict(entry)
                 entry["transcript"] = clean_transcript_text(retried["text"])
@@ -1548,10 +1567,10 @@ def fetch_people(sources, existing_feed, known_video_ids):
         # a definitive 'no_en' verdict skips; 'unknown' (network/IP block) falls
         # through so a real English interview is never dropped on a fluke. cn
         # voices are exempt (their real interviews are in Chinese).
-        if search.get("region") != "cn" and _yt_english_track_status(vid) == "no_en":
+        if search.get("region") not in ZH_REGIONS and _yt_english_track_status(vid) == "no_en":
             log(f"    ⏭️ no English track (foreign original/dub), skipped: {v['title'][:50]}")
             continue
-        fetched = _yt_transcript_by_id(vid)
+        fetched = _yt_transcript_by_id(vid, caption_langs_for(search))
         transcript = clean_transcript_text(fetched["text"]) if fetched["text"] else None
         if transcript:
             log(f"    ✅ transcript ({len(transcript)} chars)")
