@@ -21,6 +21,7 @@ import json
 import os
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -355,14 +356,42 @@ def candidate_bases():
 
 
 def fetch_json_any(path):
-    """Fetch a repo-relative JSON file, trying each mirror base in order."""
+    """Prefer origin; when unavailable, compare mirror snapshot timestamps."""
     global _preferred_base
-    for base in candidate_bases():
-        url = f"{base}/{path}"
-        data = fetch_json(url)
+    bases = candidate_bases()
+    keys = {"feed-x.json": "x", "feed-podcasts.json": "podcasts",
+            "feed-arxiv.json": "papers", "feed-blogs.json": "articles",
+            "feed-transcripts-index.json": "transcripts", "feed-summaries.json": "profiles"}
+    key = keys.get(path.rsplit("/", 1)[-1])
+
+    def read(base):
+        data = fetch_json(f"{base}/{path}")
+        if not isinstance(data, dict):
+            return None
+        if key and not isinstance(data.get(key), dict if key == "profiles" else list):
+            return None
+        stamp = parse_iso_datetime(data.get("generated_at"))
+        if key and (stamp is None or stamp > datetime.now(timezone.utc) + timedelta(minutes=5)):
+            return None
+        return data
+
+    if RAW_BASE in bases:
+        data = read(RAW_BASE)
         if data is not None:
+            _preferred_base = RAW_BASE
+            return data, f"{RAW_BASE}/{path}"
+        bases.remove(RAW_BASE)
+    if bases:
+        # Network calls retain the existing per-request timeout. Compare in
+        # parallel so an unreachable mirror does not multiply the wait.
+        with ThreadPoolExecutor(max_workers=min(5, len(bases))) as pool:
+            snapshots = list(zip(bases, pool.map(read, bases)))
+        valid = [(base, data) for base, data in snapshots if data is not None]
+        if valid:
+            base, data = max(valid, key=lambda pair: parse_iso_datetime(
+                pair[1].get("generated_at")) or datetime.min.replace(tzinfo=timezone.utc))
             _preferred_base = base
-            return data, url
+            return data, f"{base}/{path}"
     return None, f"{candidate_bases()[0]}/{path}"
 
 
@@ -410,7 +439,7 @@ def feed_meta(filename, url, source, feed, reason=None):
 def fetch_feed(filename, content_key=None):
     remote, url = fetch_json_any(f"feeds/{filename}")
     local = load_local_json(filename)
-    if remote and (not content_key or remote.get(content_key)):
+    if remote is not None and (not content_key or content_key in remote):
         return remote, feed_meta(filename, url, "remote", remote)
     if local:
         reason = "remote_unavailable"
@@ -489,6 +518,15 @@ def annotate_feed_sources(feed_sources, feeds):
     for key, meta in feed_sources.items():
         feed = feeds.get(key)
         item = dict(meta)
+        upstream_errors = (feed or {}).get("errors") or []
+        if isinstance(upstream_errors, str):
+            upstream_errors = [upstream_errors]
+        item["upstream_errors"] = upstream_errors
+        item["health"] = "partial" if upstream_errors else "ok"
+        for error in upstream_errors:
+            # Keep detailed diagnostics in metadata, show a compact source hint.
+            source = str(error).split(":", 1)[0][:120]
+            warnings.append(f"{key}: {source} 本轮抓取失败；已有内容不代表该来源已更新")
         age = feed_age_hours(feed)
         if age is not None:
             item["age_hours"] = round(age, 2)
@@ -506,6 +544,10 @@ def annotate_feed_sources(feed_sources, feeds):
             warnings.append(
                 f"{key} feed generated_at is older than {FEED_STALE_AFTER_HOURS} hours"
             )
+        if item["source"] == "unavailable":
+            item["health"] = "unavailable"
+        elif item["is_stale"]:
+            item["health"] = "stale"
         annotated[key] = item
     return annotated, warnings
 

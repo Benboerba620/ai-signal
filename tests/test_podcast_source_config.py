@@ -22,8 +22,10 @@ class PodcastSourceConfigTests(unittest.TestCase):
             channels["Lenny's Podcast"]["rss_url"],
             "https://api.substack.com/feed/podcast/10845.rss",
         )
-        self.assertNotIn("fallback_rss_urls", channels["Latent Space"])
-        self.assertNotIn("fallback_rss_urls", channels["Lenny's Podcast"])
+        self.assertEqual(channels["Latent Space"]["fallback_rss_urls"],
+                         ["https://www.latent.space/feed/podcast/1084089.rss"])
+        self.assertEqual(channels["Lenny's Podcast"]["fallback_rss_urls"],
+                         ["https://www.lennysnewsletter.com/feed/podcast/10845.rss"])
 
     def test_y_combinator_uses_current_feed(self):
         sources = json.loads((ROOT_DIR / "config" / "sources.json").read_text("utf-8"))

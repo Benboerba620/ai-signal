@@ -95,6 +95,18 @@ def validate(scope="all"):
     if scope not in VALIDATION_SCOPES:
         raise ValueError(f"Unknown validation scope: {scope}")
 
+    # Data-contract success does not imply that every upstream source updated.
+    filenames = {"twitter": "feed-x.json", "podcasts": "feed-podcasts.json",
+                 "arxiv": "feed-arxiv.json", "blogs": "feed-blogs.json"}
+    for kind, filename in filenames.items():
+        if scope not in ("all", kind):
+            continue
+        path = FEEDS_DIR / filename
+        if path.is_file():
+            errors = json.loads(path.read_text("utf-8")).get("errors") or []
+            if errors:
+                print(f"WARNING: {kind}: {len(errors)} upstream failure(s); feed may be incomplete", file=sys.stderr)
+
     checks = {}
     counts = {}
     if scope in ("all", "twitter"):

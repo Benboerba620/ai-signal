@@ -440,8 +440,9 @@ def main():
         "",
     ]
 
-    if data.get("errors"):
-        lines.append("> 非致命提示：" + "; ".join(data["errors"]))
+    notices = (data.get("warnings") or []) + (data.get("errors") or [])
+    if notices:
+        lines.append("> 数据提示：" + "; ".join(str(x) for x in notices))
         lines.append("")
 
     render_podcasts(data, lines)

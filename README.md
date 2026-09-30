@@ -10,6 +10,8 @@
 
 ## 最近更新
 
+- `2026-09-30`：新增播客官方 RSS 备用入口、信源失败提示、镜像新鲜度检查及独立 PR 测试。
+
 - `2026-09-20`：增加五家企业软件公司的官方访谈与企业 AI 落地追踪，高管每家公司仅一人；[来源与人物表](docs/enterprise-ai-watchlist.md)。
 - `2026-09-20`：三档播客试点复用本地已有转录，公开 RSS 校验后由云端去重合并；[维护说明](docs/local-podcast-pilot.md)。
 - `2026-08-21`：SemiAnalysis 改为日常自动匹配官方 YouTube 字幕；Latent Space 与 Lenny 切换到 podcast-only RSS，避免把 newsletter 文章封面误当音频；维护者可在 Mac 上用共享 Whisper 引擎补齐无公开字幕的节目
@@ -65,7 +67,7 @@ SemiAnalysis 已进入日常自动全文流程：系统优先匹配官方 YouTub
 
 ## 信息源
 
-### 播客（15 个频道）
+### 播客（19 个频道）
 
 | 频道 | 为什么选 |
 |------|----------|
@@ -85,11 +87,17 @@ SemiAnalysis 已进入日常自动全文流程：系统优先匹配官方 YouTub
 | [Capital Allocators](https://capitalallocators.com/podcast/) | 机构投资者视角 |
 | [The Acquirers Podcast](https://acquirersmultiple.com/podcast/) | 价值投资方法论 |
 
-### 人物追踪（29 人，全网搜索）
+台湾节目还包括：財報狗、定錨產業筆記、科技領航家、DIGITIMES《It's 秀 TIME》。完整有效名单和过滤条件以 `config/sources.json` 为准。
+
+这两档 Substack 节目（Latent Space、Lenny’s Podcast）优先读取原专用播客 RSS，失败时切换到节目自有域名下的同一播客 feed；不会改用混有文章和其他节目的普通 newsletter feed。如果所有入口都失败，日报会明确提示受影响来源。
+
+### 人物追踪（40 人，全网搜索）
 
 频道订阅之外，每天在 YouTube 全网搜索这些人作为**嘉宾**出现的访谈（RSS 只覆盖主持人自己的节目，这里补他们上别人节目的场合），搜索用 YouTube 服务端"本周上传"过滤器限定，只收最新的：
 
 **海外**：Sundar Pichai、Greg Brockman、Sam Altman、Demis Hassabis、Jensen Huang、Satya Nadella、Mark Zuckerberg；Anthropic 全线（Dario / Daniela Amodei、Krishna Rao、Mike Krieger、Sholto Douglas、Amanda Askell、Boris Cherny、Cat Wu、Alex Albert）；Kevin Weil（OpenAI CPO）、Ivan Zhao（Notion）、Dylan Patel（SemiAnalysis）、Ben Thompson（Stratechery）、Gavin Baker（Atreides）、Naval Ravikant
+
+其他人物及台湾供应链新增名单见 `config/sources.json` 的 `podcasts.people.searches`，以配置为准。
 
 **中国 AI**：闫俊杰（MiniMax）、杨植麟（月之暗面）、梁文锋（DeepSeek）、唐杰（智谱）、罗福莉、李广密（拾象）、肖弘（Manus）
 
@@ -130,7 +138,7 @@ SemiAnalysis 已进入日常自动全文流程：系统优先匹配官方 YouTub
 | cs.CL | 计算语言学（LLM / NLP 论文主阵地） |
 | cs.LG | 机器学习 |
 
-> 使用 5 天滚动窗口跨过周末和休刊时段，客户端按论文 ID 去重，不会重复推送。中央每天北京时间 06:00 做全量抓取，工作日约 09:30 再做一次 arXiv 专用刷新，以避开新论文批次尚未发布的空窗；09:30 前的早报可能仍使用上一批论文。
+> 使用 5 天滚动窗口跨过周末和休刊时段，客户端按论文 ID 去重，不会重复推送。中央全量抓取计划于每天北京时间 04:13 触发（实际完成时间受 GitHub 调度影响），工作日约 09:30 再做一次 arXiv 专用刷新，以避开新论文批次尚未发布的空窗；09:30 前的早报可能仍使用上一批论文。
 
 ## 快速开始
 

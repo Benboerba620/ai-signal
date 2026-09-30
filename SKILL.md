@@ -59,3 +59,7 @@ Read only the references needed for the current task:
 - Changing user preferences: read `references/configuration-handling.md`.
 - Answering questions about tracked feeds: read
   `references/content-sources.md`.
+
+### 数据完整性提示
+
+生成日报必须保留 payload 的 `warnings`、`errors` 和各 `feed_sources` 的健康状态；部分信源失败时说明受影响来源，不能把 feed 的生成时间当成每源最近成功时间。无新内容与未抓取成功必须分开表述。

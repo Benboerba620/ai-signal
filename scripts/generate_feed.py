@@ -364,7 +364,20 @@ def fetch_rss_with_fallback(channel, attempts=3):
             try:
                 resp = httpx.get(url, headers={"User-Agent": UA}, timeout=45, follow_redirects=True)
                 resp.raise_for_status()
+                if not parse_rss(resp.text):
+                    errors.append(f"{url}: response contains no parseable episodes")
+                    break
+                if errors:
+                    log(f"  ↪ RSS fallback selected: {resp.url}")
                 return resp.text, str(resp.url), None
+            except httpx.HTTPStatusError as e:
+                errors.append(f"{url} attempt {attempt}/{attempts}: {e}")
+                if e.response.status_code in (401, 403, 404, 410):
+                    # Retrying the same rejected route does not help; try the
+                    # configured publisher-owned alternative immediately.
+                    break
+                if attempt < attempts:
+                    time.sleep(1.5 * attempt)
             except Exception as e:
                 errors.append(f"{url} attempt {attempt}/{attempts}: {e}")
                 if attempt < attempts:
