@@ -1,0 +1,514 @@
+Why Dwarkesh is Wrong about Computer Use + How OpenAI shipped its Jev competitor in 1 Week
+Sign in
+Latent Space: The AI Engineer Podcast
+Why Dwarkesh is Wrong about Computer Use + How OpenAI shipped its Jev competitor in 1 Week
+1
+1×
+0:00
+Current time: 0:00 / Total time: -39:12
+-39:12
+Audio playback is not supported on your browser. Please upgrade.
+Why Dwarkesh is Wrong about Computer Use + How OpenAI shipped its Jev competitor in 1 Week
+Our DevDay coverage - the first pod on the DevDay lineup - dives in with the leaders of OpenAI’s CUA team and API platform.
+Sep 30, 2026
+1
+Transcript
+Three months ago Dwarkesh, who has been posting incredible blogs and episodes about RL, posted a framing question for his video essay on RLVR which upset a lot of Computer Use folks:
+Dwarkesh Patel @dwarkesh_sp
+Here's a question I find confusing and interesting and which actually tells us a lot about the nature of current AI progress:
+Why has progress on computer use been so slow? Computer use is so clearly verifiable.
+I think the answer is that it is not enough for a domain to be…
+Dwarkesh Patel @dwarkesh_sp
+What does the next training paradigm look like?
+0:00:00 – The big research bet the labs are making
+0:02:12 – Grindability is just as important as verifiability
+0:06:10 – Will RLVR alone generalize?
+0:08:41 – Getting the learning back to the weights
+0:15:22 – Dreaming
+0:17:23 –
+12:54 AM · Jun 27, 2026 · 604K Views
+143 Replies · 70 Reposts · 1.02K Likes
+We are no strangers to learning in public and are no strangers to the stress of getting things wrong when you have a big platform. However, we were at Anthropic for the Computer Use launch , there for Claude Cowork with the first big podcast on it, organized the first Computer Use track at AIE presenting the state of the art, and were close to the OpenAI-Sky Software acquisition that now powers the complete domination of computer use that Codex enjoys today. This is why we’re excited to bring you today’s first guest, Ari Weinstein , cofounder of Sky and now leading all the amazing CUA progress that casuals might miss:
+Ari Weinstein @AriX
+We've gotten a lot of great questions on privacy implications of Computer History.
+Here's a few things we've done to build a super powerful feature while keeping things private.
+First off, you can review all of your Computer History in the timeline view:
+Ari Weinstein @AriX
+Today we're releasing Computer History in ChatGPT.
+It lets ChatGPT learn from everything you do on your computer, so it can better understand how you work, finish tasks that you're in the middle of, and suggest skills and automations based on how you use your computer.
+8:39 PM · Aug 14, 2026 · 107K Views
+39 Replies · 29 Reposts · 512 Likes
+Ari explains why Computer Use is now “180 degrees different” from where it was months ago, how agents are learning to debug and recover from failures, why combining screenshots with accessibility data, the DOM, Playwright, and generated code changes the speed equation, and why the next frontier is making agents literally superhuman at using software.
+OpenAI clones Jev
+In the second half, Nikunj Handa from OpenAI’s API team breaks down the new developer stack: async tool calling, mid-turn steering, WebSockets, UltraFast inference, the Decisions API, prompt caching, pre-warming, compaction, and the Agents API . Given that we were the first Jev podcast , we particularly focus on the unusually fast sprint on the Decisions API:
+OpenAI Developers @OpenAIDevs
+Give your app real-time decision-making with Decisions API, powered by GPT-6 Luna.
+Define questions and possible answers to classify content, route requests, or choose an agent’s next action.
+Available in limited preview.
+6:34 PM · Sep 29, 2026 · 684K Views
+222 Replies · 401 Reposts · 5.71K Likes
+And why it is just a Luna wrapper for now but the team is motivated and egoless enough to clone what they consider to be good patterns.
+We discuss:
+Why OpenAI thinks Computer Use has changed dramatically in just the last few months
+Dots and what changes when every agent gets its own Linux computer
+Why Computer Use can now complete some tasks faster than the average human
+The path from human-level to “literally superhuman” computer use
+Why modern agents are much better at debugging and recovering from failure
+How screenshots, accessibility trees, the DOM, Playwright, and generated JavaScript work together
+App Shots and why they give models much richer context than ordinary screenshots
+Why Computer Use can close the loop between writing software and testing it
+Trust, permissions, and safety when agents can make payments and operate websites
+Async function calling and why models no longer need to stop reasoning while tools run
+Mid-turn steering, WebSockets, and the architecture behind more responsive agents
+UltraFast inference and how OpenAI is pushing frontier models toward much lower latency
+The rapid internal story behind the Decisions API
+Why Decisions API is more than structured outputs at low latency
+GPT Live, fast tool calling, and real-time computer control
+How OpenAI is already using Decisions API for support classification and internal workflows
+Longer prompt caching, cache pre-warming , and cache-aware applications
+Server-side compaction vs manual compaction for long-running agent threads
+What should live inside an Agents API versus a developer’s own harness
+OpenAI as an “AI cloud” and the search for higher-level primitives beyond raw model APIs
+Ari Weinstein
+Product & Engineering, Computer Use at OpenAI
+X: https://x.com/AriX
+LinkedIn: https://www.linkedin.com/in/weinsteinari/
+Nikunj Handa
+Product, API at OpenAI
+X: https://x.com/nikunjhanda
+LinkedIn: https://www.linkedin.com/in/nikunjhanda/
+Timestamps
+00:00:00 OpenAI DevDay: Dots, GPT-6.1, Agents API, and Decisions API
+00:02:52 Dots and Personal Cloud Computers
+00:04:59 Why Computer Use Is “180 Degrees Different”
+00:06:04 From Sky to Self-Debugging Computer Use Agents
+00:09:24 How Computer Use Sees and Operates Software
+00:12:09 From Faster Than Humans to Superhuman Computer Use
+00:16:03 Agents API: Trust, Permissions, and Safety
+00:17:31 Computer Use for Coding, Testing, and QA
+00:19:14 GPT-6 APIs, Async Tool Calling, and UltraFast Inference
+00:23:21 The Rapid Story Behind Decisions API
+00:25:32 What Decisions API Is and How It Works
+00:30:24 What OpenAI Is Building With the New APIs
+00:32:23 Prompt Caching, Pre-Warming, and API Performance
+00:35:20 Context Compaction for Long-Running Agents
+00:37:13 Memory, Higher-Level APIs, and the AI Cloud
+Transcript
+Introduction: OpenAI DevDay and the New Agent Stack
+Vibhu [00:00:00]: Okay. We’re very excited to be here. Today is OpenAI DevDay. Special podcast
+Swyx [00:00:08]: We’re the first podcast after your livestream.
+Vibhu [00:00:10]: First podcast. We have Ari here, who leads the product and engineering team for Computer Use agents. Before we kick in and dive deep on Computer Use, you wanna give a quick recap? What was announced? What’s the quick slew of announcements you guys had today?
+Ari Weinstein [00:00:24]: Yeah. yeah, it was a super exciting day. we just got out of the keynote. It was really sick. there were a bunch of Computer Use announcements that I think are worth thinking about. We have, Dots, which is the new, sort of personal assistant product, and, that has some really exciting Computer Use features. There’s GPT-6.1 Sol, which is this amazing new model, that I think is particularly great for Computer Use ‘cause of, sort of the cost and speed, advantages. I think, I think we
+d that it’s, a fifth of the cost of Astra and a seventh of the cost if you’re looking at Computer Use specifically, which is really amazing. sorry, there were so many things. I’m trying to sort through it.
+Swyx [00:01:02]: And the API.
+Ari Weinstein [00:01:03]: Agents API, which now has Computer Use in it, which is really cool, ‘cause now developers can build on the same Computer Use, that is part of Codex, and ChatGPT. and then there were some demos of our existing Computer Use features, like app shots, where you can take the context of something you’re doing on your computer and bring it into Codex and ChatGPT really fast. And then, like, native Computer Use on your Mac, where Roman had it taking screenshots of his app, automatically, and he could do other things on his computer while Computer Use was using his applications. so yeah, really exciting keynote.
+Swyx [00:01:35]: And not to mention the Decisions API.
+Ari Weinstein [00:01:37]: Decisions API.
+Swyx [00:01:38]: Off the bat, are they all the same model? Like, this is. Or the same dataset distilled to different models?
+Swyx [00:01:44]: Like, basically, like, is Computer Use using Decisions API, or are they, like, kinda separate?
+Ari Weinstein [00:01:49]: So what’s really cool about the Decisions API is it, you know, it has all these new capabilities. It does inference in parallel. it doesn’t have reasoning. It’s a smaller model, than the ones we use for Computer Use. and so those capabilities make it really fast.
+Dots and Delegating Work to a Cloud Computer
+Swyx [00:02:07]: Yeah.
+Ari Weinstein [00:02:07]: They also make it a little bit less good at doing, like, long horizon, sort of sophisticated tasks. And so I think I would say it’s still an open area of research for how we, like, bring those approaches together. But, yeah, I’m really excited to see what people build with the Decisions API.
+Vibhu [00:02:24]: One of the interesting things is Dots now have attached personal computers.
+Ari Weinstein [00:02:28]: Yeah.
+Vibhu [00:02:28]: So it seems like they’re very much more persistent. You’ve been using them for a while. How should people push the bounds? Like, what should people aim for? What should they try? Personally, right now I use it for a lot of customer service. Like
+Ari Weinstein [00:02:41]: Cool
+Vibhu [00:02:41]: “Oh, this was wrong. I don’t wanna sign in. I don’t wanna authenticate.” Find whatever and just get it fixed.
+Ari Weinstein [00:02:45]: Yeah.
+Vibhu [00:02:46]: How should we push further? What should people try?
+Ari Weinstein [00:02:50]: Dots Are a really cool product because each Dot has access to its own Linux virtual computer in the cloud, which is different from our other products. you know, traditionally, we’ve have access to a browser in the cloud, or it has access to your own computer, but now you get your own entire Linux computer in the cloud. And so it can run full desktop applications, and it can also use a web browser. And so, yeah, you know, I think the powerful thing about Computer Use and the reason why I think it’s so, exciting is because it makes it so that the agent can do anything you as a, as a person can do, because all the software in the world was designed for humans, and now agents can use that same software, and you can delegate to the agent. So, yeah, like, anything that you would do on a computer, you can ask a Dot to do. Yeah, I think what particularly is useful is gonna really depend on who the end user is and what- what’s valuable in their life. but yeah, I would just start by thinking about, like, one of the things that you spend time on and how could you delegate those to an agent.
+Swyx [00:03:47]: Yeah, a lot of flight booking and shopping and honestly even, like, playing a game or whatever, right?
+Ari Weinstein [00:03:52]: Totally.
+Swyx [00:03:52]: Yeah.
+Ari Weinstein [00:03:53]: Yeah, I don’t know. For me, something I did recently, I’ve been working on. I’ve,
+d to a meal prep service ‘cause I was trying to, like, eat healthy, you know? And I really like this meal prep service I found because it lets me customize the meals I order to, like, a high degree of granularity. So I can say, like, “I want this many grams of chicken and this many grams of rice.” but it was so complicated. It took me two hours to do an order, and I found that I could ask Computer Use to do it for me, and it did it in 15 minutes. so I actually saved two hours. it both did it eight times faster than I could, and it saved me two hours on GPT-6.1 Sol.
+Swyx [00:04:32]: Yeah.
+Ari Weinstein [00:04:32]: So those are the kinds of tasks that I feel like, are really powerful.
+Swyx [00:04:36]: As a creator, I can tell you automatically, immediately, my number one use case is automating YouTube.
+Ari Weinstein [00:04:40]: Nice.
+Swyx [00:04:40]: Because, YouTube doesn’t expose a lot of things via API.
+Ari Weinstein [00:04:43]: Yeah.
+Swyx [00:04:43]: And you have to just put it in a VM and just, like, run it, for, like, let’s say, let’s say their AB testing feature or making community posts. None of this is available by API ‘cause they hate developers.
+Swyx [00:04:53]: Anyway, so,
+Ari Weinstein [00:04:55]: I’ve heard that from our developer experience team too. They use it with YouTube a lot. Yeah. It’s really awesome.
+Swyx [00:04:59]: So I wanna draw for, you know. let’s say, I wanna get a little bit spicy. One of our, the leading AI podcasts, our friends, is famous for saying that Computer Use hasn’t advanced in the last two years.
+How Computer Use Has Changed in the Last Year
+Ari Weinstein [00:05:12]: Yeah.
+Swyx [00:05:13]: Which is a very interesting statement, and I think you’re one of the best people in the world to talk about this, like, how have things have progressed, right?
+Ari Weinstein [00:05:20]: Yeah. You know, they said that a few months ago, I think, and I hope they have a different perspective now because Computer Use is, like, 180 degrees different than it was.
+Swyx [00:05:26]: He’s a, he’s a tough guy to impress.
+Ari Weinstein [00:05:27]: Yeah, okay. well, we’re working on it.
+Swyx [00:05:30]: But, you know, you worked on. You’ve, like, basically spent your whole career working on, like, some kind of computer automation, right?
+Ari Weinstein [00:05:34]: Yeah.
+Swyx [00:05:34]: Like shortcuts
+Ari Weinstein [00:05:35]: Yeah
+Swyx [00:05:35]: At Apple, and then Sky, and then, and then joining OpenAI. Can you draw, like, what your through line is for, like, what is driving you and what- you, what wasn’t possible back then maybe
+Ari Weinstein [00:05:47]: Yeah.
+Swyx [00:05:48]: And, like, what your sort of milestones were.
+Vibhu [00:05:49]: I guess to add on to that as a follow-up question, what’s the major change from using Codex Computer Use from, like, last week
+Ari Weinstein [00:05:57]: Yeah
+Vibhu [00:05:57]: Through to today? Is it model? Is it dots? Is it harness? So all the history plus what really just changed in today’s announcements?
+Ari Weinstein [00:06:04]: Yeah. On the through line, I guess I’ve always been excited about automation and helping people automate tasks because then you can, like, save time in your life and focus on things that are more important to you than, like, operating a computer very intricately. And so, yeah, that was why we worked on some of those products. I was at Apple before. we made a company called Sky. we ended up joining OpenAI, which is really exciting. and I think something that was
+Swyx [00:06:27]: And almost like you have to hack around Apple until Apple was like, “Fine, like, we’ll just hire you and you can just work on the inside,” right? Like.
+Ari Weinstein [00:06:35]: It was, it was a cool place to get to work. what was really interesting looking back at Sky is we were, we were working on Computer Use there as well, and the models were so much less capable. And now the models, just in the last one year, have become extraordinarily capable at Computer Use. I think the biggest delta that I see is before they could, like, reliably start tasks, but then they would run into problems, and now they’re really good at debugging. They’re really good at trying again, introspecting what is and isn’t working. and I think we’ve also brought the Computer Use the Computer Use field itself has moved forward. I think we’re using more techniques. now Computer Use, often writes code. So if you actually look at it in Codex and you expand the tool calls manually, you can see that it’s not just doing one action at a time. It’s actually writing JavaScript code that it executes, that the computer executes to perform sometimes many actions at once, which is a great, you know, speed up and great capability. We use more accessibility, sort of multimodal interfaces. So, the model may use screenshots, it may use accessibility, it may use Playwright. it can use a lot of different mechanisms, based on the task at hand. and then, yeah, the model acceleration has been, has been just amazing. So, yeah, what’s different today? I think we’re making computers better all the time, so I think just, like, one day’s difference, is probably a little bit less consequential than, like, even the past month or the past two months. but, yeah, I think the Computer Use in Dot is really exciting as well as, the new model that we came out with.
+Measuring Computer Use and Improving the Harness
+Vibhu [00:08:03]: On the keynote, Tejal was mentioning 7x improvements in Computer Use speed, a lot better on a few benchmarks. How do you guys think about measuring it? Computer Use is one of those things where, as you say, you know, it’s improvements over time.
+Ari Weinstein [00:08:20]: Yeah.
+Vibhu [00:08:20]: Is it harness? Is it model? Is it post-training?
+Ari Weinstein [00:08:22]: Right.
+Vibhu [00:08:22]: How do you guys look at it internally about measuring how good it is, and what were the changes with the new model?
+Ari Weinstein [00:08:29]: We actually have a bunch of different ways of measuring it, some of which are on different permutations and configurations of the harness. It’s a bit of a complicated story because, you know, our production products have, you know, some more safety checks, and, you know, those are configured differently based on the needs of the, of the task at hand. So there’s a lot of ways to measure it, but I think regardless of how we measure it, we find pretty consistent gains. and those gains are, sometimes in the harness and sometimes in the model. and yeah, I was really excited by this result that GPT-6.1 is even more cost-effective for Computer Use than its baseline cost improvement as compared to Astra. It’s, like, really cool to see.
+Swyx [00:09:10]: Yeah. I mean, one of the visuals I really liked from the livestream was that, you’re sort of improving the Pareto frontier of, your, curve, and there was a lot of talking about how you’re improving it together with the harness.
+Ari Weinstein [00:09:24]: Yeah.
+Swyx [00:09:24]: Can you give some examples of aha moments that you had, whether it’s on, like, model driving the harness driving the model, whatever?
+Ari Weinstein [00:09:32]: I don’t mean to repeat myself, but I think, like, introducing more modalities has been really powerful.
+Swyx [00:09:36]: Okay.
+Ari Weinstein [00:09:36]: One more specific example of that is, in the past, I think we saw a lot of Computer Use, products had to spend a lot of time, like, scrolling, you know? So it would, like, take a screenshot. It would try to do something. It would be like, “Oh, I gotta, like, scroll down to the next page of results,” and then it would take a screenshot, and then it would try to do something. It would scroll down again. And so I think, with accessibility and other. and, direct access to the DOM and other things like that, now the language model can actually see, like, an entire page or an entire application. It can write code that can do multiple steps at once. And so I think those have been probably the biggest single aha moments. There’s, like, a lot of tiny ones that are less exciting in comparison, but actually we do find also that a lot of speed improvements are driven by, like, a lot of little paper cuts that we gotta go in and introspect.
+App Shots, Accessibility, and Better Computer Context
+Swyx [00:10:21]: Yeah. A lot of really hard engineering.
+Ari Weinstein [00:10:23]: Yeah.
+Swyx [00:10:23]: I mean, app shots in general, right? Like, I think people don’t quite get the difference if. because there’s, like, a nice visual in Codex when it
+Ari Weinstein [00:10:30]: Yeah
+Swyx [00:10:30]: When you take an app shot, but they don’t maybe they get the difference that, you are able to actually drive each button and you have the, you have each text, in a very optimal representation.
+Ari Weinstein [00:10:40]: Yeah. Exactly. Yeah. It’s kind of fun actually. If you wanna be, like, really nerdy about it, you can go into Codex, take an app shot by hitting the two command keys. So you grab the content from whatever app you’re working with, bring it into the, Codex or ChatGPT chat. And then the. if you click on the attachment and you click on this, like, little tiny button in the top right, you can see the raw text and you see the raw accessibility representation. And yeah, we’ve put a lot of work into, putting
+Swyx [00:11:04]: Just dumping everything out. Yeah.
+Ari Weinstein [00:11:05]: Dumping it out, but also making it token-efficient, doing it efficiently. There’s, like, a bit of an art to it. And, you know, it turns out that the same technology that was invented for humans, you know, who maybe have accessibility needs, who wanna use a screen reader technology, that technology is really helpful for them to be able to use computers. It’s also really helpful for LLMs to be able to use computers. So that’s been, like, really fun to get to work on.
+Vibhu [00:11:27]: For context, I feel like a lot of people don’t understand app shots. They don’t even know it’s a feature.
+Ari Weinstein [00:11:30]: Yeah.
+Vibhu [00:11:31]: It’s when you double hit command, it pulls in what looks like a screenshot
+Ari Weinstein [00:11:34]: Right
+Vibhu [00:11:34]: And you’re like, “Oh, why have I opened up just a screenshot and thrown it in?” No, it’s actually pulling all the metadata, all the code, everything.
+Ari Weinstein [00:11:40]: Yeah, exactly. Yeah. So it’s like, you know, if you take a screenshot of a webpage that has a link- The screenshot doesn’t include where the link goes. It doesn’t include, you know, maybe you take a screenshot of your calendar, the ca- event ti- titles are truncated, you know? But when you take an app shot, it gives, like, the language model, like, full context about everything and, that lets it, just sort of, like, do much more.
+Swyx [00:12:02]: Yeah. For those who wanna see more, Jason Liu, I invited him to do a full workshop on this, at AI Engineer.
+Ari Weinstein [00:12:07]: Amazing.
+Swyx [00:12:08]: Did a great job.
+Vibhu [00:12:09]: I have a broader vision question
+Toward Superhuman Computer Use
+Ari Weinstein [00:12:11]: Yeah
+Vibhu [00:12:11]: On Computer Use agents. So your example of take a screenshot, scroll page, take a screenshot is where we were.
+Ari Weinstein [00:12:17]: Right.
+Vibhu [00:12:17]: Today, they can automate a lot. what are the bottlenecks? Is it models? Is it harnesses? What. Where do you see it going in, like, two years? Do you see it just running for hours? How do we get there? Any predictions on where Computer Use goes?
+Ari Weinstein [00:12:32]: Yeah. I mean, I think what’s really crazy that I think, You know, the team’s accomplished over the past couple of months is that now Computer Use is, like, faster at accomplishing tasks than, like, the average human probably in most cases. and I think that the next frontier is to have Computer Use be, like, literally superhuman in its performance where it actually is as fast or faster at using software than, like, expert Computer Users like us. and I think that’ll be really consequential and exciting when that happens because I think we’ll be able to all of a sudden build products, that, provide just much more real-time experiences. And I think it’ll also. lowering the barrier to entry of, or the activation energy, I suppose, of using Computer Use I think will make us start to default to doing certain things in agents that we’ve become accustomed to doing manually. And I think that’s exciting also ‘cause it’ll save us a ton of time. and I think there’s a, you know, there are a lot of different little paper cuts and bottlenecks that are sort of standing in the way of that. I think that there’s, yeah, there’s things on the model side, there’s things on the inference side, there’s things on the harness side, there’s things in the, in the representation. You know, we find that as Computer Use gets faster, we’re increasingly bottlenecked by just, like, the speed of doing an operation. Like, for example, you know, a non-trivial amount of time in our benchmarks of Computer Use tasks is actually, like, let’s say you’re automating a task on doordash.com. Like, a lot of the time is actually waiting for doordash.com itself to load, you know?
+Swyx [00:14:04]: Yeah, then you just write a wait and then you execute the wait.
+Ari Weinstein [00:14:07]: Yeah, totally. And you wanna get. Yeah, actually, it’s actually really important that you get that de- like, you want as little delay as possible between when it finally finishes loading and when you go and
+Swyx [00:14:16]: Yeah
+Ari Weinstein [00:14:16]: Trigger the LLM to do the next action, which is actually- itself a statistical science.
+Swyx [00:14:20]: Like an event-driven way maybe to do that.
+Ari Weinstein [00:14:22]: When possible, you want it to be event-driven.
+Swyx [00:14:24]: JavaScript has some load events.
+Ari Weinstein [00:14:25]: And JavaScript has load events for. or the web browser has load events for web navigation, but there’s other types of events that actually really can’t be event-driven. So there’s a lot of complexity
+Vibhu [00:14:34]: The one that comes to mind is, like, chatting with customer service.
+Ari Weinstein [00:14:37]: Yeah.
+Vibhu [00:14:37]: Replies could take 30 seconds, could take three minutes.
+Ari Weinstein [00:14:39]: Oh, right.
+Swyx [00:14:41]: I have dealt with so many bots with Codex. it’s great, but I also wonder if the other side knows that they’re talking to a bot ‘cause I’m, like, answering in complete sentences. Like, I’m capitalized correctly.
+Ari Weinstein [00:14:50]: That’s hilarious.
+Swyx [00:14:51]: Like, I’m giving full num- full reference numbers and everything. Like, it’s too. it’s clearly too good. I don’t care. Like Like, I’m just, like, trying to get my support case.
+Vibhu [00:14:58]: I’ve prompted it to, like, you know, “Don’t pretend you’re a bot. Be very annoyed human.”
+Vibhu [00:15:02]: Short one-liners, like
+Swyx [00:15:04]: Yeah
+Vibhu [00:15:04]: Push it, do all this. I also tell it, “While you’re waiting for responses, like, use subagents to research better ways to figure out what we need.”
+Ari Weinstein [00:15:12]: Nice.
+Vibhu [00:15:12]: It’s just, like, human little intervention.
+Ari Weinstein [00:15:14]: That’s awesome. I also feel like half the time it’s a bot on the other end, so now you
+Vibhu [00:15:17]: Yeah
+Ari Weinstein [00:15:17]: Got the bots talking to each other.
+Swyx [00:15:18]: Yeah. I will also say, you know, like, you know, one milestone of Computer Use that we are, we’re at now is, you know, three, four years ago, we were scared of hooking up LLMs to the, to the web and to
+Ari Weinstein [00:15:31]: Yeah
+Swyx [00:15:31]: To our, to our devices. And now I’m having it configure DNS for me.
+Ari Weinstein [00:15:35]: Wow.
+Swyx [00:15:36]: I’m having it pay my bills, and, like, really, like, tens of thousands of dollars of, like, stuff I’m just sending it over and yoloing with Computer Use and, like, you know, what’s the, what’s the worst thing that can happen?
+Swyx [00:15:48]: So that- that’s all, that’s all really good.
+Building Safely With Computer Use in the Agents API
+Ari Weinstein [00:15:50]: Yeah.
+Swyx [00:15:50]: I think now that you’ve. you know, obviously, you also have to dogfood your own products and all these things. Now that you’ve sort of released this in API, what are some pitfalls or tips that you wanna tell developers, because they’re about to, I guess, encounter all this, firsthand?
+Ari Weinstein [00:16:03]: First of all, I’m just really excited that we brought Computer Use into the Agents API. I think this is, really great because obviously a lot of developers are building applications that wanna be able to work with third-party websites and services. And so Computer Use has this universality to it. It can work with anything. So now all of a sudden, developers can build using the same Computer Use implementation that we’re building on. I think there’s great work to be done if you wanna build your own Computer Use harness, but it’s hard. And also, we train our models on our Computer Use harness, so there is, an advantage to using the one that’s in distribution for the model. There actually might be a speed and cost and accuracy advantage. So I think it’s really great for people to get to build on top of that. And, yeah, you know, I think kind of to the point that you were making, like, I think we’re all sort of still in the process and maybe, like, some of us are ahead of many people in the world of, like, getting comfortable with this technology and trusting it. And so I think it’s incumbent on us to, sort of build that trust over time by making sure we’re building things that are reliable, by building, the right kinds of safety checks, by asking for the user’s consent before doing something consequential like making a payment, by, asking, you know, maybe depending on the application, making sure you’re only letting it access the websites or applications that it actually needs for the task. So that’s, I think, something important to think about. but yeah, I’d really encourage people to try the new Agents API, build all kinds of cool stuff on it. We’d love to hear your feed- feedback if, you know, depending on how it goes.
+Vibhu [00:17:31]: Have you seen any changes in the way it affects dev workflows? So one of the things with dots is, you know, you’re seeing it in Slack.
+Ari Weinstein [00:17:38]: Yeah.
+Vibhu [00:17:38]: You’re seeing people use voice and build. the example Roman showed of change this app and send me screenshots along the way and all this.
+Computer Use for Testing and Closing the Software Loop
+Ari Weinstein [00:17:46]: Yeah.
+Vibhu [00:17:46]: Is anything that you’re seeing there in adoption about how people are using Computer Use for coding workflows? Any tips people should take from that?
+Ari Weinstein [00:17:55]: One of my favorite use cases for Computer Use actually, and one that we see a lot in the wild, is Computer Use letting the agent- actually test the software that the agent has built, which is far more consequential than it sounds. Because traditionally, you know, you’d build something in Codex and then the-- and the Codex builds it for you, and then you have to test it, and you are now like QA for the agent, right? So with Computer Use, you can complete the develop-- the software development life cycle, where, the agent can build software, it can test it. So I have a lot of fun, you know, building stuff, having the agent test it. By the time it comes to me, it’s already working. I have, extra fun because sometimes I’m, like, developing Computer Use itself, and so now I have a Computer Use agent that’s using my Computer Use agent that’s using something else. so yeah, I really, I really think this is a super powerful class of use case.
+Swyx [00:18:44]: I have a visual play test skill that I’ve developed that, really catches a lot of design issues,
+Ari Weinstein [00:18:49]: Nice
+Swyx [00:18:50]: That, you know, normally when you just look at code, you wouldn’t really pick it up. it’s also really good for cloning apps, though. If you’re using a shitty SaaS and you wanna kill the SaaS You just clone it screen by screen by screen. and Obviously, Computer Use can completely drive everything, take screenshots, note it down, and then clone everything with Codex.
+Ari Weinstein [00:19:06]: That’s really cool.
+Swyx [00:19:06]: But yeah, thanks for all your progress. I think, that is
+Ari Weinstein [00:19:08]: Absolutely
+Swyx [00:19:09]: Our time.
+Nikunj Handa: What’s New in the OpenAI API
+Ari Weinstein [00:19:10]: Yeah.
+Swyx [00:19:10]: This is not the last that we’re gonna talk.
+Ari Weinstein [00:19:12]: Yeah, cool. This has been really fun. Thank you guys for having me.
+Swyx [00:19:14]: All right.
+Vibhu [00:19:14]: All right. Okay, we’re a strict cutoff. We’re just gonna dive right in.
+Nikunj Handa [00:19:17]: Let’s do it, yeah.
+Vibhu [00:19:19]: Okay, so, Nikunj, we’re very excited to have you. You shipped a lot on the API side, like we just
+Nikunj Handa [00:19:25]: Yeah
+Vibhu [00:19:25]: Talked about with Ari. You can now build with Computer Use agents. Anything you wanna highlight, the API side of changes, and introduce yourself a little and what you do?
+Nikunj Handa [00:19:34]: Yeah, for sure. My name is Nikunj. I lead product for the API team. Been here for roughly three years. been working on launching models. I feel like that’s just been, like, a thing, constant thing throughout my time, here at OpenAI. And, with every new model, we try to, like, basically work super closely with the post-training team, the research team, to figure out what’s new in it. and then we, like, expose those capabilities in the API. so that’s, like, the basic way of putting it. and if you just look at, everything that’s new with GPT-6, the cool new capabilities that we launched were, firstly, async function calling. so what you see with, like a lot of the things that you’re seeing in, like, Codex and Dots and everything is that tool calls take so long that you don’t have to, like, pause the model’s execution while, the tool is running. So you could just, like, kick off a tool call, keep running, keep reasoning, and then check back in. so we launched async tool calling. We launched, like, mid-turn steering, so now you can, like, inject messages while the model is reasoning, in the middle. so as your tool call finishes, you can put in that instructions.
+Async Tool Calls, Mid-Turn Steering, and WebSockets
+Swyx [00:20:43]: And that’s also partially a model alignment capability, right?
+Nikunj Handa [00:20:46]: Yeah.
+Swyx [00:20:46]: Like, they have to train in the ability to train.
+Nikunj Handa [00:20:48]: Exactly, yeah. And
+Vibhu [00:20:49]: I feel like we’ve had it in the app. You could always, as it’s reasoning, you could steer.
+Nikunj Handa [00:20:54]: Yes.
+Vibhu [00:20:54]: It wasn’t the best. It’s gotten much better.
+Nikunj Handa [00:20:57]: Yeah.
+Vibhu [00:20:57]: Excited to see how it does this in version
+Nikunj Handa [00:20:58]: Yeah, and I like our main
+Vibhu [00:20:59]: And now
+Nikunj Handa [00:21:00]: Goal in, our main goal in the API is to, like, put things in the API once it’s trained into the harness. And so we kinda wait for that moment until it’s good enough. And a lot of that is, like, actually being powered by WebSockets, which we launched, a few, I wanna say months ago. And so WebSockets just opens this, like, whole bidirectional, like, communication thing with the model. This is not, the GPT Life thing. I’m just talking about GPT-6. and you can do all these, like, async tool calling, async reasoning, injecting messages. It’s a really fun API to work on. I think, like, really enjoying.
+Swyx [00:21:33]: Yeah. This is why we are the engineering podcast, because we get to talk about WebSockets.
+UltraFast and the Inference Stack
+Nikunj Handa [00:21:36]: Yeah.
+Swyx [00:21:37]: This also pairs very well with UltraFast, right?
+Nikunj Handa [00:21:39]: Oh, yeah.
+Swyx [00:21:39]: Like, that is now, like, I think for the first time ever available in the API.
+Nikunj Handa [00:21:43]: Yes.
+Swyx [00:21:43]: Which is, which is basically the theoretical fastest speed you can ever get, Frontier of Intelligence.
+Nikunj Handa [00:21:49]: Yeah. It’s been so exciting to work on that project. I think, before I go into the API, the most fun part of, UltraFast has been just watching the inference team cook with Astra. Like, they’re just, like, constantly having these, like, Codex agents running, trying to, like, squeeze out more performance. And, I would say, like, at least for a couple of months, a lot of it was focused on efficiency and driving the cost down, which is how we, like, were able to cut the Luna price by, like, 80%. It was, like, a lot of that was driven by, like, all the inference improvements they landed. And then now they’ve, like, shifted gears towards, like, how can we make this run as fast as possible? And so UltraFast has just been, like, amazing to see on a mo- on a model like Astra. Like, to go that fast has been really cool. And yeah, WebSockets is like. actually it was like the first time we launched WebSockets, it was for GPT, 5.3 Codex Spark, which was. Can’t believe we named a model that, but, you know, that’s what we launched it for. And obviously, it helps so much because, like, you gotta have the tool calls. you had, like, really reduced the overhead, of going back and forth with tools. And so, WebSockets is awesome for that.
+Swyx [00:22:57]: Yeah. it’s always cute to see, like, I have my reset usage limit, and then I have my Spark usage limit that I never use.
+Nikunj Handa [00:23:03]: Yeah.
+Swyx [00:23:04]: Like, it’s there if I want it.
+Nikunj Handa [00:23:05]: I think it’s gone finally.
+Swyx [00:23:06]: It’s gone. It’s gone, yeah.
+Nikunj Handa [00:23:07]: I know it’s gone, so.
+Swyx [00:23:08]: Yeah. you’re slowly killing off all the, you know, the
+Nikunj Handa [00:23:11]: The old ones, yeah.
+Swyx [00:23:11]: Oldies.
+Vibhu [00:23:11]: This is a great week. I mean, it was the first time we had Frontier Intelligence at extreme speeds.
+Nikunj Handa [00:23:17]: Yeah.
+Vibhu [00:23:18]: People really liked it.
+Nikunj Handa [00:23:19]: Yeah.
+Vibhu [00:23:19]: So
+Swyx [00:23:20]: Yeah
+Vibhu [00:23:20]: First time it comes back.
+Swyx [00:23:21]: Yeah. for, 5.3 Spark is explicitly attributed to Cerebras. You guys are not confirming or denying that, UltraFast is related to Ce- Cerebras, but people are. I’ll just say that people do care and, are wondering about it. And you have your own silicon as well. elephant in the room, decision models.
+Decisions API: OpenAI’s Fast Decision Model
+Nikunj Handa [00:23:38]: Oh, yeah.
+Swyx [00:23:38]: Decisions API. We were the first podcast to do a big Jev, deep dive with, Diogo, and I also, you know, featured him at AI Engineer. How quickly did you see Jev and go like
+Nikunj Handa [00:23:49]: Oh my gosh. Yeah.
+Nikunj Handa [00:23:50]: Yeah. Firstly, like, huge props to Diogo and, like, the Jev team for, like, really inspiring the
+Swyx [00:23:55]: Yes
+Nikunj Handa [00:23:55]: Like, whole segment in the market. Like, obviously Jev comes out, everyone’s, like, losing their minds over it. Our users are, like, hitting us up. But also, like, our internal teams are like, “We need, like, a much faster classification system.” We can. I don’t wanna, like, get ahead of some of the dots features that are gonna come
+Swyx [00:24:16]: Whoo
+Nikunj Handa [00:24:16]: But you’re gonna see, like, some cool, like, really snappy, fast things built on top of the decisions API. but, you know, like, yeah. Props to Jev for, like, inspiring this whole thing. obviously a bunch of people at OpenAI get nerd sniped by that, and they’re like, “How can we, like, make this work? We’re not gonna, like-”
+Swyx [00:24:33]: Okay.
+Nikunj Handa [00:24:33]: “. train a new model.” But
+Swyx [00:24:34]: Like, four weeks ago, this was not on the dev radar, right?
+Nikunj Handa [00:24:37]: No, not at all. No.
+Swyx [00:24:37]: Okay.
+Nikunj Handa [00:24:37]: This is like
+Swyx [00:24:38]: Wow
+Nikunj Handa [00:24:38]: Jev-inspired and, like
+Swyx [00:24:40]: I think you are officially the first one to your lab to, like, clone and, adopt this.
+Nikunj Handa [00:24:44]: Yeah. Yeah. I feel like, OpenAI has such a strong, like, hacker culture and, like, people are just, like, they get excited about things. And so, guy from inference, this one awesome guy from, the infra team are like, “ this is amazing. We’re gonna, like, hack on it.” They build a prototype, it, like, works, and now we- we are just, like, hill climbing on latency and trying to make this as fast as possible, and we wanna, like, launch it in the coming days. so as soon as we hit our, like, latency target, we’ll try to get this out.
+Vibhu [00:25:13]: It’s interesting. At the same time of hacker culture, you also, as Sam said, like 99%, one of the most reliable APIs with
+Nikunj Handa [00:25:20]: Mm-hmm
+Vibhu [00:25:20]: I think probably the most usage, which is your team directly. how should people see decisions API? I feel like a lot of people saw Jev, heard the buzz, haven’t built with it. You’re making it very mainstream.
+What Decision Models Are Good For
+Nikunj Handa [00:25:32]: Mm-hmm.
+Vibhu [00:25:33]: What should people see it as? How should they use it?
+Nikunj Handa [00:25:36]: Yeah. I think the main use cases we’ve seen is, like, really fast classification. all the Computer Use demos have been amazing and really cool. I think there will be limitations, of course, in terms of, you know, having Astra, like, write, like, a JavaScript-like script to control your computer, versus having Luna pick, like, one action at a time. I think, it’s not gonna be at the same intelligence level, but, like, maybe there’s some Computer Use tasks that this is good enough for. So excited to see that come through. the other cool prototype I’ve seen internally is people hooking it up with GPT Live. So GPT Live is like, you know, our bidirectional, like, real-time,
+Swyx [00:26:14]: Voicing
+Nikunj Handa [00:26:14]: A- API. And, it’s built on this, like, model of front-end models and back-end models. So GPT Live is this, like
+Swyx [00:26:20]: Think or talker
+Nikunj Handa [00:26:21]: Super fast. Yeah, think or, talker thing. So GPT Live is the talker, super fast, really good at delegation, and you have something like Astra sitting at the ba- at the back. But tool calling has always felt, like, really slow in GPT Live. and so people have been, like, putting together these, like, tool calling demos of GPT Live controlling a computer, and it just feels like so much more snappy and natural. So I’m, like, kinda excited to see, like, what people do with Live and with Luna on decisions API. so that’ll be pretty exciting. Yeah.
+Swyx [00:26:55]: So I wanna iron this out for people, especially from the product side, because a lot of people have been putting out Jev clones. There’s been about 100 in the last two weeks.
+What Makes a Decision Model Different
+Nikunj Handa [00:27:01]: Oh, really? That’s amazing.
+Vibhu [00:27:03]: The first couple days.
+Swyx [00:27:04]: But like, it. Like, they can clone a Jev API, which is honestly structured outputs
+Nikunj Handa [00:27:09]: Yeah
+Swyx [00:27:09]: Which OpenAI was first to.
+Nikunj Handa [00:27:10]: Yeah.
+Swyx [00:27:11]: Right? So, like, I think let’s iron out for people what is a decision model, as far as
+Nikunj Handa [00:27:16]: Yeah
+Swyx [00:27:17]: As far as, like, what is important? It is not just latency. It’s not just structured output, right? Because I could just have Luna as it’- The decision model is priced the same as Luna, right?
+Nikunj Handa [00:27:26]: Mm-hmm.
+Swyx [00:27:27]: Have turned off reasoning and then have structured output. Do I have a Jev? you know, no, right? And that’s the
+Nikunj Handa [00:27:33]: Yeah
+Swyx [00:27:33]: That’s the real
+Vibhu [00:27:34]: There’s a confidence there.
+Swyx [00:27:35]: Yeah.
+Nikunj Handa [00:27:36]: Yeah, totally. I think, the way that. So we haven’t trained, like, a new model for this.
+Swyx [00:27:40]: Yeah.
+Nikunj Handa [00:27:40]: We’re, like, building this purely on top of the same Luna weights that we have.
+Swyx [00:27:44]: Oh.
+Nikunj Handa [00:27:44]: So yeah. This is, like, really just Luna. And, on top of that, what you’re doing is you’re constraining. So, like, structured output’s a big part of it. you’re really optimizing the inference stack to, like, get very fast on TTFD. And because you can have multiple questions, what you do is, like, you basically run those in parallel,
+Swyx [00:28:05]: As a batch.
+Nikunj Handa [00:28:06]: Yeah. You run those in the-- as a batch. you-- All sorts of, like, inference techniques people are working on to try to make it as fast as possible. But I’d say, like, at least our implementation of it at the start and this first version is, like, zero-shotting this on top of Luna, to see how it goes. And obviously, you wanna, like, put it out there. Like, this is OpenAI’s, like, classic iterative deployment thing. Put it out there, see what people think, and then, like, we’ll make more model improvements, as needed. so yeah. That’s, the decisions API.
+Swyx [00:28:38]: Yeah. And, obviously as a benefit, you have vision. They don’t have vision, right?
+Nikunj Handa [00:28:42]: That’s true.
+Swyx [00:28:42]: Obviously, Jev’s comes with
+Nikunj Handa [00:28:43]: Yeah. Like, we get it for free with Luna. Yeah.
+Swyx [00:28:45]: Yeah. I do think that, like, you know, some of the innovations, it sounds like, it’s still to come if it’s still the same Luna weights, which is, like, the confidence stuff, like, the in calibration is something that we’ve talked about on the podcast with, benchmarking calibration. ‘Cause basically, the whole point is that RLHF kind of collapses you towards what you want to hear.
+Calibration, Architecture, and the Open Research Questions
+Nikunj Handa [00:29:03]: Yeah.
+Swyx [00:29:03]: But, like, not actually, like, what the amount of confidence is.
+Nikunj Handa [00:29:06]: Yeah. Yeah, totally. I’m eager to see how it pans out. Maybe there’s, like, gonna be. These are gonna be, like, the key areas where we may have to, like, hill climb
+Swyx [00:29:15]: Yeah
+Nikunj Handa [00:29:15]: With the, with the future model release. But, yeah.
+Swyx [00:29:18]: And then architecture-wise, the other thing that’s in the debate, obviously, you-- Nobody knows because Jev doesn’t talk about it, but the two speculations are, one, maybe diffusion model instead of autoregressive.
+Nikunj Handa [00:29:28]: Mm-hmm.
+Swyx [00:29:29]: But you are able to achieve the parallel, generation in your way. And then the other one is some mech interp type thing
+Nikunj Handa [00:29:37]: Mm-hmm
+Swyx [00:29:37]: That you’re, like, analyzing the activations and then just outputting
+Nikunj Handa [00:29:40]: That would be cool
+Swyx [00:29:41]: The weights.
+Nikunj Handa [00:29:42]: Yeah.
+Swyx [00:29:42]: Which, like, you guys have all done the research on this. People have speculated.
+Vibhu [00:29:45]: There have been demos on
+Swyx [00:29:46]: Yeah
+Vibhu [00:29:46]: Both of these as well. I think Gemini
+d a Gemini diffusion, Gemma diffusion on a Jev-style output.
+Nikunj Handa [00:29:53]: Oh, sick.
+Vibhu [00:29:53]: And, interp people have also, you know, pulled out interp from a middle layer, but this is all speculation.
+Swyx [00:29:59]: It’s just like, what are you trying to aim for, right? Because you can achieve the API. Everyone can achieve the API. It’s actually pretty trivial. But, like, then there’s the speed, then there’s the accuracy, then there’s the other calibration features.
+Nikunj Handa [00:30:11]: Mm-hmm.
+Swyx [00:30:11]: I don’t know what else.
+Nikunj Handa [00:30:13]: Yeah. Yeah. No, totally. It’s so cool that this, like, whole space has been kicked off now and people are gonna do so much cool stuff and everyone’s gonna learn from each other. And, yeah, I’m excited about it.
+What Developers Should Build Next
+Vibhu [00:30:24]: I feel like being on the platform team, a lot of your job is to empower builders.
+Nikunj Handa [00:30:27]: Mm-hmm.
+Vibhu [00:30:28]: What do you think people should build with decisions API and also Computer Use agents? Any stuff that you’ve- been building with internally that you think really opens up after the new change?
+Nikunj Handa [00:30:39]: Yeah. okay, let’s think. decisions API, use cases internally have been pretty obvious. Like, the user ops team was, like, jumping on it. We were like, “We gotta classify all of our support tickets.” what else came up? obviously, there were, like, the really cool GPT Live demos. I’m sure, like, the Codex app team might, like, pick this up and try to do something cool with it. So, you know, like, this whole thing started, like, a week ago, so it’s, like, very early and
+Swyx [00:31:06]: Oh, one week.
+Nikunj Handa [00:31:07]: We’re excited. Yeah. Yeah, pretty much.
+Vibhu [00:31:08]: There was a big push in, evals, LLM as a judge having really low latency there.
+Nikunj Handa [00:31:13]: Right. Yeah. That’ll be interesting to see. and then, with the Agents API, we have-- we’re basically, like, having a bunch of first-party products, like, at OpenAI built fully on top of it. we’ve had the Codex security stuff that just went out that’s fully built on top of, the Agents API. We have, sort of the-- we- we are having, like, a meetings type of thing launching today.
+Agents API and OpenAI’s First-Party Products
+Swyx [00:31:40]: Mm-hmm.
+Nikunj Handa [00:31:40]: I think there was, like, a demo. do you remember, like, the plugin extensions when Sam was showing it? There was, like, a demo for, like, you’re in a calendar, you can sort of, like, have your meeting notes
+Swyx [00:31:51]: Like, drop into a single
+Nikunj Handa [00:31:52]: Flow into like your space
+Swyx [00:31:52]: Like, Google Docs type thing.
+Nikunj Handa [00:31:53]: Yeah.
+Swyx [00:31:54]: Right?
+Nikunj Handa [00:31:54]: And so the-- all of that stuff is, like, fully built on top of, the Agents API. and yeah, I’m, like, just excited to see. Like, we’re just getting this out, and let’s see what people build on top of it.
+Vibhu [00:32:04]: I think you showed it off very well. The whole edit spaces, pages, collaborate, add in your dot. Like, that’s a lot, so
+Nikunj Handa [00:32:12]: Yeah
+Vibhu [00:32:12]: There’s a lot of inspiration people can go to.
+Nikunj Handa [00:32:14]: Yeah. All possible with Astra, you know. Like, thing- things just move so fast now. Like
+Swyx [00:32:19]: Yeah
+Nikunj Handa [00:32:19]: People go from idea to execution so quickly, it’s amazing.
+Swyx [00:32:23]: Is there something that you want, people to focus on to give you feedback? Like, what-- like, you know, maybe you’re just putting this out there and you want-- and there’s, like, a fork in the road and you want developers to help you decide.
+Responses API Performance and Long-Lived Caching
+Nikunj Handa [00:32:35]: So I think Agents API and decisions API, they are like, these are our newest products. Would love, like, any and all feedback on that to figure out where to take them. I think, over here, we’re, like, very open on Responses API, which is sort of like our workhorse over here. like, really focused on performance right now, and the performance comes in, like, two main ways. first is just, like, latency. We’ve been, like, rewriting the whole Responses API stack to, like, make it as fast as possible from a TTFT perspective, DVD perspective. So there’s like-- that, like, continues to be, like, a main area of focus for us. The second thing we’ve been trying to do is, like, really go deep on caching, particularly with these, like, personal agents that are, you know, like, basically, like, a single thread that just goes on and on forever. We’ve been, trying to, like, really up our game on caching. We provide now guarantees of, like, cache hits within, like, 30 minutes. We’re actually, like, we-- for one of our users, we just launched, like, a much longer cache window. So we have, like, a 12-hour caching guarantee, that we offer so that you have, like, guaranteed cache hits for
+Swyx [00:33:40]: Is that a public API?
+Nikunj Handa [00:33:42]: Not yet. That’s in preview.
+Nikunj Handa [00:33:43]: We’re gonna, like, try to get that out to everyone as soon as possible. But, like, just pay a little bit more for the cache write, and we, like, guarantee, like, cache reads for, like, a much longer period. So even if, like, your instinct thread, for example, like, you just, like, do something on it and then come back to it, like, three to four hours later, you- you’re still getting the caching performance out of it. And launched
+Vibhu [00:34:04]: And you cut the cost there quite a bit too, right, with the new model?
+Nikunj Handa [00:34:07]: Oh, yeah. That’s right.
+Vibhu [00:34:08]: Like, 25% cheaper, so
+Nikunj Handa [00:34:08]: Yeah, with, like, driving down cache reads, yeah.
+Cache Pre-Warming and Cost-Efficient Agent Threads
+Vibhu [00:34:10]: For builders, they should implement
+Nikunj Handa [00:34:13]: Yeah
+Vibhu [00:34:13]: Because it’s significantly cheaper.
+Nikunj Handa [00:34:14]: Yeah. Yeah. Just, like, building your apps with, like, to be very cache aware and sort of, like, use our prompt diagnostics or cache diagnostics tool to figure out, like, where things are dropping off. And, so the caching part is, like, really important. yeah, I also wanted to talk about pre-warming. We have that in the API now. So, like, if you know that, “Hey, I’m gonna get a cache,” like-- sorry, “I’m gonna get this prompt. I just wanna, like, pre-warm the cache, pay, like, the cache write fee right now, and then, like, have it sort of ready to go for the next 30 minutes for whenever.”
+Swyx [00:34:49]: And it can spawn many instances of that thread.
+Nikunj Handa [00:34:51]: Exactly, yeah.
+Swyx [00:34:52]: Yeah.
+Nikunj Handa [00:34:52]: You can just keep going and have
+Swyx [00:34:54]: Yeah, just keep messing with the prompt there
+Nikunj Handa [00:34:55]: Tons and tons of that. and so, yeah, like, I’m very excited about getting feedback on, like, the low-level performance things that we can keep making Responses API the most performant and reliable way to, like, build on top of an LLM. And then you basically have our, like, new products where I’m just looking for, like, any and all feedback.
+Swyx [00:35:15]: Yeah, just use it, right?
+Nikunj Handa [00:35:16]: So yeah, just use
+Swyx [00:35:16]: Tell us what to
+Nikunj Handa [00:35:17]: Yeah. Define our roadmap for us, please. So yeah.
+Swyx [00:35:20]: I think for me, the caching thing, great, right? Like, obviously very needed. But at the end of the day, you’re still bumping up against a million-token context
+Compaction and Managing Million-Token Contexts
+Nikunj Handa [00:35:28]: Mm-hmm
+Swyx [00:35:28]: And that’s probably not gonna change for the foreseeable future.
+Nikunj Handa [00:35:31]: Mm-hmm.
+Swyx [00:35:31]: Like, you still need good compression.
+Nikunj Handa [00:35:33]: Yeah.
+Swyx [00:35:33]: What is the best practice there?
+Nikunj Handa [00:35:34]: Yeah. Yeah, totally. so firstly, OpenAI has its own, like, proprietary compression, comp
+Swyx [00:35:40]: Which is in
+Nikunj Handa [00:35:41]: Compaction.
+Vibhu [00:35:42]: Compaction.
+Swyx [00:35:42]: It’s in the agents.
+Vibhu [00:35:43]: It’s in the API.
+Nikunj Handa [00:35:43]: Yes.
+Vibhu [00:35:43]: Agents API.
+Nikunj Handa [00:35:44]: Yeah.
+Swyx [00:35:44]: You decide for us, right?
+Nikunj Handa [00:35:45]: Yeah, exactly. So in the Agents API, it comes built into the harness. and if you’re in Responses API, there’s, like, two ways of doing it. One is what we call server-side compaction, which is you basically tell Responses API that if you ever hit this threshold of tokens, just auto-compact it and, like, go back, or sorry, like, reduce the context, being used. And the second way is, like, /compact, which is, like, if you want full control. So you can, like, /compact at any time
+Swyx [00:36:15]: I hear you
+Nikunj Handa [00:36:15]: Have your own logic on when to, like
+Swyx [00:36:17]: It’s not AGI.
+Nikunj Handa [00:36:18]: It.
+Swyx [00:36:18]: It’s not AGI.
+Nikunj Handa [00:36:19]: Yeah. Yeah.
+Swyx [00:36:20]: Yeah. But it, I mean
+Nikunj Handa [00:36:20]: Yeah
+Swyx [00:36:20]: It is the manual override.
+Nikunj Handa [00:36:21]: Yeah, it is the manual way. And like, I don’t know, but a lot of the big coding agents like to do it manually. I mean, like, if you look at the Codex implementation of it in the Code- open source Codex harness, you can see that they use /compact and do it. and, there’s also, like, new, by the way, new compaction techniques that we are working on. Some of them you will be able to see in the Codex harness. Like, it’s already implemented in the Codex harness. And so, they’re like some file-based, systems that we are, like, experimenting with. So yeah, lots of cool stuff going on around in compaction as well.
+Swyx [00:36:57]: Cool. we are running out of time.
+Nikunj Handa [00:36:59]: Okay.
+Swyx [00:36:59]: I think you’ve talked about, a lot about performance and talked a lot about, the new APIs that you’re launching. Can you give us any other hints as to things that you’re interested in as far as the future of the platform is concerned?
+Higher-Level Platform Primitives and the AI Cloud
+Nikunj Handa [00:37:13]: We’re obviously like very low level. Like, I used to work at Stripe before this, and, at Stripe a lot of the game was like building these higher level primitives and products on top of like the core payments primitives. and, I’m always like curious about what the best way of doing that is in AI. And I think we’ve had a couple of attempts at that. We like had launched assistance API like way back in the day, and like wasn’t really the right fit. We were sort of like going off with this like Agents API, and, it gives you the codex harness, but like where’s like the, what’s the right amount of flexibility to give in that? That’s like an open question. Like how should we like have memory walls and like all of these like higher level like API objects to take away, also like to abstract away more, like storage concepts. Like this is like a whole, like, there’s a whole space that I’m like very curious about figuring out how we design. I think a lot of things in AI are just have a low-level API primitive and see an example harness and go and have your coding agent implement that. But how much of that do we build into the API is like a constant question that I’m thinking about.
+Swyx [00:38:24]: Yeah.
+Nikunj Handa [00:38:24]: So I don’t know if folks have thoughts on that. If anyone has ideas, it would be super interesting to hear.
+Swyx [00:38:30]: Yeah. The analogy I always bring back to, and we’ll end there, is, you’re building an AI cloud, right?
+Nikunj Handa [00:38:35]: Mm-hmm.
+Swyx [00:38:35]: Like, which is, something that, Sam said a year ago
+Nikunj Handa [00:38:38]: Mm-hmm
+Swyx [00:38:38]: Where, and you’re, it’s almost like you’re kind of doing the AWS invention and you have to do, okay, this is EC2
+Nikunj Handa [00:38:45]: Yeah
+Swyx [00:38:45]: And this is S3, and this is like. But you’re doing the AI-native versions of each of these.
+Vibhu [00:38:48]: There are a lot of analogies, so you’re pre-warming caches for stuff that you know will be
+Nikunj Handa [00:38:53]: Yeah.
+Vibhu [00:38:53]: And it’s nice that it’s all exposed to builders
+Closing
+Nikunj Handa [00:38:56]: Mm-hmm
+Vibhu [00:38:56]: ‘cause it just opens up ways that you can build new things.
+Nikunj Handa [00:38:59]: Yeah, absolutely.
+Swyx [00:39:00]: Okay.
+Vibhu [00:39:00]: Awesome. Well
+Swyx [00:39:01]: That’s everything.
+Nikunj Handa [00:39:01]: Thank you, guys.
+Vibhu [00:39:02]: Thank you.
+Nikunj Handa [00:39:02]: Yeah.
+Discussion about this episode
+Comments Restacks
+Latent Space: The AI Engineer Podcast
+The podcast by and for AI Engineers! In 2025, over 10 million readers and listeners came to Latent Space to hear about news, papers and interviews in Software 3.0.
+We cover Foundation Models changing every domain in Code Generation, Multimodality, AI Agents, GPU Infra and more, directly from the founders, builders, and thinkers involved in pushing the cutting edge. Striving to give you both the definitive take on the Current Thing down to the first introduction to the tech you'll be using in the next 3 months! We break news and exclusive interviews from OpenAI, Anthropic, Gemini, Meta (Soumith Chintala), Sierra (Bret Taylor), tiny (George Hotz), Databricks/MosaicML (Jon Frankle), Modular (Chris Lattner), Answer.ai (Jeremy Howard), et al.
+Full show notes always on https://latent.space
+Sponsorship and business inquiries: [email protected]
+The podcast by and for AI Engineers! In 2025, over 10 million readers and listeners came to Latent Space to hear about news, papers and interviews in Software 3.0.
+We cover Foundation Models changing every domain in Code Generation, Multimodality, AI Agents, GPU Infra and more, directly from the founders, builders, and thinkers involved in pushing the cutting edge. Striving to give you both the definitive take on the Current Thing down to the first introduction to the tech you'll be using in the next 3 months! We break news and exclusive interviews from OpenAI, Anthropic, Gemini, Meta (Soumith Chintala), Sierra (Bret Taylor), tiny (George Hotz), Databricks/MosaicML (Jon Frankle), Modular (Chris Lattner), Answer.ai (Jeremy Howard), et al.
+Full show notes always on https://latent.space
+Sponsorship and business inquiries: [email protected]
+Listen on
+Substack App
+Apple Podcasts
+Spotify
+RSS Feed
+Recent Episodes
+Claude Code’s Next Era — Thariq Shihipar, Anthropic
+Sep 29
+OpenRouter: from Seed to Stripe — with OpenRouter’s Alex Atallah & AMP’s Anjney Midha
+Sep 25
+Runway’s WorldPrompt and the Engineering of Real-Time Worlds
+Sep 25 • Richard MacManus
+🔬Bio-security is an AI Arms Race - Eric Nguyen (CEO, Radical Numerics)
+Sep 23 • RJ Honicky
+🔬 An Oscar, Two Asteroids, and the Algorithm in Your sklearn: John Platt on AI for Science
+Sep 22 • Brandon Anderson
+Jev: System One models for Prod, not God — with Diogo Almeida, CEO, TypeSafe AI
+Sep 21
+Underwriting Superintelligence: Backing Agents you can Sue — Rune Kvist, AIUC
+Sep 16
+Ready for more?
+© 2026 Latent.Space · Privacy ∙ Terms ∙ Collection notice
+Start your Substack Get the app
+Substack is the home for great culture
