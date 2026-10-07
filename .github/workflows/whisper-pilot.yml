@@ -1,0 +1,79 @@
+name: CPU Whisper Pilot (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      guid:
+        description: 'Exact eligible episode GUID from cloud_whisper_pilot.py --list'
+        required: true
+        type: string
+      model:
+        description: 'English or multilingual small model (CPU int8)'
+        type: choice
+        default: small.en
+        options: [small.en, small]
+      language:
+        description: 'Use small for auto/zh'
+        type: choice
+        default: en
+        options: [en, auto, zh]
+      sample_seconds:
+        description: 'Start with 300 seconds; 0 explicitly requests full episode'
+        type: choice
+        default: '300'
+        options: ['60', '300', '0']
+      start_seconds:
+        description: 'Sample offset 0–600; full episode requires 0'
+        type: string
+        default: '60'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-signal-whisper-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    # Standard Linux CPU runner only. No paid API keys, GPU or larger runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install isolated pilot dependencies
+        timeout-minutes: 7
+        run: |
+          python -m pip install -r requirements-whisper-pilot.txt
+          command -v ffmpeg
+          command -v ffprobe
+      - name: Test pilot safeguards
+        run: python -m unittest discover -s tests -p 'test_cloud_whisper_pilot.py'
+      - name: Transcribe one bounded episode sample
+        env:
+          EPISODE_GUID: ${{ inputs.guid }}
+          MODEL: ${{ inputs.model }}
+          LANGUAGE: ${{ inputs.language }}
+          SAMPLE_SECONDS: ${{ inputs.sample_seconds }}
+          START_SECONDS: ${{ inputs.start_seconds }}
+          OMP_NUM_THREADS: '4'
+          HF_HUB_DISABLE_TELEMETRY: '1'
+        run: |
+          python scripts/cloud_whisper_pilot.py \
+            --guid "$EPISODE_GUID" --model "$MODEL" --language "$LANGUAGE" \
+            --sample-seconds "$SAMPLE_SECONDS" --start-seconds "$START_SECONDS" \
+            --threads 4 --timeout-seconds 1800 \
+            --output-dir "$RUNNER_TEMP/whisper-pilot-results"
+      - name: Keep transcript and measurements (including failures)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: whisper-pilot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/whisper-pilot-results/
+          if-no-files-found: warn
+          retention-days: 7

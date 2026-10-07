@@ -65,6 +65,8 @@ SemiAnalysis 已进入日常自动全文流程：系统优先匹配官方 YouTub
 
 没有公开字幕时，维护者也可以在 macOS 上运行 `python3 scripts/transcribe_missing_podcasts.py --backend local --only-channel a16z --force-channel a16z --limit 1`，调用本地 Whisper 逐集转录。该模式默认寻找上级工作区中的共享 `workspace/scripts/podcast_rss_transcribe.py`；其他目录结构可用 `AI_SIGNAL_LOCAL_TRANSCRIBER` 指定脚本路径。音频只保存在临时目录，单集完成后自动删除。
 
+另有独立的 [Linux CPU Whisper 手动试跑](docs/cloud-whisper-pilot.md)：默认先转录 5 分钟样本，保存实验字幕和耗时，不写入生产 feed、不改变现有筛选或火山 ASR 流程。真实音频基准尚待通过下载与模型运行验证。
+
 ## 信息源
 
 ### 播客（19 个频道）
