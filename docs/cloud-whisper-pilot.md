@@ -69,8 +69,14 @@ GitHub 的 `workflow_dispatch` 初次注册要求 workflow 已在默认分支，
 ## 本次验证记录（2026-10-07）
 
 - 云端成功安装 faster-whisper 1.2.1 和其 CPU 运行依赖。
-- 独立 SemiAnalysis Ep.035 的 5 分钟样本尝试，在音频域名解析阶段 `socket.gaierror` 失败，尚未下载实际音频、加载模型或执行推理。
-- 因此没有真实音频速度、准确率、完整单集或 GitHub runner 下载成功的结论；代码测试与真实转录必须分开看。
+- 最初在云工作区的尝试于 `socket.gaierror` 停止；随后维护者明确要求分支测试，使用 GitHub 标准 runner 跑通同一来源。
+- 初次 GitHub 分支任务发现 runner 缺少 ffmpeg；已补 Ubuntu 官方包安装。修复后的 [run 37636421548](https://github.com/Benboerba620/ai-signal/actions/runs/37636421548) 全部成功，实际运行 commit 为 `5985b62c0633581164d4892b028c3451fa03c5a9`。
+- 原音频 GET 成功：33,289,194 字节、`audio/mpeg`、实际时长 2,080.549 秒；音频哈希与全部测量见 [原始 stats](benchmarks/whisper-semi035-20261007.json)。
+- 真实人声样本：第 60 秒起 300 秒，VAD 后 298.4 秒；small.en、CPU int8、4 线程、beam 5。
+- 下载 0.301 秒，裁剪解码 1.121 秒，首次模型下载+加载 11.083 秒，纯推理 63.639 秒，worker 合计 76.744 秒；RTF 0.2121，约 4.7 倍实时速度。整个 GitHub job（含环境安装/测试/上传）约 1 分 54 秒。
+- Python/Whisper worker 峰值 RSS 868.1 MiB。样本文本 4,946 字符，时间戳与文本 [artifact](https://github.com/Benboerba620/ai-signal/actions/runs/37636421548/artifacts/11490270656) 保留至 2026-10-14。
+- 仅做文本可读性检查：整体连贯、未见明显长段循环，但专名/术语有疑似误识，例如 `Infin-SEX`、`Plus and Max`、`Avalanche`。未逐句对音、无参考稿，不能报告准确率或 WER。当前样本不能据此认定能直接替换生产 ASR。
+- 此次只跑 5 分钟，未跑整集、未合并 PR、未改 main。纯推理速率不能直接当作整集完成时间保证。
 - 离线自动测试覆盖实际 ffmpeg 裁剪探测、mock 推理产物、HTML/截断/体积拒绝、重定向、实际连接 DNS 防护、超时/磁盘预算、失败记录、成功哈希复用和生产输出保护。mock 推理与合成音频测试不是 Whisper 的真实人声测试。
 - 原生产流程的来源政策、两次尝试额度、Volc 配置与日程保持原样。
 
