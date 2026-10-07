@@ -60,7 +60,7 @@ GitHub 的 `workflow_dispatch` 初次注册要求 workflow 已在默认分支，
 - 来源 GUID/标题/URL（去除查询参数）、feed/配置/音频哈希、实际下载 MIME/字节数
 - 音频下载、裁剪解码、模型下载+加载、完整 generator 推理、worker 总耗时
 - 完整音频长度、实际解码样本长度、VAD 后人声长度
-- `real_time_factor = inference_seconds / decoded_sample_seconds`；越小越快，只表示推理，不含冷启动
+- `real_time_factor = inference_seconds / decoded_sample_seconds`；越小越快，表示完整转录处理（含 faster-whisper 内部解码、VAD、特征处理和模型计算），不含模型下载/加载
 - Linux worker 的 `peak_process_rss_mib`、CPU 数量/支持的计算类型、线程数、模型、量化、beam、依赖版本
 - complete/failed 状态与失败阶段；样本产物一律标记需要人工质量审阅
 
@@ -73,10 +73,10 @@ GitHub 的 `workflow_dispatch` 初次注册要求 workflow 已在默认分支，
 - 初次 GitHub 分支任务发现 runner 缺少 ffmpeg；已补 Ubuntu 官方包安装。修复后的 [run 37636421548](https://github.com/Benboerba620/ai-signal/actions/runs/37636421548) 全部成功，实际运行 commit 为 `5985b62c0633581164d4892b028c3451fa03c5a9`。
 - 原音频 GET 成功：33,289,194 字节、`audio/mpeg`、实际时长 2,080.549 秒；音频哈希与全部测量见 [原始 stats](benchmarks/whisper-semi035-20261007.json)。
 - 真实人声样本：第 60 秒起 300 秒，VAD 后 298.4 秒；small.en、CPU int8、4 线程、beam 5。
-- 下载 0.301 秒，裁剪解码 1.121 秒，首次模型下载+加载 11.083 秒，纯推理 63.639 秒，worker 合计 76.744 秒；RTF 0.2121，约 4.7 倍实时速度。整个 GitHub job（含环境安装/测试/上传）约 1 分 54 秒。
+- 下载 0.301 秒，裁剪解码 1.121 秒，首次模型下载+加载 11.083 秒，转录处理 63.639 秒，worker 合计 76.744 秒；RTF 0.2121，约 4.7 倍实时速度。整个 GitHub job（含环境安装/测试/上传）约 1 分 54 秒。
 - Python/Whisper worker 峰值 RSS 868.1 MiB。样本文本 4,946 字符，时间戳与文本 [artifact](https://github.com/Benboerba620/ai-signal/actions/runs/37636421548/artifacts/11490270656) 保留至 2026-10-14。
 - 仅做文本可读性检查：整体连贯、未见明显长段循环，但专名/术语有疑似误识，例如 `Infin-SEX`、`Plus and Max`、`Avalanche`。未逐句对音、无参考稿，不能报告准确率或 WER。当前样本不能据此认定能直接替换生产 ASR。
-- 此次只跑 5 分钟，未跑整集、未合并 PR、未改 main。纯推理速率不能直接当作整集完成时间保证。
+- 上述样本运行只跑 5 分钟；整集另见下方独立记录。样本处理速率不能直接当作整集完成时间保证。
 - 离线自动测试覆盖实际 ffmpeg 裁剪探测、mock 推理产物、HTML/截断/体积拒绝、重定向、实际连接 DNS 防护、超时/磁盘预算、失败记录、成功哈希复用和生产输出保护。mock 推理与合成音频测试不是 Whisper 的真实人声测试。
 - 原生产流程的来源政策、两次尝试额度、Volc 配置与日程保持原样。
 
@@ -87,6 +87,15 @@ GitHub 的 `workflow_dispatch` 初次注册要求 workflow 已在默认分支，
 参考：[faster-whisper](https://github.com/SYSTRAN/faster-whisper)、[CPU 量化](https://opennmt.net/CTranslate2/quantization.html)、[GitHub 事件触发](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push)、[GitHub 手动运行](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)、[Actions 计费](https://docs.github.com/en/billing/concepts/product-billing/github-actions)。
 
 
-### 整集验证（进行中）
+### 整集验证（已完成）
 
-2026-10-07 用户在样本通过后明确要求更长测试，现于同一 PR 分支启动 Semi035 整集（约34分40秒）、同模型同线程，保留此前5分钟stats不覆盖。待完成后记录真实处理时长、最后segment时间、耗时/内存和文本重复情况；尚无整集结果时不以样本速度代替结论。
+2026-10-07 用户明确要求更长测试后，在相同分支、相同来源、相同 small.en CPU int8 / 4 线程 / beam5 设置下完成 [整集 run 37639973674](https://github.com/Benboerba620/ai-signal/actions/runs/37639973674)。实际执行 commit：`016a39cf509330f77306179ae4ff8ce8c1597a01`；main 与生产 feed 均未修改。此前 5 分钟结果保留，不覆盖。
+
+- 请求 sample_seconds=0、start_seconds=0。原音频 2,080.549 秒，实际解码 **2,080.508 秒（34分40.508秒）**，差 0.041 秒；来源音频 SHA-256 与样本测试完全相同。
+- 转录处理 **432.854 秒（7分12.854秒）**；下载 0.403 秒，裁剪解码 5.393 秒，冷模型下载/加载 5.869 秒；总 worker **445.219 秒（7分25.219秒）**。RTF **0.2081**，约 **4.8 倍实时**。这里的转录处理包括 faster-whisper 内部解码、VAD、特征和模型计算，不是单独模型内核耗时。
+- VAD 保留 2,060.864 秒。峰值 Python/Whisper RSS **2,524.5 MiB（约2.47GiB）**；5分钟样本为868.1MiB。长音频的内存上涨明显；2GiB临时磁盘预算不是RAM限制，不能据此保证任意2小时节目都能稳定跑。
+- 输出 **33,252 字符、6,008 词、671 段**。时间戳单调、无负时间、无超过音频尾部的段。末段结束 **2,072.73 秒（34分32.73秒）**，已包含结束告别语；与音频终点相差7.778秒，可能是尾静音，尚未逐句对音确认。
+- 未发现连续相同段或长度≥40字符的精确重复段。存在短段内重复词及疑似专名/术语误识；整体可读并不证明逐字准确。没有人工参考稿/音频对齐，不报WER或准确率，不自动替换生产ASR。
+- [整集原始stats与机械检查](benchmarks/whisper-semi035-full-20261007.json) 永久保留在此PR；[字幕、segments与stats artifact](https://github.com/Benboerba620/ai-signal/actions/runs/37639973674/artifacts/11492790936) 保留至2026-10-14。ZIP SHA-256：`98ee5c2098ef771c5e8a176cc688ecdee2d19b44328c536144c511eedee23441`，已取回并校验三份产物哈希。
+
+结论：此35分钟节目已经实际跑通，速度与样本接近；内存和领域词识别仍需在生产设计中处理。没有合并、发布转录到feed或调用付费API。

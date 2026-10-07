@@ -204,6 +204,12 @@ class PilotTests(unittest.TestCase):
         self.assertFalse(list(self.root.glob('*/.running')))
 
     def test_worker_writes_complete_artifacts_with_mock_inference(self):
+        self.check_worker_artifacts(sample_seconds=60)
+
+    def test_full_worker_writes_complete_artifacts_with_mock_inference(self):
+        self.check_worker_artifacts(sample_seconds=0)
+
+    def check_worker_artifacts(self, sample_seconds):
         if not pilot.shutil.which('ffmpeg'):
             self.skipTest('ffmpeg not installed')
         source = self.root / 'source.wav'
@@ -211,7 +217,7 @@ class PilotTests(unittest.TestCase):
                         '-ar', '16000', '-ac', '1', str(source)], check=True)
         output = self.root / 'results'
         output.mkdir()
-        request = {'start_seconds': 0, 'sample_seconds': 60, 'model': 'small.en', 'language': 'en', 'threads': 4}
+        request = {'start_seconds': 0, 'sample_seconds': sample_seconds, 'model': 'small.en', 'language': 'en', 'threads': 4}
         task = {'output': str(output), 'request': request, 'audio_url': 'https://example.org/audio',
                 'expected_seconds': 11, 'policy': {}}
         pilot.atomic_json(self.root / 'task.json', task)
