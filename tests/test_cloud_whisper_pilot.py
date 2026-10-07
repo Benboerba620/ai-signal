@@ -248,6 +248,7 @@ class PilotTests(unittest.TestCase):
         self.assertIn("github.event_name == 'push' && '300'", source)
         self.assertIn('persist-credentials: false', source)
         self.assertIn('if: always()', source)
+        self.assertIn('sudo apt-get install -y --no-install-recommends ffmpeg', source)
 
 
 if __name__ == '__main__':
