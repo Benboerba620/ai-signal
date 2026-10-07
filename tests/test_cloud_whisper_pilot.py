@@ -236,11 +236,16 @@ class PilotTests(unittest.TestCase):
         with patch.object(pilot, 'select_episode', return_value=item), self.assertRaisesRegex(pilot.PilotError, 'output'):
             pilot.run(args)
 
-    def test_workflow_manual_only_and_no_write_or_secrets(self):
+    def test_workflow_opt_in_and_no_write_or_secrets(self):
         source = (pilot.ROOT / '.github/workflows/whisper-pilot.yml').read_text()
         self.assertIn('workflow_dispatch:', source)
-        for forbidden in ('schedule:', 'pull_request:', 'push:', 'secrets.', 'contents: write', 'git push', 'transcribe_missing_podcasts.py'):
+        for forbidden in ('schedule:', 'pull_request:', 'pull_request_target:', 'secrets.', 'contents: write', 'git push', 'transcribe_missing_podcasts.py'):
             self.assertNotIn(forbidden, source)
+        self.assertIn("branches: ['codex/cloud-whisper-pilot']", source)
+        self.assertIn("paths: ['.github/whisper-pilot-request.txt']", source)
+        self.assertIn("contains(github.event.head_commit.message, '[run-whisper-pilot]')", source)
+        self.assertIn("github.ref == 'refs/heads/codex/cloud-whisper-pilot'", source)
+        self.assertIn("github.event_name == 'push' && '300'", source)
         self.assertIn('persist-credentials: false', source)
         self.assertIn('if: always()', source)
 

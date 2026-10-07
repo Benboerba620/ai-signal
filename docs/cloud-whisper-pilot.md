@@ -39,9 +39,17 @@ python scripts/cloud_whisper_pilot.py \
 
 ## GitHub Actions
 
-`.github/workflows/whisper-pilot.yml` 只有 `workflow_dispatch`，权限为 `contents: read`，不注入 secrets；使用 `ubuntu-latest` 标准 CPU runner，所有结果（含失败）作为独立 artifact 保留 7 天。没有 git push、生产脚本调用、定时触发或付费 fallback。工作流输入通过环境变量引用，避免把标题/GUID插入 shell 程序。
+`.github/workflows/whisper-pilot.yml` 支持 `workflow_dispatch` 以及明确授权的分支试跑，权限为 `contents: read`，不注入 secrets；使用 `ubuntu-latest` 标准 CPU runner，所有结果（含失败）作为独立 artifact 保留 7 天。没有 git push、生产脚本调用、定时触发或付费 fallback。工作流输入通过环境变量引用，避免把标题/GUID插入 shell 程序。
 
-GitHub 要求手动 workflow 已存在于默认分支，才可在 Actions 页面触发；随后可以选择其他分支。新 draft PR 中的 workflow 不能假定已经可运行。需要先由维护者审阅、明确批准合并；不要为测试擅自合并，也不要改成 push/PR 触发绕过这道边界。
+GitHub 的 `workflow_dispatch` 初次注册要求 workflow 已在默认分支，但这不代表分支不能测试。2026-10-07 维护者明确要求先在分支实际试跑后，本 PR 新增了严格限定的 `push` 路径：
+
+- 必须是 `codex/cloud-whisper-pilot` 分支。
+- 必须修改 `.github/whisper-pilot-request.txt`。
+- HEAD commit message 必须包含 `[run-whisper-pilot]`，三项同时满足才运行转录。
+- 分支触发固定只跑 SemiAnalysis Ep.035、`small.en/en`、第 60 秒开始的 300 秒，不能借输入扩大到整集。
+- 正常改代码/文档或 main push 不会触发此试跑；无需合并，也不使用 `pull_request_target`。
+
+需要重试时先确认上一轮已结束、检查失败原因，再明确修改 request 文件和 marker commit。不要无意义反复启动。工作流保留 concurrency 和 30 分钟 worker / 40 分钟 job 上限。
 
 本仓库为公开仓库，标准 GitHub-hosted runner 的免费规则适用；不要改用 larger runner 或增加付费资源。若仓库可见性、平台计费规则发生变化，运行前重新确认。
 
@@ -70,4 +78,4 @@ GitHub 要求手动 workflow 已存在于默认分支，才可在 Actions 页面
 
 当前 feed 是滚动快照；节目退出窗口后，本入口不会扩大历史发现范围。这次只验证后端可行性，不引入持久生产队列。若样本及整集的速度/质量通过，再另行设计以 GUID 为键的持久队列、失败次数/下次重试/来源身份、转录保存及发布审核，解决“等转录时已退出 feed 窗口”的问题。
 
-参考：[faster-whisper](https://github.com/SYSTRAN/faster-whisper)、[CPU 量化](https://opennmt.net/CTranslate2/quantization.html)、[GitHub 手动运行](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)、[Actions 计费](https://docs.github.com/en/billing/concepts/product-billing/github-actions)。
+参考：[faster-whisper](https://github.com/SYSTRAN/faster-whisper)、[CPU 量化](https://opennmt.net/CTranslate2/quantization.html)、[GitHub 事件触发](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push)、[GitHub 手动运行](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)、[Actions 计费](https://docs.github.com/en/billing/concepts/product-billing/github-actions)。
