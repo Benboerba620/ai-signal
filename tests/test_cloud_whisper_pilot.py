@@ -236,6 +236,13 @@ class PilotTests(unittest.TestCase):
         with patch.object(pilot, 'select_episode', return_value=item), self.assertRaisesRegex(pilot.PilotError, 'output'):
             pilot.run(args)
 
+    def test_full_episode_requires_zero_offset(self):
+        import argparse
+        args = argparse.Namespace(list=False, guid='one', model='small.en', language='en', threads=4,
+                                  sample_seconds=0, start_seconds=60, output_dir=str(self.root), timeout_seconds=1)
+        with self.assertRaisesRegex(pilot.PilotError, 'Full-episode runs require'):
+            pilot.run(args)
+
     def test_workflow_opt_in_and_no_write_or_secrets(self):
         source = (pilot.ROOT / '.github/workflows/whisper-pilot.yml').read_text()
         self.assertIn('workflow_dispatch:', source)
@@ -243,9 +250,11 @@ class PilotTests(unittest.TestCase):
             self.assertNotIn(forbidden, source)
         self.assertIn("branches: ['codex/cloud-whisper-pilot']", source)
         self.assertIn("paths: ['.github/whisper-pilot-request.txt']", source)
-        self.assertIn("contains(github.event.head_commit.message, '[run-whisper-pilot]')", source)
+        self.assertIn("contains(github.event.head_commit.message, '[run-whisper-full]')", source)
         self.assertIn("github.ref == 'refs/heads/codex/cloud-whisper-pilot'", source)
-        self.assertIn("github.event_name == 'push' && '300'", source)
+        self.assertIn("github.event_name == 'push' && '0'", source)
+        self.assertEqual(source.count("github.event_name == 'push' && '0'"), 2)
+        self.assertIn('--threads 4 --timeout-seconds 1800', source)
         self.assertIn('persist-credentials: false', source)
         self.assertIn('if: always()', source)
         self.assertIn('sudo apt-get install -y --no-install-recommends ffmpeg', source)

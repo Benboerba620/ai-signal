@@ -35,7 +35,7 @@ python scripts/cloud_whisper_pilot.py \
   --guid '同一期 GUID' --sample-seconds 0 --start-seconds 0
 ```
 
-整集也保留相同总时间/磁盘限制。不要把 5 分钟样本线性估算当成整集完成保证。此变更不自动运行整集、不自动发布转录。
+整集也保留相同总时间/磁盘限制。不要把 5 分钟样本线性估算当成整集完成保证。整集必须明确授权；当前维护者已授权同一期整集分支试跑，不自动发布转录。
 
 ## GitHub Actions
 
@@ -45,8 +45,8 @@ GitHub 的 `workflow_dispatch` 初次注册要求 workflow 已在默认分支，
 
 - 必须是 `codex/cloud-whisper-pilot` 分支。
 - 必须修改 `.github/whisper-pilot-request.txt`。
-- HEAD commit message 必须包含 `[run-whisper-pilot]`，三项同时满足才运行转录。
-- 分支触发固定只跑 SemiAnalysis Ep.035、`small.en/en`、第 60 秒开始的 300 秒，不能借输入扩大到整集。
+- HEAD commit message 必须包含 `[run-whisper-full]`，三项同时满足才运行转录。此前 5 分钟样本用 `[run-whisper-pilot]`，该旧 marker 现在不会启动整集。
+- 2026-10-07 用户明确要求更长测试后，当前分支触发固定跑同一期 SemiAnalysis Ep.035 完整音频（起点 0、sample_seconds=0），仍使用 `small.en/en`、CPU int8、4 线程。模型和已有 30 分钟 worker 上限不变；不能借输入换节目或模型。
 - 正常改代码/文档或 main push 不会触发此试跑；无需合并，也不使用 `pull_request_target`。
 
 需要重试时先确认上一轮已结束、检查失败原因，再明确修改 request 文件和 marker commit。不要无意义反复启动。工作流保留 concurrency 和 30 分钟 worker / 40 分钟 job 上限。
@@ -85,3 +85,8 @@ GitHub 的 `workflow_dispatch` 初次注册要求 workflow 已在默认分支，
 当前 feed 是滚动快照；节目退出窗口后，本入口不会扩大历史发现范围。这次只验证后端可行性，不引入持久生产队列。若样本及整集的速度/质量通过，再另行设计以 GUID 为键的持久队列、失败次数/下次重试/来源身份、转录保存及发布审核，解决“等转录时已退出 feed 窗口”的问题。
 
 参考：[faster-whisper](https://github.com/SYSTRAN/faster-whisper)、[CPU 量化](https://opennmt.net/CTranslate2/quantization.html)、[GitHub 事件触发](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push)、[GitHub 手动运行](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)、[Actions 计费](https://docs.github.com/en/billing/concepts/product-billing/github-actions)。
+
+
+### 整集验证（进行中）
+
+2026-10-07 用户在样本通过后明确要求更长测试，现于同一 PR 分支启动 Semi035 整集（约34分40秒）、同模型同线程，保留此前5分钟stats不覆盖。待完成后记录真实处理时长、最后segment时间、耗时/内存和文本重复情况；尚无整集结果时不以样本速度代替结论。

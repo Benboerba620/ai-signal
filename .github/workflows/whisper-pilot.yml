@@ -45,7 +45,7 @@ jobs:
       ${{ github.event_name == 'workflow_dispatch' ||
           (github.event_name == 'push' &&
            github.ref == 'refs/heads/codex/cloud-whisper-pilot' &&
-           contains(github.event.head_commit.message, '[run-whisper-pilot]')) }}
+           contains(github.event.head_commit.message, '[run-whisper-full]')) }}
     # Standard Linux CPU runner only. No paid API keys, GPU or larger runner.
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -68,13 +68,13 @@ jobs:
           command -v ffprobe
       - name: Test pilot safeguards
         run: python -m unittest discover -s tests -p 'test_cloud_whisper_pilot.py'
-      - name: Transcribe one bounded episode sample
+      - name: Transcribe one bounded episode
         env:
           EPISODE_GUID: ${{ github.event_name == 'push' && '233d9970-74f8-42c7-8383-f7ea5f70f1d6' || inputs.guid }}
           MODEL: ${{ github.event_name == 'push' && 'small.en' || inputs.model }}
           LANGUAGE: ${{ github.event_name == 'push' && 'en' || inputs.language }}
-          SAMPLE_SECONDS: ${{ github.event_name == 'push' && '300' || inputs.sample_seconds }}
-          START_SECONDS: ${{ github.event_name == 'push' && '60' || inputs.start_seconds }}
+          SAMPLE_SECONDS: ${{ github.event_name == 'push' && '0' || inputs.sample_seconds }}
+          START_SECONDS: ${{ github.event_name == 'push' && '0' || inputs.start_seconds }}
           OMP_NUM_THREADS: '4'
           HF_HUB_DISABLE_TELEMETRY: '1'
         run: |
