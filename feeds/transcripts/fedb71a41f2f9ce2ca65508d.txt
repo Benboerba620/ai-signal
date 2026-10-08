@@ -1,0 +1,1015 @@
+Hello, everyone. Welcome back to Seminalysis Weekly. I'm joined this week by the Inference
+X team. It's been about two months since we've had them on the podcast to give a little bit
+of an update. This episode, we're going to talk about engrams, offloading Agent X, TPUs,
+and anything else that we think of. You guys have been hard at work, so I got Cam, Brian,
+and Alec. Guys, welcome to the show.
+What's up? What's up? What's up? Hello. Nice to be here.
+Awesome. Okay. So the latest article that came out, we're going to start with that
+and came out September 18, so almost two weeks
+ago at this point.
+It's all about engrams and what happens
+when people co-design the model architecture
+for a capability of offloading certain parts of the model
+or the KVs to DRAM or SSD.
+So how about we just start by talking about what
+are engrams and give a little bit of an introduction there?
+Yeah.
+Yeah. So I think, you know, n-grams basically have been n-gram models and the, the concept
+of sort of like transferring more things to the embeddings have been around for a while.
+Brian can touch on more of unlike the history, but basically when you have a transformer
+architecture, each token has an embedding, right? And embedding is some, you know, latent
+space of meaning about what that token means. As you have a sequence of tokens and it makes its
+way through the layers of the transformer, you can think of each layer as sort of building
+more information about grounding the facts of what that sequence means as the tokens relate
+to each other and so on and so forth. As it flows through the layers, more meaning flows
+into the hidden state. So the idea with n-gram is basically, instead of having these layers,
+you can basically, during training time, you can have the meaning of multiple, so
+two-grams and three-grams token embeddings kind of learned at training time. So then
+then these can be stored in a hash table and then looked up at inference time. And this
+is basically like for free. I mean, not completely free, but if you go down to the next graph
+or a couple of graphs down, you know, deep seek ransom experiments, right? And basically
+on the right side at 100%, it's the loss for all mole layers, so no n-gram layers.
+And then on the left side, it's all n-gram layers and no mole layers.
+So you can see that the loss is actually minimized at a middle point.
+So when you have some n-gram layers and then some mole layers, it turns out that the performance
+is actually quite good.
+So that's like a high-level overview, but I think Brian, maybe you want to talk a little
+bit more about the motivations for NGRAM and the history.
+Yeah.
+Yeah.
+So the paper that came out introducing DCTC earlier this year actually talk about the
+intuition for adding it, which was that models had to build up this representation or the
+meaning of words, basically, in later layers.
+So they tested this by comparing the next token predictionability of the hidden state
+of the tokens at different layers.
+And there was an earlier paper on this, I forgot what it's called.
+And basically with n-grams, if you calculate the KL divergence between the hidden states
+of the earlier layers and the later layers, you notice with n-grams, the earlier layers
+lower KL divergence with the later layers, which kind of show that the model is moving
+towards a next open prediction earlier in the model instead of later, which is good.
+Because it means that you're not wasting parameters on memorizing stuff, memorizing
+or trying to build up the meaning of words.
+And the co-design of this model, which is one thing that lipstick really specializes
+in this neck for like considering inferencing while designing the architecture of the model
+is that the engram models can be asynchronously overlapped with other parts of the model because
+the inputs for the engram modules are just the token IDs. So in their paper, the original paper,
+Dipstick also talked about the trade-offs of engrams being put earlier versus later because
+Because if you have n-grams, n-gram layers
+put earlier in the model, they can
+help the most and the ablation show this, I believe.
+The n-gram layers help the most as it
+can bring in the memory of the meanings earlier on.
+But the problem with having the n-gram layers earlier on
+is that there's really nothing to overlap it, right?
+Because you have to straight away start
+waiting for the n-gram to end before continuing.
+So this actually shows up in Quen's 3.8 Flash next, I think.
+They put their engrams in the second layer
+because the first layer gives it time for the retriever
+from DRAM or SSD to actually come in first
+so that there's no, there's very little overhead.
+My interesting part for V1, V4.1 Flash
+is that they put it at layer one.
+So there was still space for overlap,
+but not as much, yeah.
+And this brings me to the results, I guess,
+comparing, we have graphs in our ticker
+comparing the DRAM and SSD offload versions of NGRAM.
+Jordan, could you pull up the chart?
+Yeah, I'm trying to find it.
+Yeah, no worries.
+Yeah, by the way, Jordan is finding the charts.
+Maybe I'll talk about like this offload,
+how the offload works.
+So the offload uses UVA, which stands for United.
+Yeah, unified virtual addressing, sorry.
+And basically, it just moves the NGRAM to CPU pin host memory.
+NOS, thanks, Jordan.
+And yeah, we can see that DRAM will,
+we actually tested HBM within HBM, NGRAM as well as,
+I don't think we talked about in the article,
+because the results aren't very interesting.
+HBM, take a step back here, Ryan, like the implication of this is just that there's a
+significant HBM constraint and people are innovating around that constraint by introducing
+engrams to make it easier to offload to DRAM or to SSD, right? And this is just maybe a natural
+evolution of that progression over time.
+I guess one part of like, Brian, maybe you have context on this. I don't know if necessarily
+like NGRAM was a specific co-design for a restriction of HBM. Was it?
+I mean, definitely partially. A lot of deep-sick stuff
+are addressing limited HVM, like last year even their whole MLA thing was about reducing
+KV cash for HVM usage. And I think this is along the same lines as well. Because if you
+think about it from first principles, you want something, you want a technique that
+can be overlapped. So either a retriever or, so yeah, so just retriever. And the stuff
+you get at the front of the model is basically the token IDs. So
+basically, what can you do with token IDs? With only the token
+IDs, they can be added to the hidden states. And overlap and I
+think NGRAM is a very natural, consequent that you get to
+actually the long cat team from made one claim to be concurrently
+working at the same with the same technique. So this is quite
+cool that like, you will lapse, I'm not sure if they
+collaborated or what, uh, two labs arrived at this conclusion independently
+that engrams was a good technique.
+Yeah.
+Anyway, going, going back to Jordan's point about his BM, I think we talked
+about this in a, in our previous four high podcasts, but yeah, his BM is
+really a big constraint right now.
+And we shouldn't offload everything off of his BM, right?
+Like, uh, we clearly offloading firstly.
+I think Kim and Alec are quite experts in this field,
+given that we did this for Agent X,
+maybe they can explain about it.
+Yeah, I mean, a big part of that 12-high,
+eight-high, four-high, Ruben D-Spec conversation
+around HBM was the fact that the American labs
+are optimizing for HBM bandwidth over capacity
+or bandwidth per bit.
+Um, in some ways the Chinese labs have already had that constraint forced upon them by the
+chips that they have access to.
+And so, um, yeah, maybe you can talk a little bit about the like Chinese chips, like the
+domestic accelerator ecosystem, as well as the sort of already despect American chips
+and how, if you just don't have the bandwidth already available, well, you need to do something
+about it in order to improve serving at high concurrency or like high interactivity, I guess.
+Yeah.
+Yesterday, the Chinese chips are very interesting.
+In our earlier deep-sick V4 Pro article, the Day Zero article, we did talk about the San-950
+design. And the HBM they use, they don't really call it HBM. It's high Q. I'm not sure what it stands
+for, but it's their own version of HBM that they manufacture in China. And of course, the bandwidth
+is lower than the stuff we get, but they're very creative workarounds for their hardware
+restrictions. And we're actually writing an article on this, which will come out very, very soon.
+maybe right after this podcast comes out. I'm not sure when this podcast will come out, but
+yeah, basically the trend, the trend, I mean, at a high level, the trend forever has been,
+I mean, China has been restricted in terms of HBM, even more than the United States on a chip
+to chip level. So they've just been trying to make the KVs smaller and more efficient,
+compression KV, and then that leads to like having to offload stuff to lower tiers of memory.
+And I think, you know, Ngram is just like a natural extension of that because you're effectively
+getting like, as Brian was mentioning, you're getting layers for free in a way,
+since you don't have to build up the representation and you just have that offloaded on DRAM.
+And you can, as Brian was saying, you know, you can overlap that with, with other computations
+since you have the token ID at the beginning. So yeah, I mean, this is like a general trend of just
+like Chinese labs are just trying to be more efficient because in a way it's a curse that the
+US labs have, you know, infinite compute and are hoarding HBM and stuff because we don't have,
+our hands aren't forced in that, in that sense. So yeah, it's, it's been, it's been quite
+interesting. All the innovations feels like they're coming from China.
+Yeah, interesting. Now, maybe you guys can talk about the application on the workload. So obviously,
+the reason to want to store a bunch of KV is driven by many concurrent requests or very
+large requests. So either long context workloads or high throughput serving, both of which are
+in demand for anybody that's serving their model for coding
+agents right now, like agentic coding. So obviously we had this
+big motivation to try to develop a benchmark that more accurately
+represents the workload pattern of agentic coding. And we've
+applied this for all of the new models and released both the
+data set as well as the initial results. It's called agent x.
+Or Cam, can you run us through what is agent x and what's
+the implication on the change from traditional 8K, 1K to using Agent X and then how we were
+actually able to tease out some of these differences in efficiencies from the model architecture
+and clearly demonstrate them using this benchmark?
+Yeah.
+Yeah.
+Good question.
+So I think before we were doing 8K, 1K, no prefix caching, just testing at a chip level.
+Now we moved to Agent X. Basically, this is just agentic traffic, right?
+So as you see here in this image, each the way, when you code with an agentic harness,
+what's happening at a low level is you send a message and the output gets appended and
+maybe some tool gets called and the output of that tool gets appended to your stream
+of messages and then this just keeps getting sent to the model because the model is stateless.
+But as we know, the KD cache is just growing at an insane rate from turn to turn.
+And when you have million context length models, you need to store quite a bit of KV cache.
+So the idea with Agent X is we're no longer just testing the chip level stuff.
+We're testing the entire system, how KD cache moves between chips and pre-filled decode
+disaggregation scenarios and how offloading works, right?
+So yeah, actually, if you want to pull up inferencex.com
+maybe, take a look at some results.
+Yeah, definitely.
+Actually, so in the traces that we replay, right?
+Many people are surprised that the cash hit rate,
+the theoretical cash hit rate is very high,
+like above 98%, right?
+So it's just about how much of that 98%
+can you actually realize in your system.
+So maybe just click on like, I don't know, B300 VLLM, right?
+So the points that are, have a halo around them, right?
+This is with offloading enabled.
+So you see that this is not very important
+for the higher interactivity points
+because really offloading to secondary tier of memory
+is slower, right?
+And when you're at a higher concurrency
+and you want higher interactivity,
+you, I'm sorry, I misspoke,
+when you want a higher interactivity at a lower concurrency,
+you don't have as much KV to store,
+so offloading isn't particularly relevant,
+but when we're at the 40 to 60 TPS range
+with extremely high throughput,
+so this would be something like offline batch inference
+or even like reinforcement learning rollouts
+where you have hundreds of concurrent agentic session,
+offloading is extremely relevant.
+And you see maybe upwards of 20% to 30%
+cache hit rate just from DRAM instead of HBM.
+So yeah, this is the idea with Agent X.
+And we really just want to show what a realistic workload is.
+And yeah, I don't know.
+Brian, maybe you want to talk about,
+I think the coolest thing is the, the profit calculator.
+Yeah.
+So the cost of our, so our benchmark is really quite cool in the fact that, uh,
+we can kind of like, because semi-linearities also have TCO models, right?
+Uh, please buy our TCO model.
+Uh, our TCO model actually calculates like the total cost of ownership of
+of accelerator chips in other words like how much does it cost an hour to run
+them and basically like breaks down what this cost entails like your data center
+cost, your electrician cost, the chip cost etc and we cannot give a preview for
+users of infant sex the final number which comes down to the one shown right
+now and with these costs as well as so these are the cost basis and on open
+routing you can kind of obtain how much the inference providers are charging and
+from inference X we kind of know how many users and I was a concurrency the
+throughput and with all these numbers combined we kind of calculate the
+profit one can make using different chips so for example right now with the
+Best serving which is GB 300 and we have 72 I believe you can make about a forty point seventy percent margin
+profit margin at those
+parameters for kimichi three and
+Yeah, we've deep sick before point one flash. You cannot see another trend where we've certain
+parameters or certain settings you cannot don't make a profit so I mean it's really quite interesting seeing this because I
+I mean, we do have we are going to write up and I think I saw it on the methodology of
+these I believe.
+I mean, I mean, it's quite simple, like, it's, it's, I mean, go back to Kimmy, Jordan.
+I mean, the the greatest takeaway from this is like these are actual feasible profit margins
+that you can get from running open source inference.
+Like these things, there's money printers right now until the cost of compute sort
+of normalizes, like, to break this down, right, on the current GB300, like with Dynamo, assuming
+a 60% or sorry, what are we at? Put it down to 60%, that's probably more. So 60% utilization,
+right? Meaning, yeah, obviously, you don't have users fully saturating the system at
+all times. And maybe you have like some nodes down or whatever. So at 60% utilization,
+30% license fee that you have to give to Moonshot, you can literally make almost 50%
+profit margin serving this on GB300. It's just a money printer, right? So this is assuming
+like the cash hit rate that we get on Agent X and then looking at the open router data,
+but this is like very feasible, right?
+Yeah. I'm sorry, Sam. Kim, let's go back a minute to the Agent X dataset and talk about
+that a little bit. I think we haven't necessarily introduced that clearly. We talked about how
+this approximates the use of agentic coding and how this distribution of requests is interesting
+because the P50 request is still almost 100,000 input tokens. And you keep talking about
+of cash hit ratio, a bunch of people are probably like,
+how do they know that's real?
+It's real because we're replaying our own data.
+So can you talk a little bit about how we collect that
+and why we're pretty confident that the replays
+of the data against these endpoints
+for the Agent X benchmark is actually approximating
+real world coding?
+Yeah, I mean, we have a proxy that intercepts
+all of the semi-analysis employees' agentic coding sessions
+And we just replayed them, right?
+So we just take them all and then do some post-processing
+to get rid of the bad requests,
+and then we replay them against actual servers
+running an open source inference.
+And yeah, I mean, this isn't gonna be
+perfectly representative of all agentic coding traffic,
+but the fact of the matter is like
+the workload shapes are quite simple, right?
+All harnesses are kind of the same, similar, right?
+You have some tasks that you want done.
+You send that, you prompt a model,
+the model decides to use some tools,
+goes and gathers a bunch more context,
+writes out all the cache,
+and then does this self-agenic loop
+for however long it takes for the task to be done.
+And during this time, the bottom line is,
+most of the context is a cache hit.
+So with that, you need to be quite smart
+about how you store your KDCache,
+how you transfer your KDCache,
+how you route requests to different pre-filled servers.
+And as you can see at the top here,
+There's a lot of parameters you can set.
+We're using Mixle for the KV transfer engine.
+We're using VLLM for KV offloading to CPU.
+We're using DRAM offloading only.
+We're using the Dynamo router.
+And this is not necessarily trivial.
+There are a lot of ways to do this.
+But yeah, to answer your question,
+the data is representative because it's just straight up
+just coding sessions that we captured.
+So that's quite cool.
+You can explore all this on inferencex.com,
+it's pretty neat.
+Yeah, so when we're saying like,
+hey, in fact, what Brian was saying,
+around the profit estimator per gigabyte,
+like if we take our real world traffic,
+discount it by the utilization rate,
+and then divide it by real hardware cost numbers,
+if people are running the latest and greatest chips
+with the latest and greatest models,
+it's incredibly profitable right now.
+Yeah, and if you're listening to this podcast
+and you have like a few million dollars,
+I would buy like a GB 300 rack.
+No, I'm serious, dude.
+Like you can, R1,
+it is just like,
+probably make your money back in like a couple months.
+And it's probably better as well, right,
+for the Infants providers
+because they have their own like,
+rival partners and we're just working with open source stuff.
+Yeah, I mean, even if you go back there,
+I mean, you don't have to go back to the page,
+but even if you put like a 30 or 40% utilization rate,
+which I'm sure some of the providers
+on OpenRout are in no shade,
+but I'm sure they're getting around there,
+like pretty shit utilization,
+it still can be profitable, right?
+So until the price of compute kind of,
+I don't know, I'm not a finance guy,
+but I'm assuming this will normalize, right?
+Like it's insanely profitable.
+Well, I think people question this a lot at the beginning.
+And I want to bring in Alec here to talk a little bit
+about this, so let me try and tee him up.
+Two things have been changing.
+We talked initially at the start about how
+the models are getting more efficient and higher quality,
+which generally means people are able
+to charge a higher price for the new models
+because they're higher quality,
+but then make more money because it's a lower cost
+to serve them if they're improving in efficiency,
+especially with all these optimizations
+for N-Grams and KV-Cache.
+But then also the hardware is improving.
+And so there's competition out there.
+And specifically another article that you guys wrote
+was about introducing the TPU.
+Probably the most exciting looked forward
+to announcement here.
+Here's a nice picture of the TPU racks.
+A lot of people wonder like you can rent them in GCP.
+Why are they not on inference X,
+why is everybody talking about Nvidia versus AMD?
+But Alec, talk us through the high level, man.
+Like what's been up with TPUs?
+We got some data.
+Right, right.
+So I think, so we ended up testing out TPU V7,
+which is Google's first real purchasable accelerator
+through their own cloud.
+And so we wanted to see like do a quick apples-apples comparison against B200 and B300, you know,
+see how's the performance, is it like feasible and so on.
+And as you can see from this Pareto curve, the blue is TPU V7 and it's like at the bottom,
+that's the best part to be.
+It's the cheapest cost per million tokens, you know, for everything except for like a
+single point, which is fantastic.
+And that depends a lot on the TCO for the TPU accelerator.
+I think for this one, it's specifically the external TCO, which is $1.21, I believe.
+I mean, that's like super good, and the performance they were able to drag out of it is fantastic.
+Yeah, and this is early days for TPU inference performance, so that it will just get cheaper
+through software improvements.
+Right, right.
+This is the open source version too.
+This isn't what they be running internally in big inference providers.
+This is what the Publix has access to.
+Yeah.
+And talk about the trend, maybe a little bit.
+Obviously, TPU is a very different chip
+than B200, B300, both in terms of the silicon design,
+the programming model, how many people have access to it,
+how open source the community is.
+But there's a lot of like, you said apples to apples
+and then apples to bananas in the article in terms
+of comparing TPU V7.
+V7 is maybe the current generation, but V8 is coming pretty quick. We're talking about
+some open source models that maybe aren't Google's highest priority to optimize for.
+TPU VLLM is pretty new. What's the trend for the future with TPU? It's probably going
+to get better from here, right?
+Right, right. So I think as we saw recently, actually, we saw our Infract and TPU had the
+mega kernels and like they got like a huge performance boost nowhere.
+So like, um, I'm,
+I'm sure we can keep looking forward to seeing that kind of massive performance
+boost, uh, from them.
+Okay. One of the things about the TPU for years is that Google would produce a
+ton of them,
+but then they would use them all for internal workloads or for really big
+customers where they get the whole support of the TPU engineering team.
+You guys talked a little bit about VLM plus TPU and how this is in preview.
+Obviously, we're specifically reporting results from one model on one workload and comparing
+it to B200, B300.
+It's a little bit contrived.
+What's the broader trend here?
+I think it seems like we're going to have more TPU over time in the ecosystem.
+Is that fair?
+Yes.
+Yeah.
+So I'll take this and then hand it off to Brian.
+You're going to see a couple of things.
+going to see mass externalization of TPU as we see more maturity of V7 and then V8 and
+so on and so forth, meaning that Google is going to stop allocating all of this to internal
+workloads. They'll still allocate a ton, but they'll sell a bunch of it too. With that,
+you'll see massive improvements to the open source ecosystem. So for instance, right now
+There's no native Torch backend for TPU.
+It basically goes through this whole different intermediate representations and it's really
+messed up.
+So Torch TPU is going to come out quite soon.
+And this is going to be a native Torch backend for TPU.
+And this is going to make things, the programming model, way easier from a software perspective.
+So you'll see immediate improvements in open source inference, and this is just going to
+be the trend for quite a while, I think.
+Brian, you probably have some things to add.
+Yeah, I mean, typically in the past, I may go a bit more deeper into this.
+Like, it is a built-on systolic arrays, which utilizes data movement.
+One problem with it, of course, was that the systolic array was of a fixed size.
+So it's smaller once you have to do padding, which is kind of a waste of the compute.
+And this kind of resulted.
+And yeah, because TPUs were mainly used for internal stuff, a lot of the models were built
+around this limitation, whereas open source did not.
+And this was one limitation, or like one thing holding TPUs back for models on inference
+X.
+the full power of the TPU wasn't really used.
+And a few years back, maybe just a year back,
+everyone was bullish on Google and DeepMind
+because they had the most amount of compute out of any lab
+because of the TPUs.
+I forgot what the numbers are.
+Maybe something like 3 million TPUs being produced.
+But yeah, everyone was very poor because
+of the amount of TPUs Google had.
+and the amount of research that they did.
+I mean, if you went to any of the conferences,
+any of the ML conferences,
+you'll see a ton of Google DeepMind papers.
+And the guys there are really quite correct.
+There's a saying on X that everyone prominent in ML
+is either in DeepMind or has been in DeepMind
+at some point of their career.
+Yeah, so the TPUs actually being externalized
+is quite a big deal, I believe.
+And, yeah, and it's quite some time since you've seen a real third competitor to MDN and VDIA.
+It'll be interesting to see what the next few years are like.
+Yeah, I think the first thing I'm looking forward to is moving for the support in inference X
+from a private fork to the actual public repo and getting this stuff running on some persistent clusters there.
+That's really exciting.
+The other thing is we know that TPUs are being installed in Neo Clouds as well.
+So for the first time, there's going to be hosting of them outside of GCP,
+which should open up the ecosystem to have some more customers actually using
+the TPUs beyond power, consume them through GCP.
+People will be happier to not have to go through GCP.
+That's like a turn off.
+I want me to make this a ClusterMax call, but anyways.
+Alec, talk to us about the GCP console. What's your favorite? Alec,
+Give me your top three cloud consoles. What do you think?
+My top three, huh? Well, I can't say I've used that many of them, but I mean,
+I just kind of leave it to the command line to be honest.
+I find the command line easier to navigate through all the crazy UI.
+What do you think codecs or cloud codes favorite? What do you think their top three
+CLR for the clouds. GCP, bro. When you update GCP on the command line, it takes like 14 prompts
+that you have to say yes to, dude. It's like install a bunch of shit. I think that's free.
+I think software is free, man. I think you can do that whole install for you now,
+or maybe you're open claw. Okay, so moving on from TPU. Some other new hardware hit the
+hit the wires on inference X as well,
+namely Verruben.
+Let's talk a little bit about the difference
+between Verruben and first Blackwell.
+So Jensen sandbagging again, huh?
+Certainly, yeah, he's definitely sandbagging.
+I mean, look, it's just an incremental improvement, right?
+So you see, in particular at the spot
+that people would ask, so this is Deep-Cv4 Pro,
+which I guess no one uses anymore, but in the, you know, in the range of
+interactivity where providers would actually be serving, it's, it's just like
+three X better.
+So, I mean, when you think about what that means is you can serve three X number
+of users at the same interactivity.
+So you could charge three X the amount of users, the same price, right?
+But that's not how you'd price it.
+But like, I mean, it's just more money, right?
+More profit.
+So if you go to the profit estimator, you'll, you'll see this reflected, but,
+Yeah, I mean, Brian can speak more to the architectural improvements, but yeah, I mean
+just more flops, more memory bandwidth, like it's, it's, it's better, man.
+Okay.
+One thing I'll lead Brian.
+And one thing that I've talked about with Vera Rubin on this show before is the fact
+that it is a little bit more of a minor improvement going from GB300 to VR and VL72 in terms
+of software support, in terms of like the physical deployment of the system, because
+say going from H100 or H200, HGX to GB200, GB300, you introduced the ARM CPU, you introduced
+scale-up NVL switches for the first time, you introduced a new 400 gig network or 800
+for the GB300s, you know, obviously Blackwall SM100 was a whole rev, it had new FP4 data
+types that the previous one didn't, Vermin seems like more of an incremental change.
+There's no big change to the scale-up network, there's no new ARM CPU, everybody should have
+experience with liquid cooling already deploying it physically.
+So on one hand, it might be easier to adopt, but on the other hand, you might feel like
+oh, I'm not going to get as big of a performance improvement compared to GB300, I'm maybe less
+motivated to go for the new stuff.
+It seems like that's not necessarily the case initially.
+So high level, like Brian, maybe you can talk about the initial software experience
+of porting to Vera Rubin and then, yeah, back up what Cam said, which is like, there's definitely
+going to be some performance benefits or cost benefits on a per token basis when comparing
+to GB300, right?
+Yeah, yeah, I agree with you that the Vera Rubin step up from the previous generation
+was not as big as Black Well was from Hopper. I mean, some interesting stuff regarding Vera
+Ruby knows that, of course, the display that we talked about earlier, going to 8 high,
+the reduction in VRAM. And of course, this may be the left prioritizing memory bandwidth
+because of the scale network, you are able to like spread your model out and do stuff
+like YEP, which makes users of more GPUs memory bandwidth. So your per GPU memory capacity
+isn't as important because your aggregate is what matters, right? And another interesting
+new thing with Bear Rubin, of course, we can't talk too much about the intricacies of Bear
+Rubin, is that the new LAD-D organization that we mentioned in our previous article
+introducing Bear Rubin. Yeah, it's very interesting. The first time we see...
+And it's quite cool.
+So, yeah, so for those that did not read Nowotaker,
+Player Ruby has a new hardware-accelerated path
+called LUTB in their internal docs.
+And this was confirmed already, like,
+their PTX, I forgot which version,
+already talked about it.
+And there are like open source Triton branches
+or forks implementing LUTB.
+And from a high overview,
+all it does is a lookup table of quantization.
+so use, if I'm not wrong, three-bit keys
+to look up eight-bit lookup table values.
+And this reduces down to about 3.125 bits,
+if I remember correctly, per weight.
+And it's quite interesting that NVIDIA gave it
+a specific hardware-accelerated path on Bear Rubin.
+And right now, we don't see any applications of it yet,
+be interesting to see what comes out of it. Maybe it's some very specialized use case that the labs
+have that open source does not have yet, but very interesting to see what comes out of it.
+Yeah, and thanks Jordan for showing what it is and how it compares to like our block scale
+quantizations like MXFP4 and MVFP4. But yeah, very interesting to see what this is used for
+specifically and because you can actually emulate this for those curious you can actually emulate
+this in black well to look at like the efficiency and how well it actually quantizes higher precision
+weights and can run like evls on it and to check the bug complexity law stuff like that
+so yeah a lot of work coming out of this yeah there will be is quite interesting some regards
+although not really that much of a difference here.
+But the performance is the aspect for itself, right?
+Like, we do see crazy increments in performance
+from InferenceX, and this is like quite early results
+some more, and we are getting like better results
+probably very soon.
+I think before this Polka goes out,
+we'll probably have more data results.
+Here's what jumps out to me, right?
+It's a curve, and so obviously it depends
+which point you pick in the curve
+to compare to the baseline in order
+to see what the multiple is.
+If you take some really contrived point here,
+it's like infinitely better than just not
+being able to serve people at 200 tokens per second,
+because now VR and VL72 can do it.
+But at a midpoint, 100 tokens per second
+to get three times better, and then
+on the high throughput cases to not be quite at the three times
+better, be more at 1.4, so a 40% improvement,
+makes you question, OK, is this
+going to be good for high throughput?
+Interestingly.
+This reminds me, actually.
+Sorry, Jordan, but this reminds me of the CPX.
+I mean, the noise has died down quite a lot on CPX,
+but there will be introduces CPX for dissect workloads
+and splitting up the preview and this decode.
+And right now we don't have CPX on our InfantX,
+but yeah, we'll look forward to getting CPX results soon,
+maybe, and check how CPX improves
+desegregated workloads.
+Yeah, it's just, it motivates people to think
+about the flops versus bandwidth trade off
+at the different ends of the curve
+and how you can optimize.
+And so the obvious chart to me is just like
+the big step up for Ruben as a GPU is the memory bandwidth,
+which is like, as you go from HBM3 to HBM4,
+you get almost a three times improvement
+in memory bandwidth and that roughly seems to correspond
+with this, you know, three times improvement
+on the big middle parts of the curve
+where inference is memory bandwidth constraint.
+To your point, Brian,
+the fact that this is an early result
+and these lookup table quantization schemes are not explored
+and some of the other hardware acceleration features
+in the GPU is not there yet,
+it just seems like here's us demonstrating
+that roughly on a per dollar or per watt
+or per like adjusted dollar watt basis,
+Bear Rubin is still going to be more efficient
+at inference than Blackwell.
+It's just a better chip.
+they're not pricing it super aggressively,
+you know, aggressively,
+meaning they're not price gouging with this chip
+because they know people are gonna buy it.
+Like if you're gonna get three times the performance
+and the chip doesn't cost two times more,
+like that's the trade everybody's looking to make
+now going into next year.
+And to go back to the profit estimator calculations
+from earlier, it just seems kind of obvious
+that people are gonna make this calculation
+going forward and say, yeah, I want the latest and greatest.
+NVIDIA has done it again.
+Jensen sandbagging performance again.
+There's parts of the curve that are really
+memory bandwidth constrained,
+and you want to be able to serve that.
+Maybe last question for you guys.
+You do a lot of work with these coding agents.
+Can you talk about experience using fast tokens?
+Like a lot of the implications of these performance curves
+seem to be related to like,
+people are going to pay a premium
+for a hundred plus tokens per second.
+We have some hot takes on the phone.
+I won't share mine right now.
+Can you give me your initial thoughts on like
+slash fast and slash ultra fast?
+And if we're going to see a lot more of this going forward
+for you guys using it.
+Oh, Cam has spicy takes on this, I believe.
+Brian, are you at the start?
+Let you start.
+Are you a super, are you a fast maxi
+or are you a fast bear?
+What do you think?
+Nah, nah, I don't do fast.
+Like for my personal use cases,
+I have multiple agents running at the same time.
+So I have multiple VS.
+In my personal use case, I use multiple VS code windows
+and multiple agents on each VS code terminal doing basically
+different tasks.
+So it doesn't matter to me how fast one agent completes.
+Because when I come back to that,
+agent is probably already done, given how much time
+I spend on the rest.
+I know Cam has some differing views on Ultrafast.
+Yeah, I mean, I really, I'm quite bearish on it,
+because I guess my thinking is that,
+as tasks become more agentic, you need to,
+I mean, really the power in these models
+is that they can call tools very, very well, right?
+So they can call tools to bring in more context
+and accomplish things.
+But the tools take time to run.
+And if you have a model running on like,
+cerebrost or something that can serve
+like a thousand tokens per second, right?
+But then the tool use time takes like 30 seconds,
+then that speed up in the generation of tokens
+just is not really realized
+because you're still bottlenecked by the tool use time.
+So I guess like, if you're just like generating
+HTML pages all day, like 100,000 lines of HTML, then yeah, I suppose it would be quite useful.
+Wow, that's a great cue for me to talk about my use of these models.
+Yes.
+No, no. Alec, what's your take, man? What?
+No, I do have to agree with them, you know. There's times where I need to do something
+really fast and we're like getting the answer real quick or something, gather context and,
+you know, fast mode is going to be nice for that. But from the vast majority of the time,
+I also have just multiple agents and I can just do something else as they're running.
+I don't need the code immediately. I don't need it to be merged instantaneously in it.
+It can happen in an hour or two even. I just don't use it very much anymore.
+It's so expensive, right? I'm not sure if the ROI is there. Especially when you're
+bottlenecks by the tool use time, it's just like really,
+especially like the ultra fast stuff,
+like, you know, I'm not paying $400 per million
+to output tokens or cash.
+Okay, so let me push this counterfactual.
+I agree with you for my current usage,
+but I also didn't forecast myself using AI
+exactly the way I use it today, a year ago
+or two years ago, so I find it hard to predict
+what it's gonna look like a year from now
+and whether fast tokens aren't gonna be useful
+with any sort of certainty.
+So let me push you guys to two extremes.
+One is like, do you have the experience
+where a model is really big?
+In other words, let's not say really big in this case,
+but like, or the network's really slow
+or the tool use is really slow
+or the model just slows down because the end point's busy
+and then you get really frustrated
+because something is just not returning something at all.
+So can you imagine a world where the models
+get 10 times bigger, 10 times less efficient
+and we just need to speed them up
+for them to be even useful at all?
+I mean, that's a very interesting thing.
+The scaling laws do show that the more you scale,
+the better results you get.
+So it's kind of an interesting approach to just scale.
+I mean, that's the bitter lesson, right?
+Just to scale and let computer take over.
+But I mean, I've been thinking about that quite recently,
+actually, like, why don't we just scale up
+and just go very fast to reach a usable token output rate?
+token output rate.
+But seeing stuff at what the industry is actually doing.
+For example, Astra and rumors that 6.1 sold
+are looped transformers, not confirmed.
+It really look quite interesting, right?
+To show where the industry is going.
+Like, it doesn't seem to be like just scaling up
+is the way this architectural changes,
+very interesting innovations.
+And yeah, and even loop transformers and lots of reasoning is not free in terms of how much computation you need to do, right?
+So yeah, yeah, that's actually good point on the reasoning though
+Like if you're on like ultra max, whatever the reasoning that is obviously just purely
+Output speed like you need to decode very quickly. So that's a good point
+I honestly I think my prediction would be something along the lines of like
+you have a harness that can route to a fast mode for certain tasks and then it can patch
+certain tasks that don't really require low latency.
+Because when you think about it, this is basically what we're describing where if you're bootstrapping
+a React app, then it would be really, really, really useful to have fast tokens.
+But if you're doing something like Brian saying, you're running a performance benchmark
+trying to hill climb overnight, the benchmarks take like 50 minutes. So if it takes 50 minutes
+and then you spend $40 decoding a few thousand tokens and then just wait another 50 minutes,
+that's just a waste of money. So that's my prediction, right? My prediction is like,
+it'll be very specialized, but it'll still be useful for some things.
+Yeah. How about the other extreme? Let's say the models get really, really small,
+really, really efficient and still high enough quality? Is there a scenario where you are
+just bootstrapping a React app or you're using your open clause slash muse slash instinct
+perplexity computer or whatever, and you want, have you had the experience of getting instantaneous
+responses and feeling like, wow, this is really cool?
+I mean, there's one interesting direction, but I don't know, personally, I don't really
+think there's a chance of us reaching this smaller model state because like I mean it's shown in
+the history of like computing that if you make something more more efficient someone else is
+gonna just lump more stuff into there like CPUs, RAMs have gotten so much better but then websites
+have gotten so much more sluggish and so much more inefficient with the libraries. Yeah I don't
+Honestly, I don't think a world where smaller models are used will really come true.
+But it'd be interesting if I'm proven wrong.
+But definitely the environment too as we are like.
+Interesting.
+Okay.
+Appreciate you guys going on that little journey with me.
+I have a suspicion that even when you guys use all of these different agents in parallel
+and you don't really care about the time it takes to return, that if it was 10 times
+or you would still find a way to get upset.
+If you went to bed, woke up in the morning
+and there still wasn't a response, that wouldn't be good.
+So there's a room for some sort of fast tokens
+in the future and it's not all for fast, right?
+Also, Jordan, people in America
+can barely afford Big Macs, right?
+So I don't know if they're gonna pay like, you know,
+$100 per million output token.
+So I don't know, man.
+But yes, I agree, yes.
+Like speed matters, right?
+To some extent, I always love when Jensen says this,
+Jensen, Jensen says this in every keynote, right?
+Like faster tokens are smarter tokens, right?
+Obviously he's inclined to say that, right?
+Because he sells GPs, but yeah, I mean, like,
+to some extent, that's true, right?
+I mean, think about if you could, you know,
+basically have instantaneous output, right?
+That would be extremely useful for some cases,
+because you're just getting the answer out of the way,
+but I don't know, man, we'll see.
+Time will tell.
+Who knows?
+We will see you guys. Okay.
+Okay. We should talk about Tyler T.
+Ah, yeah, yeah, yeah.
+That was a perfect lead in, man.
+I was about to wrap this up.
+We can wrap it up.
+I don't think there's...
+No, I'm talking about Tyler RT
+because a lot of people when they saw the 6.1 Astra,
+or sorry, 6.1 Soul Ultra Fast mode
+get released at OpenAI Deviday,
+everybody was like, oh, well,
+there's a cerebrost deal with open AI
+that's promising them 750 megawatts over the next few years.
+Obviously this is cerebrost,
+but Tyler R.T. is super capable.
+And if our take on how big these open AI models are
+is correct, and they're using some similar optimization
+to what we've got on screen here showing Tyler R.T.
+Well, 200 tokens per second,
+all the way approaching 500 tokens per second
+on a decent side model,
+we're approaching trillion parameters
+like we've got on screen here.
+is totally possible just on NVIDIA GPUs, right?
+Yeah.
+Yeah, I mean, Tyler T, for those who don't know,
+is basically just an inference engine
+optimized for ultra-low latency, right?
+So I think the takeaway here is that you don't necessarily
+need super specialized SRAM architectures, whatever,
+to get high interactivity.
+So these are achievable to some extent, right?
+Bound by the laws of physics, of course,
+by super optimized inference engines, right?
+So this has been shown here.
+There's also an AMD result.
+And I think going forward, this will become a trend
+where inference engines will become more specialized
+for different use cases.
+We're already kind of seeing this trend.
+But yeah, tile RT is super cool
+Because, yeah, you don't have to have a new chip.
+Can you talk a little bit about how it works?
+Obviously, there's SRAM on the NVIDIA GPUs.
+There's lots of different ways that you can configure
+the serving setup as well as write specialized kernels
+to actually serve the models.
+Anything, you know, technical we can talk about on that.
+I think Brian can talk about like why it's good
+at higher activity, but it's bad
+at a high throughput, right?
+Yeah.
+So basically, you can see tower TS,
+one humongous megaconner for entire model.
+So the problem at low interactivity is data flow.
+So what companies like Cerebras, Simonova have done
+is they built data flow machines where the hardware is
+built for data flow.
+And for GPUs, this is a bit more difficult.
+And entirely, you can kind of see it.
+Only batch size one is possible right now.
+And the model releases are quite slow.
+This is because it takes a lot of software effort
+to actually get to this mega kernel
+because the GPUs are not that friendly
+for this kind of data flow stuff.
+But it's really quite interesting
+that GPUs really are general.
+The fact that they can be used for this
+and replace the specialized hardware.
+But to what extent is this enabled by
+just having an AI agent hill climb
+one giant mega kernel that literally
+no one can actually read, right?
+And then it's just like works
+and it's like good accuracy and high interactivity, right?
+Yeah, but I mean, people have been doing this,
+that's for sure, but,
+and of course, I personally do believe
+that kernel development is a very easy task for agents
+to do, because it's very easily verifiable.
+And we have seen a lot of agents on the leaderboards
+of GPU mode and other kernel competitions.
+And I don't know, right now, this is a very new space.
+Recently, I've seen this kind of mega kernel ideas come out
+on MLX.
+It's a repo recently released on MLX.
+So as other developments, for example, the TPU mega-kana,
+which uses the same idea of this mega-kana
+for entire model, which is very interesting, yeah.
+Jordan, I have a question for you.
+Sorry, Jordan, I have a question for you.
+If you're, not to name any names,
+but if you're a chip startup and you're basically,
+entire thesis is like fast tokens,
+Are you a little bit like concerned right now with the state of, I mean, all these improvements
+with mega kernels like Brian's talking about in jalapeno, for instance, like, and just
+the general purpose GPU is just becoming faster at this region of, of interactivity.
+What do you think?
+I'm not concerned because I have a fundamental belief that demand completely outstrips supply
+and anybody who can produce chips is going to find a customer right now.
+just need a lot more chips of all sorts. I think in the long term, all of these chip
+startups really make or break their business by their ability to deploy things that actually
+work and to be able to produce a bunch of chips.
+If you're going to have a really big business, you need to be able to manage your supply
+chain and actually produce a bunch of chips. You need to be able to get good yields and
+you need to be able to build servers and just build a data center and train people
+and all of that, which is, you know, in some ways a much harder task than actually making
+something that performs really well. I think the other thing that I've been clued into is the fact
+that high interactivity is high throughput if the interactivity is high enough. In other words,
+you don't need a bunch of batching dynamics just to get a whole bunch of, you know, throughput,
+even if it's a one-to-one ratio between throughput and interactivity, because if your
+your interactivity goes to 1,000, your throughput's at 1,000.
+If it goes to 2,000, your throughput's at 2,000.
+So I'd be driving interactivity as high as I possibly could
+with a lot of this custom silicon.
+But it's gonna be like expensive.
+Like if you said like batch size one,
+and you have 1,000 throughput at 1,000 TPS,
+then one user is paying for entire utilization.
+You can do batch one, but if it's really,
+really fast batch one, you can just pipeline everything
+and still get high effective throughput,
+even though there's not a bunch of batching dynamics
+So, I don't necessarily feel like fast tokens are, by definition, inefficient tokens.
+I think that really depends on the hardware design and if you're, as Myron says, using
+because eggs got expensive, meaning HBM, you're going for caviar, which is the SRAM.
+So, I don't think the per calorie thing.
+It'll be interesting.
+Another axis that I'm skeptical of is like quite a few of the alternative chip startups,
+not to name names, do kind of rely on general purpose GPUs for pre-fill.
+So like the heterogeneous stuff is cool and all, but if your argument is like, okay, well,
+people are chip constrained and they need more chips, but like if the chip can't actually
+run efficient inference, like it's just kind of like, you still need NVIDIA GPUs.
+I don't know.
+The setup that makes sense to me is some pool of pre-filled decode whereby you
+oversize one of the pools to be able to serve a non-prefilled decode
+disaggregated setup for some of the traffic. In other words, if you're fixing
+your pre-filled decode ratio ahead of time for the entire data center, I think
+that's totally bunk because it's just gonna, the workload patterns just
+gonna change and you're gonna have some wasted inefficient amount of silicon,
+right? But if the workload pattern changes, you know, for more decode or less decode, and you can
+move those chips into a, you know, only like a homogenous, broken up setup, I think that makes
+a lot more sense. In all of these scenarios, if you depend on NVIDIA, to be one of your GPU
+partners, and you're buying GPUs and stuff, yeah, the business decisions there make a
+a bunch more impact on your success rather than the technical decisions.
+Because look, Nvidia acquiring Grok is just obvious,
+like justification for all of these chip startups that they're onto something
+technically. Otherwise, you know,
+why waste $20 billion acquiring somebody whose chip doesn't work?
+It obviously works to do something Nvidia GPUs can't at any price.
+So everybody else can do the same thing.
+But the question is not technically if this is going to be beneficial to
+anybody, or if Nvidia has the demand signals to want to go and build this, it's business.
+It's like, are you going to be able to build enough of them and deploy enough of them and
+actually make them work? And I think that's quite a big question when Nvidia's controlling
+who gets shipments of GPUs and backstopping people who want to buy data centers and build
+and stuff like that, right? That's a hard business, hard to get into.
+Yeah. And I think the other thing is like all of these chip startups have proven,
+at this point, generally speaking, that they've made a chip that they can tape out.
+I mean, and get like, it works. CPU, Tranium, everybody who's building custom silicon,
+you know, MTIA, even Maya, like the hyperscalers have proven.
+And you can build general purpose stuff too.
+It doesn't have to be decode specific silicon.
+So why not just build a second chip that's pre-fill specific if you want to, you know,
+go and win, build a pre-fill and a decode chip.
+Right?
+Yeah.
+I mean, I think that's kind of what Hall and PNU did, right?
+Or that's what they are claiming at least.
+So I mean, yeah, like the design, like the RTL is not free, but people have proven it's
+That's a lot less expensive than it used to be.
+And the software moat, the quote unquote, cuda software moat is speed to develop these
+things as opposed to just like people, there's something physically setting NVIDIA apart
+where others cannot reach a certain level of performance.
+Like you can if you spend the time and the effort and the money on doing so.
+And so I expect chip startups to do that.
+I expect them to build pre-filled silicon and decode silicon.
+And I expect them to realize the benefits of removing the margin of multiple vendors,
+if it's Nvidia or Broadcom or Marvell or whoever they're partnering with.
+And then I expect them to have a really hard time deploying all of this stuff and producing
+enough of them for it to actually matter because supply chain and data center operations
+matters a lot, like I already said.
+But I'm excited, man.
+I know it kind of got buried in the middle of this conversation,
+but TPU on inference access to me, the most exciting thing here,
+cause it's just like a one way street, you know,
+they don't start selling TPUs externally and then just say, uh,
+we're going to stop and keep it all for ourselves.
+No, no, it's super exciting. I think, I mean, Alec,
+you've, you've worked with Google.
+I think you probably can attest to where you think this is going to go.
+Yeah, it's awesome. I mean, we're going to have training them soon as well. We're going
+to have alternative chip startups. We're going to have, you know, everything. That's the
+goal, right?
+So, I think going forward, like Infrancet is just going to be a consolidated place
+on the internet where you can literally get free information on the performance of chips
+and real-world inference workloads and compare all of them, so.
+InferenceX chat room soon, Cam? What do you think?
+InferenceX chat room? I don't know. We'll see, Matt. We'll see.
+You got to take that out. The boss.
+Dylan, what do you think about being a Reddit moderator again,
+except it's on inferencex.com?
+Alec, you want to be first moderator? What did your username on InferenceX socials be?
+I don't know if I ever want to be a moderator.
+That sounds like such a pain.
+Tip you.
+Are you a moderator of the GitHub Actions queue
+for all of the runs that are going on right now?
+Yes. Really gatekeeping.
+It's your codecs.
+You give me an API key and you say,
+hey, moderate all these runs.
+Well, actually, that's a good idea.
+We'll have an AI agent be the moderator.
+Hopefully, it's more of a Reddit and less of like a...
+I wonder if the AI agent will ban Dylan's posting on his own forum or if it'll let
+it slide.
+Okay, guys, nice way to end off.
+Anything you think we missed here?
+All right, a little closing sentiment.
+As we talked about this, it seems like there was six different articles that came out
+in between podcasts about InferenceX.
+We talked about Ngrams, Agent X, Ruben Performance,
+TPU Performance, the DeepSeek V4, zero to one.
+I guess we already talked about that.
+So that doesn't count.
+Five things and tile RT is the fifth.
+Good stuff.
+Hopefully we can get you guys back on
+before the next five articles drop
+and do this a little bit sooner.
+Appreciate you taking the time today
+and thanks everybody for listening.
+Thanks Jordan.
+Yeah, thanks for having us.
