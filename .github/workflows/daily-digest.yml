@@ -3,7 +3,7 @@ name: Generate Daily Feed
 on:
   push:
     branches: [main]
-    paths: ['feeds/podcast-inbox/**']
+    paths: ['feeds/podcast-inbox/**', '.github/whisper-production-request.txt']
   schedule:
     # 2026-09-07: moved 2h earlier (was '0 22', Beijing 06:00) and off the top of
     # the hour. Consumers on the Mac read this feed at Beijing 06:15; GitHub's
@@ -18,6 +18,11 @@ on:
     - cron: '30 1 * * 1-5'  # arXiv follow-up: Beijing 09:30, after the daily release
   workflow_dispatch:
     inputs:
+      transcribe_only:
+        description: 'Process the durable cloud Whisper queue without refreshing other feeds.'
+        required: false
+        default: false
+        type: boolean
       x_llm:
         description: 'LLM for X/Twitter summaries'
         required: false
@@ -39,7 +44,7 @@ on:
           - 'false'
           - 'true'
       transcribe_missing:
-        description: 'Use Volc ASR to transcribe selected podcasts without public transcripts.'
+        description: 'Use cloud CPU Whisper for eligible queued podcasts without public transcripts.'
         required: false
         default: 'config'
         type: choice
@@ -48,7 +53,7 @@ on:
           - 'false'
           - 'true'
       transcribe_semianalysis:
-        description: 'Transcribe the newest SemiAnalysis episode using official YouTube captions, with ASR fallback.'
+        description: 'Restrict cloud Whisper processing to eligible SemiAnalysis episodes (no policy override).'
         required: false
         default: 'false'
         type: choice
@@ -85,11 +90,68 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Plan podcast processing
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          PUSH_MESSAGE: ${{ github.event.head_commit.message }}
+          TRANSCRIBE_ONLY: ${{ inputs.transcribe_only }}
+          TRANSCRIBE_MISSING: ${{ inputs.transcribe_missing }}
+          SEMIANALYSIS: ${{ inputs.transcribe_semianalysis }}
+        run: |
+          echo "WHISPER_JOB_DEADLINE=$(( $(date +%s) + 65 * 60 ))" >> "$GITHUB_ENV"
+          enabled_by_default=$(python -c 'import json; print(str(json.load(open("config/sources.json"))["podcasts"]["transcription"].get("enabled_by_default", True)).lower())')
+          transcribe=false
+          capture=true
+          skip_generation=false
+          if [ "$EVENT_NAME" = "push" ] && [[ "$PUSH_MESSAGE" == *"[run-whisper-production]"* ]]; then
+            transcribe=true
+            skip_generation=true
+          elif [ "$EVENT_NAME" = "push" ]; then
+            : # Existing local-inbox imports stay import-only.
+          elif [ "$SCHEDULE" = "30 1 * * 1-5" ]; then
+            capture=false
+          elif [ "$TRANSCRIBE_MISSING" = "true" ] || [ "$SEMIANALYSIS" = "true" ]; then
+            transcribe=true
+          elif [ "$EVENT_NAME" = "schedule" ] || [ "$TRANSCRIBE_MISSING" != "false" ]; then
+            transcribe=$enabled_by_default
+          fi
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$TRANSCRIBE_ONLY" = "true" ]; then
+            skip_generation=true
+            transcribe=true
+          fi
+          echo "transcribe=$transcribe" >> "$GITHUB_OUTPUT"
+          echo "capture=$capture" >> "$GITHUB_OUTPUT"
+          echo "skip_generation=$skip_generation" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
         run: pip install -r requirements-central.txt
 
+      - name: Install cloud Whisper dependencies
+        if: steps.plan.outputs.transcribe == 'true'
+        timeout-minutes: 7
+        run: |
+          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
+          pip install -r requirements-whisper-pilot.txt
+
       - name: Run tests
         run: python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: Preserve pending podcasts before refresh
+        if: steps.plan.outputs.capture == 'true'
+        run: |
+          python scripts/cloud_whisper_queue.py --enqueue-only
+          if git diff --quiet -- feeds/feed-podcasts.json feeds/feed-transcripts-index.json ':(glob)feeds/transcripts/*.txt' && \
+             [ -z "$(git ls-files --others --exclude-standard -- ':(glob)feeds/transcripts/*.txt')" ]; then
+            bash scripts/checkpoint_whisper.sh --queue-only
+          else
+            # Cache/publication repair must persist its sidecar/index/feed together.
+            bash scripts/checkpoint_whisper.sh
+          fi
 
       # X 不在云端抓：X 对 GitHub Actions 的机房 IP 段返回 403（2026-09-06 确认，
       # 同一份新 cookie 住宅 IP 能抓、云端连跑两次都 403）。feed-x.json 改由
@@ -97,6 +159,7 @@ jobs:
       # 既不抓也不提交它（见下面 Commit feeds 的 git add 清单）。
       # TWITTER_COOKIES 因此不再注入 —— 云端没有任何一步需要它。
       - name: Generate feeds
+        if: steps.plan.outputs.skip_generation != 'true'
         env:
           SCHEDULE: ${{ github.event.schedule }}
           EVENT_NAME: ${{ github.event_name }}
@@ -111,31 +174,20 @@ jobs:
             python scripts/generate_feed.py --skip-twitter
           fi
 
-      - name: Transcribe selected missing podcast transcripts
-        if: ${{ github.event_name != 'push' && github.event.schedule != '30 1 * * 1-5' && (github.event_name == 'schedule' || inputs.transcribe_missing == 'true' || inputs.transcribe_missing == 'config' || inputs.transcribe_semianalysis == 'true') }}
-        env:
-          VOLC_ASR_API_KEY: ${{ secrets.VOLC_ASR_API_KEY }}
-          EVENT_NAME: ${{ github.event_name }}
-          TRANSCRIBE_MISSING: ${{ inputs.transcribe_missing }}
-          TRANSCRIBE_SEMIANALYSIS: ${{ inputs.transcribe_semianalysis }}
-        run: |
-          if [ "$EVENT_NAME" = "schedule" ] || [ "$TRANSCRIBE_MISSING" != "false" ]; then
-            python scripts/transcribe_missing_podcasts.py
-          fi
-          if [ "$TRANSCRIBE_SEMIANALYSIS" = "true" ]; then
-            python scripts/transcribe_missing_podcasts.py \
-              --only-channel SemiAnalysis \
-              --force-channel SemiAnalysis \
-              --limit 1
-          fi
+      - name: Capture eligible refreshed podcasts
+        if: steps.plan.outputs.capture == 'true'
+        run: python scripts/cloud_whisper_queue.py --enqueue-only
 
       - name: Validate feed uniqueness
         env:
           SCHEDULE: ${{ github.event.schedule }}
           FEED_SCOPE: ${{ inputs.feed_scope }}
           EVENT_NAME: ${{ github.event_name }}
+          TRANSCRIBE_ONLY: ${{ steps.plan.outputs.skip_generation }}
         run: |
-          if [ "$SCHEDULE" = "30 1 * * 1-5" ]; then
+          if [ "$TRANSCRIBE_ONLY" = "true" ]; then
+            scope="podcasts"
+          elif [ "$SCHEDULE" = "30 1 * * 1-5" ]; then
             scope="arxiv"
           elif [ "$FEED_SCOPE" = "podcasts" ] || [ "$EVENT_NAME" = "push" ]; then
             scope="podcasts"
@@ -189,7 +241,11 @@ jobs:
           # feeds/feed-x.json 故意不在这个清单里：它归 Mac mini 那条通路写。
           # 两个写者同时 add 同一个文件 = 每天一次 rebase 冲突，而云端这边
           # 根本没有 X 数据可写（--skip-twitter）。删这一项是承重的，不是清理。
-          git add feeds/feed-podcasts.json feeds/feed-arxiv.json feeds/feed-blogs.json feeds/feed-transcripts-index.json feeds/transcripts -f
+          git add feeds/feed-podcasts.json feeds/feed-arxiv.json feeds/feed-blogs.json feeds/feed-transcripts-index.json -f
+          if [ -n "$(git ls-files -- ':(glob)feeds/transcripts/*.txt')" ] || compgen -G 'feeds/transcripts/*.txt' >/dev/null; then
+            git add -f -- ':(glob)feeds/transcripts/*.txt'
+          fi
+          [ ! -f feeds/whisper-queue.json ] || git add feeds/whisper-queue.json -f
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.generate_summaries }}" = "true" ]; then
             [ -f feeds/feed-summaries.json ] && git add feeds/feed-summaries.json -f
             [ -d content/summaries ] && git add content/summaries -f
@@ -199,3 +255,63 @@ jobs:
           # rebase 而不是 merge，保持线性历史；两边改的文件不重叠所以不会有冲突。
           git pull --rebase origin main
           git push
+
+      # The old Volc stage and its API-key injection are intentionally removed.
+      # Each bounded attempt is committed independently, including its failures.
+      - name: Process at most two cloud Whisper episodes
+        id: whisper
+        if: steps.plan.outputs.transcribe == 'true'
+        env:
+          SEMIANALYSIS: ${{ inputs.transcribe_semianalysis }}
+          OMP_NUM_THREADS: '4'
+          HF_HUB_DISABLE_TELEMETRY: '1'
+        run: |
+          failed=0
+          args=()
+          if [ "$SEMIANALYSIS" = "true" ]; then
+            args+=(--only-channel SemiAnalysis)
+          fi
+          for attempt in 1 2; do
+            remaining=$(( WHISPER_JOB_DEADLINE - $(date +%s) ))
+            if [ "$remaining" -lt 300 ]; then
+              echo "Remaining job budget is too small; leave due episodes queued for the next run."
+              break
+            fi
+            timeout_seconds=$remaining
+            if [ "$timeout_seconds" -gt 1800 ]; then timeout_seconds=1800; fi
+            if ! python scripts/cloud_whisper_queue.py --process-one \
+              --timeout-seconds "$timeout_seconds" --checkpoint-git \
+              --output-dir "$RUNNER_TEMP/whisper-production/$attempt" "${args[@]}"; then
+              failed=1
+            fi
+            python scripts/validate_feeds.py --scope podcasts
+            bash scripts/checkpoint_whisper.sh
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+          python scripts/cloud_whisper_queue.py --status
+
+      - name: Preserve interrupted Whisper checkpoints
+        if: ${{ always() && steps.plan.outputs.transcribe == 'true' && steps.whisper.outcome != 'skipped' && steps.whisper.outcome != '' }}
+        run: |
+          if ! bash scripts/checkpoint_whisper.sh; then
+            # Persist recoverable publication intent without publishing an invalid feed.
+            bash scripts/checkpoint_whisper.sh --queue-only
+            exit 1
+          fi
+
+      - name: Keep cloud Whisper results and queue status
+        if: ${{ always() && steps.plan.outputs.transcribe == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: whisper-production-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/whisper-production/
+            feeds/whisper-queue.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Report unsuccessful transcription attempts
+        if: ${{ always() && steps.whisper.outputs.failed == '1' }}
+        run: |
+          echo "One or more transcription attempts failed. Successful episodes and failure states were checkpointed; inspect the queue and artifacts."
+          exit 1

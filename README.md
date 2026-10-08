@@ -10,6 +10,8 @@
 
 ## 最近更新
 
+- `2026-10-08`：播客无公开字幕的转录接入云端 CPU Whisper，持久队列跨 feed 窗口保留待办、逐集保存与失败退避；不再自动调用火山 ASR。[维护说明](docs/cloud-whisper-production.md)。
+
 - `2026-09-30`：新增播客官方 RSS 备用入口、信源失败提示、镜像新鲜度检查及独立 PR 测试。
 
 - `2026-09-20`：增加五家企业软件公司的官方访谈与企业 AI 落地追踪，高管每家公司仅一人；[来源与人物表](docs/enterprise-ai-watchlist.md)。
@@ -61,9 +63,11 @@
 
 字幕从最后一次出现在最近更新 feed 起保留 14 天。播客退出主 feed 后，仍可通过字幕索引展开；超过 14 天后全文缓存自动过期，只保留日报中的标题、链接和已有摘要。
 
-SemiAnalysis 已进入日常自动全文流程：系统优先匹配官方 YouTube 同期视频的公开字幕，匹配不到时才尝试 ASR。仓库维护者仍可在 GitHub Actions 的 `Generate Daily Feed` 手动运行页把 `transcribe_semianalysis` 设为 `true`，单独重试最新 1 期。
+播客全文按原来源筛选，优先使用可获取的公开字幕；缺失时由 GitHub Actions 的 CPU Whisper 顺序补齐，每轮最多两项，待处理节目保存在持久队列中。SemiAnalysis 的手动选择仍可使用 `Generate Daily Feed` 的 `transcribe_semianalysis=true`，但不绕过来源条件；`transcribe_only=true` 只处理队列。[云端维护说明](docs/cloud-whisper-production.md)。
 
 没有公开字幕时，维护者也可以在 macOS 上运行 `python3 scripts/transcribe_missing_podcasts.py --backend local --only-channel a16z --force-channel a16z --limit 1`，调用本地 Whisper 逐集转录。该模式默认寻找上级工作区中的共享 `workspace/scripts/podcast_rss_transcribe.py`；其他目录结构可用 `AI_SIGNAL_LOCAL_TRANSCRIBER` 指定脚本路径。音频只保存在临时目录，单集完成后自动删除。
+
+已有独立的 [Linux CPU Whisper 手动试跑](docs/cloud-whisper-pilot.md)：默认先转录 5 分钟样本，保存实验字幕和耗时；实验入口不写生产 feed，正式流程另用持久队列接入。2026-10-07 分支实测已跑通 5 分钟样本及约 35 分钟整集；速度、内存和识别质量限制见试跑记录，正式接入状态见云端维护说明。
 
 ## 信息源
 
