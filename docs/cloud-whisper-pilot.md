@@ -1,6 +1,6 @@
 # CPU Whisper 云端手动试跑
 
-这是独立实验入口，不替换日常生产任务。只使用标准 Linux CPU、`faster-whisper` 的 `small.en` / `small`、int8 和最多 4 个线程；没有付费 ASR、GPU、服务器购买或自动回退。
+本页记录独立实验入口和历史试跑；实验入口本身不写生产 feed。2026-10-08 经维护者授权的正式接入另见 [生产维护说明](cloud-whisper-production.md)。只使用标准 Linux CPU、`faster-whisper` 的 `small.en` / `small`、int8 和最多 4 个线程；没有付费 ASR、GPU、服务器购买或自动回退。
 
 ## 边界
 

@@ -37,11 +37,28 @@ class PilotError(RuntimeError):
     pass
 
 
-def atomic_json(path, data):
+def atomic_text(path, text):
+    """Durably replace one file without exposing partial contents."""
     path = Path(path)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    descriptor, name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        temporary.replace(path)
+        directory = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def atomic_json(path, data):
+    atomic_text(path, json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
 
 def digest(path):
@@ -213,6 +230,8 @@ def worker(task_path):
     work = Path(task_path).parent
     output = Path(task["output"])
     result = {"request": task["request"], "status": "running", "stage": "download"}
+    if task.get("public_caption_unavailable"):
+        result["public_caption_unavailable"] = task["public_caption_unavailable"]
     atomic_json(output / "result.json", result)
     # Bound individual files too; parent bounds aggregate work space and wall time.
     resource.setrlimit(resource.RLIMIT_FSIZE, (1024 ** 3, 1024 ** 3))
@@ -270,7 +289,22 @@ def work_bytes(path):
     return total
 
 
-def supervise(command, work, timeout, max_bytes=MAX_WORK_BYTES, env=None):
+def process_group_rss_bytes(group):
+    """Linux RSS watchdog, including decoder descendants in the worker group."""
+    if not Path("/proc/self/statm").exists():
+        raise PilotError("RSS enforcement requires Linux /proc")
+    total = 0
+    for directory in Path("/proc").glob("[0-9]*"):
+        try:
+            fields = (directory / "stat").read_text().rpartition(")")[2].split()
+            if int(fields[2]) == group:
+                total += int((directory / "statm").read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE")
+        except (FileNotFoundError, ProcessLookupError, PermissionError):
+            pass
+    return total
+
+
+def supervise(command, work, timeout, max_bytes=MAX_WORK_BYTES, env=None, max_rss_bytes=None):
     started = time.monotonic()
     process = subprocess.Popen(command, start_new_session=True, stdout=subprocess.DEVNULL,
                                stderr=subprocess.DEVNULL, env=env)
@@ -278,6 +312,8 @@ def supervise(command, work, timeout, max_bytes=MAX_WORK_BYTES, env=None):
         while process.poll() is None:
             if time.monotonic() - started >= timeout:
                 raise PilotError(f"Pilot exceeded its {timeout}s total wall-time budget")
+            if max_rss_bytes is not None and process_group_rss_bytes(process.pid) > max_rss_bytes:
+                raise PilotError("Worker exceeded its RSS memory budget")
             if work_bytes(work) > max_bytes:
                 raise PilotError("Pilot exceeded its temporary storage budget")
             time.sleep(.25)
