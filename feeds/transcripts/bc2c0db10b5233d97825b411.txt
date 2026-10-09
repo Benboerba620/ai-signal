@@ -1,0 +1,693 @@
+Hello, everyone. Welcome back to Seminalysis Weekly. This week, I'm joined by Max and Andrew,
+the authors of the very controversial, but very interesting, anthropic subscriptions offer
+five times or more value than OpenAI. This was an article that we put out a couple of
+days ago where the guys did limit testing for every AI subscription plan. It's not
+just OpenAI with codecs and anthropic with cloud code. It also includes meta, SpaceX
+AI, Minimax, Moonshot, ZAI, Cursor, Cognition, anybody where you could be getting an all-in
+plan from.
+And we're going to talk about the learnings that they've had.
+Guys, welcome to the show.
+Thank you for having us, Jordan.
+Okay, so first-
+I thought this was a TV interview or something, it's like the sun has too polished now.
+I'm not used to it.
+Well, yeah, okay, other people need me to like direct them with questions, but for
+you, I think we can let you run it. Max, the plans are highly subsidized, no?
+Okay, it depends on how you want to define subsidization. Relative to API pricing, the
+plans are obviously a better deal. I mean, we can throw out some graphics on the screen
+here or maybe people can read the newsletter if they haven't, but some headline results
+including you being able to pay $200 for a cloud plan and get $12,000 of this 5.5 tokens
+at API pricing. So that's obviously a good deal. However, in terms of whether or not the subscriptions
+are subsidized in an absolute sense, do you get... Does anthropic have negative gross
+markets when they're selling a social plan? I have an answer as no. The reason for this
+is that A, their margins at API pricing are incredible.
+I mean, consensus is that it's like, oh, 90% blended at this point.
+And the second thing is that most people don't use like a 100% utilization.
+And so if you combine like a low sort of realistic algorithmization,
+where I think it's around like say 10% with this, you know, 90% plus margin
+at API pricing, how do you end up with subscriptions having like call it
+50 to 60% like blended gross margins for in profit.
+Um, so it's obviously still actually a pretty good business for them, but
+compared to their like 90% plus margin API business, that's still.
+So maybe the takeaway is not that the subscription plans are subsidized,
+but that the API pricing for the current frontier models is like, you
+know, punitive, exploitative price gouging, whatever word you want to.
+It's quite expensive.
+They're selling to willing buyers at the fair market price. This is capitalism.
+Understood. Okay. So talk to me about the 100% utilization and how you actually did the
+testing to realize these numbers, these results. That's an Andrew question.
+Yeah, so I guess to figure out like the results for the subscription plans were pretty much
+just like we bought everything a plan and ended up measuring every single token type.
+And from that we're able to say what kind of workload we are running, in this case generally
+agentic.
+That's pretty much why I'm using these plans for and they'll tend to be around like 96
+percent cash reads, a little bit of inputs and a little bit of a cash try around 2.7%
+and all the other outputs, you blend that together and then you can get the big numbers that we
+figured out.
+Yeah, sorry, before you dive more into the details, I do want to emphasize that there
+have been people on tour before who did similar analysis, and they would essentially like just
+present $1 value as like the equivalent no API value of this version.
+And that is just a fundamentally oversimplified and correct analysis.
+The way to think about your subscription plan is that by giving the company $200 a month
+or whatever, they allocate you some number of credits.
+This is just some other currency.
+And you should think of each model token type combo as costing a different number of credits
+and essentially drawing from your allotted user to a different amount.
+And because the ratio between different model token type by credit costs can
+be different from their API price ratio, the actual API equivalent value
+of your subscription plan can change dramatically depending on what model
+we're using and what workload you're running.
+And what this means is that you can't just make a blanket statement like,
+Oh, uh, the $200 enthropic plan, uh, gives you $10,000 of value.
+You have to say like the $200 enthropic plan when running a particular
+workload on a particular model gives you like some dollar amount.
+And this is sort of the nuance that we capture on newsletter and
+something everyone makes sure that people understand.
+Yeah, makes sense.
+Can you go even back to basics even more and just describe the different
+token types as you're referring to token types?
+I'm not sure everybody might understand what that means.
+Yeah, so when you're in your Cloud Code CLI or your Codex app, there's different token
+types that are being used there as you chat with the model.
+The first one is the input tokens.
+Input tokens are uncashed.
+They're just fresh tokens that you send to the model.
+When you're actually doing like an agentic multi-turn conversation, most of your input
+tokens are not from your direct chat but are from things like web search where
+them fetch something and then analyze it in like a small subagent in one shot. In
+that case it doesn't need caching and so that's where it won't use caching and
+it'll be like a fresh input token cost. The second one is a cache write. A cache
+write is in a multi-turn conversation rather than reprocessing your entire
+prompt every single time when you call the LLM API server, you can save the previous
+results into a cache and reuse them later for faster inference and also for cheaper costs.
+And so, cache write tokens are previous tokens that you write to the cache, and they'll build
+once when they're written, and then once you read them back, they're built back as
+cache reads. And the nice thing about cache reads is that they're extremely cheap because
+you're essentially just serving from the kvcache on the LLM server.
+So yeah, so now you have inputs, cache writes, and cache reads. Input is generally, let's
+say, 1x price. Cache writes are generally 1.25x of inputs. Cache reads are probably around
+0.1X or less of input costs.
+And then lastly, you have output tokens.
+So this is outputs is what the model actually generates.
+This is generally the most expensive token type,
+unfable and asteroids are at like $50 per million token
+compared to like $10 in inputs.
+Yeah.
+Yeah, it's pretty straightforward to draw a line
+from like the token type to the actual processing
+that's happening on the accelerator
+that's producing the tokens.
+In other words, um, reading KV cash from memory would be a cash read.
+This is a lot cheaper in performance terms than outputting new tokens,
+which would be decode steps.
+Well, right.
+Yeah, correct.
+And cash read is like probably the most important thing and like the
+way you do caching with all this, because, you know, LLMs are, uh, they're
+like autoregressive like coders.
+Uh, if you don't do caching, you're like reprocessing the entire prompt each
+which is extremely time consuming and expensive. And because most of your chat session is actually
+catch reads, because again, you're reprocessing the entire thing every single time. So if it's
+cached, all of that is essentially cache reads. You want this cache read price to be as low as
+possible because it almost dominates the price of your chat. So can you talk to me about the
+the technical way I go back there.
+That's what I'm saying.
+This is like teasing our endpoint X testing a little bit.
+We're really having like a high cache hit percentage
+is what separates like the good inference providers
+from the doxial ones.
+And this is like actually surprisingly
+difficult product to solve,
+but it makes a huge difference in terms of
+the actual cost to like run the same workload
+for sort of everything Andrew was saying
+about the different token prices.
+Yeah, even OpenRouter recently added, if you go to OpenRouter on any given model, you scroll
+down past the top level prices per provider, they have a nice effective pricing, which
+showcases what the effective blended token costs are, assuming certain cash hit rates
+of the providers, which is pretty neat.
+Okay, so explain why cash hit rate or CHR is like a really important metric for people
+who work on inference serving today and why it's actually hard.
+Like we've been saying cash.
+Cash is like conversation history, right?
+So why is it hard to route a new request to where that conversation history is stored
+or to tear it off to lower performance but cheaper storage?
+Yeah, if you're running a real production inference workload where you have like multiple
+different racks, multiple different deployments of like the same model on each of these racks,
+and then each one is processing like a batch that has some different user requests, essentially
+like when I submit the like say the first turn of my user request, you have to be smart
+enough to like write all those tokens into the cache somewhere, you know, probably starts
+off and like staying in HBM, if you're pretty confident, I'm not going to sort of
+spit a follow up that quickly, but then if, you know, there's large gap, you probably
+want to sort of offload it to a lower, cheaper memory here, there's a very simple
+plexi there.
+And then when I come back with sort of like the next tour of my request, obviously
+you as the inference provider have processed, I don't know if you're big,
+maybe thousands, tens of thousands, like millions of other requests in that time
+delay, but you have to like take my new request, probably send it to like the
+same deployment of the mall that you have, sort of find my previous tokens that you
+hopefully wrote down to cash somewhere, and then sort of route those to the same deployment
+and then sort of reprocess the next turn.
+And I think this process generally of sort of having to find the previous cash, like
+routing the subsequent turns of the same request to the same deployment, sort of balancing
+everything properly.
+none of your PPUs are like being overutilized
+and you don't have a ton of PPUs
+that are just like sitting there idle burning money,
+these are all very complicated systems that you need.
+Yeah, and there's also this TTL dynamic too, right?
+Where like every new request is gonna be tagged
+with a time to live, so it's gonna sit in HBM,
+the highest tier, maybe for five minutes
+and then the next one maybe for an hour or something.
+But it's a punishment to the user
+if you let your old conversation die
+so that it's no longer cashed
+and now you want to keep it going,
+you got to pay a whole fresh input cost or cash right
+at 10X the price or something to be able to rehydrate it.
+So-
+Often times more than 10X at this point.
+Kind of crazy.
+Yeah, actually one of the things like,
+one thing that we called out,
+I think originally to our Cook Nocks
+and all subscribers a few months ago at this point,
+When you looked at the original anthropic API price ratios, it was like, if cash reads were
+1, then input tokens were 10, and then output tokens were 50.
+It was just 1, 10, and then 5 more ratio.
+One of the things we've noticed recently with the price cuts that OpenAI and developer have
+done is they've been overwhelmingly concentrated on making the cash, right?
+The cash reads cheaper.
+And why is this the case?
+So one, as we've established, this is the most important lever to pull to actually decrease
+overall effective pricing.
+But then two, and this is the thing that we pointed out to our technology subscribers
+a few months ago, is that cash re-started off as most likely by far just the highest
+margin token type amongst those three.
+It's very possible that following this original price ratio, Enthropic was ripping 99% markets
+on their cash, but there's just a lot.
+Um, and then now we're finally sort of seeing, uh, those prizes
+get competed down again.
+You know, uh, thanks to just competitive pressures.
+That's one thing I want to point out.
+Unfortunately, I don't think this has reached open AI with Astra is still
+one dollar, but the Ash reads as compared to Fable at 25 cents, which is
+actually a big reason why you'll see on the plans, um, Astra might have
+like higher dollar value on the Pro200 plan
+versus Fable 5.1,
+but actually Fable 5.1 has more tokens and more usage
+because its cash reads are 25 cents per million token
+versus $1 on Astra.
+And that's besides the whole point that,
+Fable 5.1 is only 50% of your plan
+and you have another 50% to use.
+Okay, yeah.
+So take me through the exact like open AI versus anthropic
+on the frontier model comparison in these plans.
+Like this is the headline chart,
+I think that a lot of people who have seen this article
+have seen, which is like,
+how can we compare Astra to Fable 5.1
+straight up on their different plans that they offer
+in terms of how much value you're getting
+on a per token basis for using these models,
+which I mean, the choice of model that you prefer
+it seems like a very personal choice at this point.
+It's not clear to me that anybody would say,
+like it's certainly not for my usage.
+It's obvious to me that Astra is better than Fable
+or Fable is better than Astra.
+They seem to just kind of trade off with different tasks
+than I'm trying to do.
+But yeah, tell me about like the actual usage.
+Yeah, so funny enough,
+I think this was not the chart
+that was getting traction on Twitter.
+Let me talk about that one next.
+This one I think people weren't complaining about because it shows opening an item drop
+that gets roughly comparable for the same $200 or $100 a month or whatever.
+One thing to emphasize though, which people missed and what Andrew talked about earlier
+is that originally people were claiming that our other chart was unfair, GBT 6.1 sole
+because that API price is cheaper than Opus.
+Well, for this like real headline chart we're comparing Astra or Stable, Fable is like effectively
+40% cheaper if you have prices than Astra or something because their cash reads are 75%
+cheaper and that's like 90% plus of your total tokens.
+And so if you were to look at it from a token percentage or just a token point of view rather,
+you get like 1.9 billion tokens of Astra for the 200 dollar month plan, but you get like
+like 3.1 billion tokens of Fable on the same $200 left plan.
+And not only that, that 3.1 billion only counts for 50% of your limit, not the full 100% because
+Fable was restricted to only using 50% of your orthographic limit.
+And so you can actually use like another million billions of tokens of Opus to hop
+at that for the same $200.
+So I think even this chart makes it clear that an orthographic offers a better value.
+If we were to switch to the Sol versus Opus chart, I think it's an even more brutal Moloch
+by a dropkick.
+Maybe Andrew can get up and miss that.
+Yeah.
+So this was a really controversial chart on Twitter where everyone was kind of saying,
+oh, this is so unfair because, you know, 6.1 Sol is so much more token efficient than
+And everyone really liked to bring up like the artificial analysis, Opus 5.5 max cost
+per task and like the 6.1 sole max cost per task and it was like some like $5 or something
+and then 6.1 sole is like 72 cents.
+And some people would kind of use that to justify that, oh, this is an affair comparison.
+There's a few reasons why this is problematic and even if you were to assume that Sol is
+really that much more token efficient, if you do the math, it still ends up being that
+Opus 5.5 is like two to three times the value in terms of tokens.
+The exact math here is, so one, we don't agree that the artificial analysis intelligence
+index is necessarily a good way to measure token efficiency.
+But we'll get to that point later.
+Even if you assume that using these contrived, often broken, often saturated benchmark tasks
+are a good way to measure token efficiency, Opus 5.5 on Macs is the number one model on
+the index, and 6.1 on Sol is not.
+And if you just use Opus 5.5 on Medium, that outperforms all the 6.1 Sol results except
+for Macs.
+So I think specifically 6.1 was sold on x-high and like Opus 5.5 on medium score the same on the a a tonus index
+and then if you look at sort of the cost per task for those two specific runs, it's like a
+2 to 3x diff or something and then you're getting 5x more
+You know API equivalent value according to this chart and so really you're still getting like 2x more value
+on Opus than sold still and this is even if you sort of assume that this like
+broken benchmark index is a good proxy for token everything yeah the
+unfortunate part though is that like obis 5.5 is not really in the 6.1 soul
+class it's actually competing directly with astra and like I don't know if I
+fully agree with this I think this is this is a drop in fanboy Andrews point
+view all right I would say like obis 5.5 even on the you know the
+broken benchmarks, it's still like, number one, a little bit
+intelligent to mix. A lot of people have been substituting
+like Astra, Resolve is 5.5, Tropics have been saying, you
+know, it's as good if it's not better than Fable. And so, like
+in that scenario, like you have Fable 5.1 for like, let's say
+that's the Astra competitor, you have that for half your
+plan. And that's essentially equivalent to the $200 plan
+already on the 50BT. But then you also have 5.5, which is a
+beast for the rest of your plan at like $6,000 or $5,000 worth of value.
+And when you do that comparison, it's like not even a question in terms of who's
+providing more value versus the tragedy, the tragedy versus anthropic, uh,
+subscriptions, uh, because it opens, opens 5.5 is just like a step above second
+one on soul and most categories for the audience.
+Andrew has a repo here, a semi analysis where he doesn't let a, he has an agents
+MD that like you need to say which model was used to rate this PR and if it's not it was 5.5 or
+fable 5.1 the otter redemptive PR. All right, Asher's not even allowed to contribute to his repo.
+Yeah, okay, so this is kind of what I said earlier, which is that this is a very,
+this seems like a very personal decision at this point of which model you're going with.
+Well, Andrew's actually an abortionist and everyone, right? He's making all the
+that Interfront Sex, Asher fanboys switched to Opus V
+and they saw the light. Everyone who started doing it, they conversed.
+True. That's true. That works.
+They saw the light. Okay.
+Okay. Can you talk to me a little bit more about the methodology?
+So how did you go about actually measuring per token type and how the limits fill up?
+Because I think this is also a way in which people get confused, which is that they launch
+one really big prompt and then their hourly rate limit or five hour limit or whatever
+it is just is gone and you know you made the point at the beginning Max that like nobody is
+using these things 100% of the time but what's the scenario that you guys actually pursued to use
+this thing to figure out how many tokens you could consume in these windows? Yeah so the
+rather than you know launching some task or benchmark and like seeing how many tokens it uses
+you know the split for that we really wanted to like do like a kind of scientific experiment like
+extract the exact rate for input, cache rate, cache read, and output token prices.
+And so the way we do that is essentially kind of mocking out the way that all the popular CLIs call
+the model APIs, essentially to mimic exactly how you would hit the inference server as a
+the normal subscription user, and then we use two types of prompts that let you maximize
+the token type that you care about and minimize the token types that you don't care about.
+So for the inputs, cache writes, and cache reads, we use a small tag at the initial start
+of the prompts and then a whole block of war and peace that just takes up a ton of tokens.
+ask a very simple question to the LLM to minimize the number of output tokens that it generates
+from the request. Usually like four tokens are the same like all history or fiction or something.
+And the reason this works is like let's say for INCO tokens we can set a cache header
+to mark something for caching or not and we can also randomize the tag in front of the initial
+So in front of the prompt, which essentially guarantees that nothing will get cached and
+also that the API is not really trying to cache it, because there's no cache header on there.
+And this is present in like anthropic and OpenAI APIs and other models.
+And then we read back like the request response to verify which token types are actually consumed
+so that we know that yes, like this was all like, for example.
+For cache writes, it's like a similar story to input,
+except we do mark it for caching.
+And so we see that the whole prompt gets cached
+besides the last maybe like model generated answers,
+like networks of key tokens.
+And then for cache read, it's a similar experiment as well.
+And for that one, we just set the cache header.
+One call is gonna be a cache write,
+and we just drop that from our counting
+and then just keep sending the same request.
+And that gives us like cache reads
+on like a per request basis.
+And then finally, output token is just like,
+write the super, super, super long like technical essay
+and then just have the models like
+rip out 16,000 output tokens.
+And that kind of consumes like that budget.
+And we can like look back at the response and the meters
+and be like, okay, that was like 2% of our weekly limit
+right there or 5% of our weekly limits.
+Output tokens are expensive,
+probably use like 5-10% per one of these calls.
+But yeah, by just like repeating these
+and just kind of graphing it out,
+like you can figure out like,
+you can do the math and isolate
+exactly how much each of the token types costs.
+And then we can use that to do any sort of analysis
+around like, okay, if you're running like a Gentacorkload,
+like do under this token split,
+like this would be your like subscription value.
+And then under like some chat workflow,
+then this would be your subscription value,
+et cetera, et cetera.
+Talk about how you get those ratios as well.
+Like we're keeping good track of what a chat workload
+versus an agentic coding workload actually looks like, right?
+In terms of ratios of input to output,
+to cache read, to cache write.
+Yeah, the agentic one actually comes
+from our tokenomics dashboard,
+which has a semi-analysis of its own internal usage
+for like the month of, all the months.
+And then we just use like the number,
+is one of the most recent, and that was our own token split
+because all of what we do on the enterprise accounts
+is just agentic work.
+For chat, it's a little more difficult
+because I think the only way to really get a good token
+split for that is like the chat chat and have
+the realistic workload.
+But you can kind of estimate it based on the fact that
+there's a system prompt on every single chat message
+Um, or like chat thread and that system prompt is essentially cached for all users of Clod or chat dbt or whatever.
+And so that alone is going to be like a big percentage of cache reads.
+And so that's how we kind of, uh, that's where we start.
+And then you assume users are sending like shortage of prompts.
+Uh, maybe they step out and they don't respond to the thread, uh, ever, or they come back and step in once or twice.
+And so like, under those assumptions, you kind of get like this flip that we have in the article, which I believe is like, is it like 5% input, some 20% cash, cash rights.
+Yeah, 13% cash rights, 75% cash inputs, and then 10% outputs.
+It makes sense, makes sense.
+Okay, how about some of the other coding plans?
+Like one of the pieces in the subtitle or header
+is that there's other all-in plans
+that aren't from Anthropic or OpenAI.
+First of all, does this actually matter to anybody?
+But yeah, let's assume it does.
+What do you guys think of like Muse from Meta,
+Minimax, the Super Grok Heavy, Cursor Composer,
+GLM and Kimmy and how they're actually measuring value
+compared to some of the other guys.
+Yeah, so I was actually kind of surprised
+that a lot of the Chinese guys,
+so Moon Shot, ZAI, and Minimax
+offered pretty good API equivalent value per dollar.
+Reason why this somewhat surprised me is that
+Uh, they're, they're all like so compute poor and I think if you look at their API pricing,
+it's even lower margin than like the frontier labs because it's, uh, a more competitive
+business.
+Uh, it's like more like the modern day, but some of them, I think, I think moonshot was
+the worst that like roughly seven X, they calculated value or something, uh, but some
+of them were, you know, in the same kind of 12 to 15 range of open AI, um, and considering
+And that open AI is sort of the exact opposite of compete poor and, you know,
+chief ITI pricing, at least for Astra, that was pretty surprised take away from me.
+But it's, it's not, maybe the takeaway for me on this was that it's not obvious
+that when you look at one of these charts, that, um, any of these plans are
+just like so much more compelling on a dollar value basis that you would be like
+willing to ship from OpenAI or Claude because like, okay, I get, you know, so much better
+value than on my Muse subscription that I'm willing to take a slightly worse model because
+I just like get so many more tokens.
+Like maybe two times or three times the OpenAI are anthropic, you know, upper limit.
+maybe it's nice that it starts at a $50 fee instead of a $200 or $500 fee to
+like really get access to their top model, but nobody's doing a price war on
+the monthly subscriptions at this point from what we can tell, right?
+Yeah, that's true.
+I think a big reason for that is nobody can touch entropics margins at API crisis.
+And so if they offer a similar API equivalent value per dollar, it probably
+means that their actual margins are way worse than it's dropping.
+And so it really just underscores that in the AI age, like being the person who actually
+owns the model everyone wants to use is a huge advantage.
+Being a wrapper is especially bad.
+We covered this at the end of the article, but if you look at using in dropping models
+on cursor or cognition, but the limits are just like way, way lower than at first party.
+And obviously this is like, you know, when you, if you just think about it for two seconds,
+like this obviously has to be true because anthropic, you know, has 90% plus first margins
+and then cursor and such cognition probably at best have like a 20% enterprises count
+or something compared to data guide prices.
+But it's like, it was pretty cool to see this kind of a claim validated by the data.
+Yeah, yeah makes sense how both
+Small small shout-out to meta for being one of the highest in value per dollar
+Plans on like $50
+subscription with meta you can get like
+$2,500 worth of like new spark and that's like
+The it's like 140 or 260 million tokens per dollar or 13 billion tokens a month
+There's quite a lot like if um, if they keep the same rate and use spark is like a little bit better
+Yeah, man for just for that $50 plan that's like 250 maybe even like 300
+Uh tennis reservations in san francisco that you can have use spark getting for you
+Tennis reservations per dollar. I'm not sure man
+Um
+Yeah
+Okay. Let me, let me quiz you about this one.
+So we've put out a chart similar to this before max, which was, I thought was
+super interesting the first time and it's like even more interesting this time.
+We have no visibility into what the utilization metric actually is on these
+plans, like there's obviously some loud mouth power users on X that are using
+100% of all seven plans that they've got maxed out.
+Then there's other people that are a little more reasonable, maybe like myself,
+who goes and records podcasts for half the day
+and doesn't use his coding agent
+or it works in the background installs.
+And then I got to go, you know, product to go do more.
+I take naps, I sleep, you know.
+You take naps, dude.
+Okay, I don't take naps, but whatever.
+At that time, yep, you have a wife.
+You're an SCT.
+Yeah, yeah, yeah, yeah, yeah, yeah, yeah, yeah, yeah.
+My daughter's taking naps.
+Yeah, yeah.
+So, okay.
+What do you think, like, if you had to speculate, what do you think the gross
+margin percentage that these guys are on the coding plan actually is for the given
+models, like, like, where would you put these guys?
+Is it the average user is using 10%, 100%, somewhere in the middle?
+I think for him, drop it, it's like, it can't be much higher than 10.
+And the reason for this is that if you really squint at all of their leaked financials,
+it just does not tie out if subscriptions are like an extremely negative market business.
+I think it basically needs to be like a decent, maybe call it somewhere between like 40 to
+like 7% margin business in order for just the leaked financials to all tie out.
+We walked through all the details in our technology model, but that's why I think
+the average utilization can't be much higher than like 10%. I think it makes sense if you
+consider the fact that a lot of the subscribers are actually enterprise and slash on like business
+plans. And I think if you're a if you're a business that's like buying $200 of plans for all your
+employees, and then those people are only spending like $800 a month on credits or something
+thousand dollars a month on credits, like you're still you're still kind of happy with that deal.
+And that corresponds to like, some 10% utilization.
+Fair enough. In your discussions with people who have these plans, what's their initial
+reaction to you saying this? I think initially, anybody who's tried to pay for token who has
+a way to consume the all-in plans is kind of like, I'd never pay for tokens willingly
+because the all-in plans are a good deal. But what's the reaction, roughly speaking,
+And you've talked to people about the article, like they kind of agree, they disagree, like,
+do you think people are around that 10%, 20% utilization number or something like that?
+Well, the guys on Twitter were a lot about this, definitely aren't.
+These are like the 100% guys, you know, with five accounts, recruiting, micro, three days,
+something like that.
+Yeah.
+I think they're they're like vibe of the plans kind of matches our raw data or a lot of people have been saying for the past
+Couple weeks at like Opus five five on a clock when you're on that in particular is like the most bang-for-buck thing you can get
+And also it's actually important to note that the
+50%
+$200 a month
+The 50% cut the way I made the 200 dollar month plans limits that they announced that that day
+Hasn't actually come into effect
+Or anyone who purchased a plan before that announcement because they got sort of like a one month race to your open AI
+And so we were actually quite puzzled why Twitter was not like roasting open AI more
+for just dropping this 50% limit reduction and like
+You know giving you a bunch of code about how like oh because GPT said of Luna is actually gonna be like smarter than TV 6
+Astra this is a win for you guys like I was kind of dumb
+Um, uh, but no one might call me out about it.
+I think that was maybe largely just because like a, they timed it.
+Well, a bunch of positive Dev PR, and then B they gave you this one month grace
+period, and then perhaps like a month from now, the limits actually like go
+into effect for the majority of users.
+I will see some more noise about it all.
+Yeah.
+That was good timing by them to announce the cut at like 9 PM the day before
+dev day and then just round it out with like 20 awesome announcements the next
+day with all this other stuff.
+They're just imagine if entropic announced this, like they, they would
+have been roasted a lot.
+Yeah, makes sense.
+Um, okay.
+What, what haven't we covered here that we should be talking about?
+That's basically everything in terms of the subscription limits.
+I guess maybe one thing to emphasize is that this newsletter is very much a
+point in time. And as like new models come out, new subscription tiers come out, new
+things like ultra-fascinated come out, or just, you know, the providers decide like,
+hey, actually I want 8% margins on my subscriptions too, not just 50. We expect
+all these numbers to change pretty rapidly. And we will be sort of tracking
+that continuously. And then, you know, reporting the updates as they have.
+And keep it in touch for model quality and token efficiency, right, which is
+going to, going to come into play. Sure. I'm sure.
+Dude, it's so hard to actually measure token efficiency. Well,
+like I wish there was a way to do it.
+Yeah. You can't rely on these benchmark tasks, dude.
+But then without benchmark tasks, it's like,
+how do you actually verify the two models where, you know, similar quality?
+I don't know, man.
+Give two people the exact same assignment, check back a week later,
+measure the quality of that assignment and see how many tokens they used.
+Yeah, I think there's a huge, you know, confounding variable there,
+which is the person doing the task.
+Yeah, what do you think has a bigger impact on token efficiency?
+Same person using two different models, Astra versus Fable or something,
+or two different people using the same model to try to accomplish.
+I have to create strong opinions on this one.
+I came in, he looked at the Sydney analysis tokenstone leaderboard, and he had some fraud
+opinions on this one.
+If you look at the leaderboard, people who use the top people on Astra and Thaebol are
+spending about similar amounts, but the Thaebol people are using more tokens.
+It doesn't really tell us much about how much we're getting done though, which is the difficult
+part of answering this question.
+I'd say from personal experience trying out different models, you can definitely see token
+efficiency on OpenAI's side, but it's what I like to think about as short-term token
+efficiency in the sense that, yes, I'll get this immediate task done, but I feel like there's
+There's so many follow ups that I would have liked to just include the Opus or Fable would
+have just done.
+And 6.1 Sol or Astra might have just not done it for the sake of completing the task faster.
+And so in that sense, in the long term, I feel like the Entropic models build you the
+better code base and a definitely more readable one.
+If you read some of these Astra tests, it's something else.
+Um, and so that's like my opinion.
+It's just like, um, I think the models matter quite a bit to
+the deficiency, uh, over like which user is actually using them.
+What about, um, Andrew, what about the, uh, resellers of these things
+like, uh, cursors, old business cognition, perplexity, uh, where
+do you, where do you think about, um, their influence on which
+model you might use? Like, is the concept of a router just still
+never showing up for you where you have to switch models or you
+allow perplexity computer or something to use a given model
+for a given task because it thinks that's the model to go
+with and it has different tastes than you do?
+Yeah, um, I think people, I mean, I don't use cursor or
+Devon myself. But if I were, I probably would just select like
+my favorite model anyway. I know like, you know, Devin has like Sweet2 and Fusion, which is supposed
+to use like a cheaper model alongside like a larger, better model to keep prices low. And like,
+this looks great on benchmarks. I haven't personally tested it myself in the real world, but my general
+vibe is that if I can and like my company like is willing to pay, I would definitely
+just use the like an Opus cheaper model rather than like a suite two model for example, or
+even like a Sonnet 5.5 cheaper model because I just like for me like I just trust those
+models like do the right thing all the time. Where I might not do that for like another
+like unknown models. I think that like as you work with these models that you kind
+develop like what each model is good at and like where they might bite you and like that's
+actually relatively important when you're designing systems. Yeah. How about the rise of open models?
+I saw some claims by David Friedberg on the All In podcast that there was a flip from
+close to open models from 80-20 to 20-80 in the last 12 weeks and you know we wrote a whole
+article about, uh, for our tokenomics subscribers about how this is like not
+true because they're just looking at router data, but what I learned through
+there is that there is a pretty meaningful move, um, at least across
+the routers and, uh, at least across token share, but maybe not implied
+revenue quite as much like people are using open models more.
+So do you have firsthand experience with this or talking to other people that
+would lead you to believe that something about the frontier labs, either
+how they're messing with their prices or the quality of the models as they release new ones is just like not far enough ahead from the open model ecosystem that's leading people to try out open models and then get stuck using them overtime.
+I think it's a question of how far ahead the close all are.
+I think it's just a question of how good a model do i need for my task and it is true that.
+Like a lot of software engineering, white-collar work in general does not need like fable 5.1
+Ashford 6 level intelligence.
+And so I think a lot of businesses, especially the ones who are like lower gross bargain businesses
+are very rationally making the decision to start offloading some of the easier tasks
+to these increasingly capable open source models.
+I think this is going to continue like happening in the future.
+And so then the question of like, are the frontier labs a durable business model like
+really just comes down to your belief on whether or not sort of the space or TAM of new things
+you can do with increasingly smarter frontier intelligence will outgrow the portion of tasks
+that are being offloaded to these cheaper models.
+And I actually think this is kind of the biggest sort of difference in priors between people
+who are bullish like Frontier Labs, which is people who are super bullish, open source.
+It's like, if you were to sort of magically spawn 100 million super intelligent PhDs
+who are experts in every field, who also don't need to eat or sleep or anything, do you
+think the economy would be able to absorb that like relatively quick and still get
+higher life, or do you think fundamentally like the world just not that intelligent as
+well? I think like reasonable people have very different priors on this. Um,
+but if you believe that the answer is yes to that question, you're bullish,
+probably not anthropic. The answer is no. You probably think we're gonna have like
+a recession, you know, relatively soon and you're really bullish like together.
+Yeah. Interesting, man. I'm motivated to ask the question because I've been
+using so much perplexity computer in Slack recently in particular using GLM 5.3
+because of all the refusals on anything cybersecurity related
+from both open AI and anthropic, or making it impossible to do
+my work. And so I needed to use chill on 5.3. And I think that
+led to me discovering that, yes, pretty good for a lot of stuff.
+Beyond
+it's been like a minute, just one level model on this.
+On the cyber benchmarks, it was it was crushing it. And I
+literally can't test it. It to me, it's a frontier, cybersecurity
+model because I literally can't use the other stuff. Yeah,
+whatever. I can only look at benchmark model cards. I can't
+actually use the other stuff, even though I'm in the CVP
+program. To get verified to do all the cyber work, I still can't
+get past the guardrails. I need some more creative prompting to
+get past the guardrails trained into the model, not the
+classifier outside of the model. But anyway, waste of time to
+spend time trying to convince the model that my grandma's at risk and, you know,
+I'm going to bribe it with a peanut butter jelly sandwich.
+If it doesn't, uh, get this thing done and just may as well switch to GLM and it'll,
+it'll do the work. But what happened is like, I'm in that same chat history.
+It's got all the data inside of it and I didn't bother switching to the other
+stuff to just make a PR on a dashboard repo to put out some data that we got
+from that, that work and like, whatever for probably 10 X less the token
+10X less, the token consumption, and in terms of pricing, it put up the dashboard PR, hmm,
+I didn't actually need Fable 5.1 for 10 lights of code.
+This is music to Dylan Patel's ears. A lot of things do not need Fable 5.1, for sure.
+Yeah, but I also feel like I'm using this stuff day and night. My wife would tell you I am up
+late using this stuff day and night, and I'm not cracking the top 10 on the leaderboard.
+So I still have no idea what the hell you guys are actually doing with all these tokens.
+We're like consistently not top 10 anymore.
+So really, you got to interrogate like, you know, Jeremy and Kyle and Andrew Wagner.
+Jeremy will be back on soon. After I'm finished asking him questions about data centers,
+then I'll be interrogating him about what this fast mode is actually doing for him
+and how many sub-agencies. He told me he just takes, one time he did admit that he takes like
+arbitrary odd numbers and says, that's how many sub-agents to launch for a given task,
+which does not need sub-agents.
+Just feel like he's like 37 sub-agents to investigate all the permits for this one
+data source site.
+It's a point of pride.
+And then he's like, oh shit, that was $2,000.
+It's research, guys. It's research.
+Yeah, don't touch it, man. Don't question my methods.
+Okay, okay.
+You know, I do want to add one extra thing about GLM 5.3, which is like, after talking
+to some very prominent hackers recently, and already actually in the world, it seems like
+even 5.6 sole, if you have the cyber unlocked, it's a much, much, much better model than
+GLM 5.3 on real world cyber tasks.
+And so while like some of these models might achieve the scores on the benchmark, I think
+like 5.6 cyber, Astra 6 cyber, Mythos 5.1 actually unlocked, might be a lot more capable than
+a lot of people think, compared to these silver.
+Yeah, there is a...
+Which is a little scary.
+It is a real possibility that the people who are inside these Frontier Labs and get to
+use these models before anybody else and understand their capabilities better than anybody
+else might not be completely lying and pursuing a convoluted scheme for complete regulatory
+capture and are actually concerned about the cyber capabilities of the model. Do you guys
+think that's a possible scenario that's playing out right now?
+I think it's very possible. The question is whether or not they're going to be captured.
+I'm just giving you a sort of-
+I think the researchers are genuine, like when they're like-
+I'm giving you a sort of cap thing to say. Maybe the researchers-
+Sorry, I was hoping I just released a new repo called Math where I think they just like
+probably made more progress in the field in the past like 10 years combined or something.
+So I got distracted slowly.
+But I didn't hear a question.
+I think they might have just solved it with a Millennium Prize.
+I think that's a better response to my question than what I was asking, which is like, yeah,
+maybe the people who see these breakthroughs, you know, months before us and are really
+concerned about what's going to happen next are being honest and genuine about
+their concerns and not pursuing some convoluted regulatory capture scheme.
+That's what I was saying in more words and well, that's, that's a
+ridiculous take, Jordan.
+It's obviously regulatory.
+Oh my God.
+Uh, anyway, guys, uh, I think we've derailed it enough and we need to go,
+uh, read an open AI blog post about some crazy, uh,
+Math. Thanks. So the, so at the repo on get hub is open AI slash math.
+That's like, that's high order and just a bunch of me.
+And then like 10 columns I'd never heard of, but are probably like really
+important.
+I'm about to learn some math tonight. Well guys, thanks for joining. Uh,
+we'll talk to you about subscription limits and token efficiency and other time.
+Sounds good. Thanks for having us.
+Hey guys.
