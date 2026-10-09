@@ -1,0 +1,597 @@
+Synthesis Superintelligence: from Semiconductors to Superconductors — Periodic Labs’ Liam Fedus and Ekin Dogus Cubuk
+Sign in
+Latent Space: The AI Engineer Podcast
+Synthesis Superintelligence: from Semiconductors to Superconductors — Periodic Labs’ Liam Fedus and Ekin Dogus Cubuk
+22
+1 ×
+0:00
+Current time : 0:00 / Total time : -1:23:59
+-1:23:59
+Audio playback is not supported on your browser. Please upgrade.
+Synthesis Superintelligence: from Semiconductors to Superconductors — Periodic Labs’ Liam Fedus and Ekin Dogus Cubuk
+A special Science pod and Engineering pod crossover.. with Forward Deployed Engineering kicker!
+Oct 08, 2026
+22
+Transcript
+It’s hard to believe that Periodic was only launched last September :
+Periodic Labs @ periodiclabs
+We are proud to announce @periodiclabs . Our mission is to accelerate science.
+Our founding team co-created ChatGPT, DeepMind’s GNoME, OpenAI’s Operator (now Agent), the neural attention mechanism, MatterGen; have scaled autonomous physics labs; and have contributed to important…
+Liam Fedus @ LiamFedus
+Today, @ekindogus and I are excited to introduce @periodiclabs.
+Our goal is to create an AI scientist.
+Science works by conjecturing how the world might be, running experiments, and learning from the results.
+Intelligence is necessary, but not sufficient. New knowledge is
+4:05 PM · Sep 30, 2025 · 243K Views
+51 Replies · 99 Reposts · 684 Likes
+One year later, it is considered one of the pre-eminent AI scientist labs, with dizzying talent density and astonishing progress in the autonomous lab buildout:
+Liam Fedus @ LiamFedus
+Industrial-scale science. Coming to a lab near you this summer.
+3:30 PM · Apr 26, 2026 · 253K Views
+69 Replies · 73 Reposts · 1.3K Likes
+Most people are familiar with the standard credentials of Liam and Dogus , but we found an incredible “talent slope” while learning more about Periodic, where each successive employee seems more impressive than the last:
+Rohan Pandey @ khoomeik
+yeah this checks out
+my first few months at periodic, the weekly midtraining meeting was:
+1. guy who trained the first trillion param LLM
+2. guy who invented the attention mechanism
+3. me
+you learn very quickly surrounded by this density of talent. we're hiring btw.
+Chris Barber @ chrisbarber
+I asked people which neolabs under $10B have the highest talent density:
+32 votes: Core Automation (@MillionInt, @_arohan_)
+26 votes: Periodic Labs (@LiamFedus, @ekindogus)
+20 votes: Flapping Airplanes (@spectorb, @amspector100, @aidanmantine)
+18 votes: Standard Intelligence
+7:43 PM · Oct 2, 2026 · 80.3K Views
+20 Replies · 16 Reposts · 669 Likes
+From building AI systems that reason over noisy physical experiments to creating laboratories where every instrument can become intelligent, Periodic Labs is betting that the next frontier of AI won’t come from simply training on more internet data , it will come from letting models experiment with the real world. In this episode, Periodic Labs’ Liam Fedus and Ekin Dogus Cubuk join swyx and Brandon to explain why scientific discovery is fundamentally different from math and coding, and what it takes to build AI scientists that can actually discover new materials.
+We go deep on Periodic’s vision for “synthesis superintelligence” : reinforcement learning grounded in physical experiments, AI-powered materials characterization, simulations and density functional theory, high-throughput labs, and systems that learn from the entire process of doing science rather than only its published results. Liam and Dogus also explain why frontier models will still need experiments , why failed experiments may be some of the most valuable training data, what it means to give every piece of lab equipment “140 IQ,” and how autonomous experimentation could compress decades of scientific trial-and-error into months.
+We discuss:
+Why intelligence alone isn’t enough for scientific discovery
+How reinforcement learning changes when the environment is the physical world
+Why science requires reasoning under uncertainty, noise, and missing information
+Prediction, synthesis, and characterization in the materials discovery loop
+Why physics and materials science are still far from “solved”
+The “matter compiler” and Periodic’s goal of synthesis superintelligence
+Phase transitions, X-ray diffraction, and AI-powered materials characterization
+DFT, simulations, and why experiments remain the ultimate ground truth
+Room-temperature superconductors, new magnets, batteries, and more efficient compute
+Why quantum computing may not automatically solve materials discovery
+What it means for every piece of lab equipment to have “140 IQ”
+Why data quality and negative results matter more than simply throwing more compute at science
+Training models on the process of doing science rather than the final answer
+Why even future frontier models will still need to physically experiment
+Scaling autonomous labs across AI, chemistry, physics, and custom hardware
+How automated experimentation could massively increase the “surface area for luck” in discovering new materials
+Liam Fedus
+LinkedIn: https://www.linkedin.com/in/liam-fedus-26547811/
+X: https://x.com/LiamFedus
+Ekin Dogus Cubuk
+LinkedIn: https://www.linkedin.com/in/ekin-dogus-cubuk-9148b8114/
+X: https://x.com/ekindogus
+Timestamps
+00:00:00 Introduction
+00:02:49 AI and Reinforcement Learning in the Physical World
+00:09:17 The End-to-End Materials Discovery Loop
+00:13:28 Why Physics Isn’t “Solved”
+00:19:04 The Matter Compiler and AI Characterization
+00:30:22 DFT, Simulation, and Experimental Ground Truth
+00:42:27 Dream Materials, Compute, and Quantum Computing
+00:45:57 Giving Every Lab Instrument “140 IQ”
+00:50:02 Automating the Lab
+00:53:16 Data, Models, and Negative Results
+00:58:13 Training AI on the Process of Science
+01:00:20 Why Frontier AI Still Needs Experiments
+01:06:06 Scaling Autonomous Labs
+01:10:45 Building the Team and Deploying to Industry
+01:17:01 From AI Copilots to Scientific Outcomes
+01:20:57 Automating the Search for Superconductors
+Transcript
+Introduction: Intelligence Must Meet Reality
+Swyx [00:00:00]: Okay. We’re here at Periodic. We’re here today with Liam and Doğuş from Periodic. Welcome, and thanks for having us at yours.
+Liam Fedus [00:00:11]: Yeah, great to be here, and yeah, thanks for coming in.
+Swyx [00:00:13]: I want to start off with one of these quotes that I love from your website. It says, “Intelligence is necessary but not sufficient. New knowledge is created when ideas are found to be consistent with reality.” It seems so straightforward, but why is it non-obvious?
+Liam Fedus [00:00:29]: I think that’s sort of the thesis and premise behind Periodic that Doğuş and I thought when we were building this, which is you can’t just think your way to a solution. The universe is so complicated that in order to actually push the frontier of knowledge and to make progress, you need to create these conjectures and then actually see whether or not it holds. No amount of rereading that textbook or paper, thinking, or disappearing into a room is going to allow you to think through all possible experimental outcomes, expected and unexpected, and you really need this iterative process. And that’s our core belief for putting this together, and that’s why from the very beginning, we’re like, “We need to have the AI systems, the simulations of the physical world, but then also to build up the physical high-throughput experiment.” And we think a different type of intelligence emerges from that.
+Swyx [00:01:21]: I think it’s also notable, like with OpenAI and Google, you don’t have those resources in those big labs. You had to come out and do your own thing, because you’re kind of inventing your own playbook as you go along.
+Building an Interdisciplinary Lab for AI Science
+Ekin Doğuş Çubuk [00:01:34]: Yeah, and a team like this has never existed, I think. We try to bring together solid-state chemists, solid-state physicists, experimentalists, theorists, hardware engineers, LLM experts, computer scientists, and some of these technologies are very recent. The high-throughput experimentation, the robotic arms have only been tried in the last three years or so. The force field expertise, some of these force fields are also very recent. But yeah, we felt like having a lab is very important. Having this focus and bringing all these people together to work together is very important. And I guess the closest examples from history are places like Bell Labs, where incredible theorists and experimentalists and chemists worked together and achieved incredible things. So we are trying to do the same here, yeah.
+Physical-World Reinforcement Learning and Uncertainty
+Brandon [00:02:17]: I want to talk about force fields in a bit, but
+Swyx [00:02:19]: Yes
+Brandon [00:02:19]: Before we get to that. Yeah what are they? But before we get to that, For context, some of our audience are AI engineers, and some are scientists. For the engineers: what’s the difference between working at a big lab like OpenAI and what you’re doing here? I think you’ve already hinted at this but maybe explicitly, how do you have to reframe your thought process?
+Liam Fedus [00:02:49]: Well, I think one interesting thing is now our reinforcement learning environments literally derive from the environment, from our physical labs. Our data comes from our physical labs, and this is sort of our ultimate truth. It’s not enough just to do optimization against, some answers that were known in some papers or textbooks because we’re going beyond that, and I think that’s one of the biggest differences. But along with that, there’s issues of say, decision-making under uncertainty. So when you’re doing optimization against math, there’s a high precision to it. You’re not really dealing with kind of like variance or uncertainties or aberrant measurements, whereas that’s very key to our process. For example, when we are doing a materials discovery loop, things don’t come out of the furnace labeled, right? Even the labeling process can be stochastic and noisy. And sometimes you’ll have aberrations between different machines. Maybe we’ll have insufficient telemetry. So we thought we ran it at this temperature, but really the temperature was, some delta away. And an intelligence that can take in this noisy data and make intelligent decisions like a scientist would, is a sort of a different set of reasoning strategies. So I think there’s a huge amount of commonalities, so the standard mid-training, reinforcement learning, the construction of tool-using agents, variance reduction, making sure infra doesn’t have mismatches between training and inference. But we have to go beyond that and really think about how do you do accurate, work when there’s a high amount of uncertainty? How do you make really incredibly efficient use of a limited set of data? So we’re scaling things up significantly, but still, it’s very different than a digital environment where you can arbitrarily add more environments or more rollouts. We don’t have that same capacity. So sample efficiency is another key thing.
+Why Experiments Are Noisy and Incomplete
+Brandon [00:04:48]: This seems a little bit abstract to me, and it is a theme which has been on the science pods for a bit, but I think it might be helpful when you talk about experimental uncertainty, to explain what would a specific process that you were doing experimentally look like, and how would a human approach this problem, before we get into the AI side? Do you have a specific example of a type of material you make and what sort of uncertainty in the measurements you would experience in the process?
+Ekin Doğuş Çubuk [00:05:17]: I think there are many dimensions to this. So one of them is I think every scientific experiment has to do some dimensionality reduction, and this is very different than coding or math. So, when you’re doing math or coding, all the context could be available to the human or the LLM. It’s a bunch of axioms, some corollaries people have derived from them. It’s a bunch of functions and API calls. So everything you need to reason through is available to you, and then you just have to be very smart and figure it out. In physics, as you know, we start with more atoms than we could ever store on a computer. So clearly, we’ll have to go from the original number of dimensions and bits that represent a system to the number of bits we can fit in the computer. And this was, I guess, the original premise of thermodynamics. They were originally really confused about how steam engines worked, but then turns out you can find five or six thermodynamic variables that explain what’s going on pretty well, which is incredible. That’s the beauty of physics.
+Brandon [00:06:13]: You have a room full of atoms, and there are 10²³ or 10²⁷
+Ekin Doğuş Çubuk [00:06:19]: Exactly
+Brandon [00:06:19]: Or something atoms in this room, and yet you need temperature and pressure and simple variables, and that tells you everything. No, it tells you mostly what you need
+Ekin Doğuş Çubuk [00:06:28]: A lot
+Brandon [00:06:29]: To know for most cases, right?
+Ekin Doğuş Çubuk [00:06:30]: Yeah.
+Brandon [00:06:30]: So let’s say you make a material, and you could do something like look at an X-ray structure, and this thing is a very lossy, projection, right? It’s not actually a structure, or it doesn’t tell you the true structure. It tells you some piece of principal components of that. So, how would a human take these simple principal components and then, kind of reason about them? And then how do you extend that to an AI?
+Ekin Doğuş Çubuk [00:06:58]: So on the theoretical physics side, right, we’ve decided that energy, the average value of energy and the fluctuations of energy is very important. So a lot of thermodynamics has been derived from this. And then we realized reaction barriers are also very important. The kinetics is very important. So a human can try to reason through this extremely complex system by coming up with some, reduced dimensionality descriptors. People also really like atomistic picture. You think about what the local neighborhoods look like, whether they’re from octahedra, tetrahedra, and that especially chemists really benefit from that. Okay, so that’s on the theoretical side. And on the experimental side, you would try to collect as much data as possible. So you’d have a lab notebook, and you’d write everything you see, et cetera, but with the understanding, of course, that you’ll miss a lot. So like as Liam mentioned, there are all these issues that come up. For example, your furnace will degrade over time because as you’re using the furnace, some of the things you’re baking will evaporate and cover the heating element. So every time you use the furnace, it gets worse and worse. Another issue is you have a furnace, but the temperature isn’t perfectly uniform, so where you put in the furnace will affect the result. We don’t have this issue yet, but we will maybe someday. The optical instruments, suffer a lot from vibrations. So every time somebody walks. I remember when I was doing my PhD, one lab had this big issue because sometimes their results would be very different than other times, and they brought it down to at a certain time in the night upstairs, somebody would be walking and that vibration affected the laser setup. So yeah, science is very hard, but that’s what makes it special, right? The other thing Liam and I have been talking about is a lot of the current improvements focus on math and coding and theoretical computer science because it’s easier for LLMs. But in real life, most things that require intelligence are actually more like science. There’s a lot of uncertainty, there’s a lot of noise, there’s a lot of missing context, but you have to be the intelligent being and figure out what to do next.
+Liam Fedus [00:08:53]: I think a really interesting point to build on that too is the optimal reasoning strategies to do math, to do theoretical computer science, to do these types of things may not be the optimal reasoning strategies to do science.
+Ekin Doğuş Çubuk [00:09:04]: Yeah.
+The Materials Discovery Loop: Synthesis and Characterization
+Brandon [00:09:05]: How do you define an RL reward function when your output is a noisy crystal structure or some number of I don’t know collective variables or something? Like.
+Liam Fedus [00:09:17]: Maybe, I’ll give, one part of the loop, and I’ll just kind of dig into that. So, as part of the materials discovery loop, we have to first figure out, what to make. So that’s the stability of the atoms together, as well as do we expect it to have the properties we want. So we don’t just want, a novel configuration of the atoms. We want them, when put together, to have the property of interest. Next is how do you synthesize it? How do you actually make the thing? That’s also non-trivial. So even if you know something will hold together, the process of actually, what are the processing conditions to actually bring that forth is highly non-trivial. But again the thing. Once you’ve done those two steps and you’ve made something, it doesn’t come off labeled, so you actually have to characterize it and figure out what you made. So in that case rather than thinking about the RL environment of we’re just going to kick off an experiment, wait a couple days, and try to do a update on did you find a room-temperature superconductor or not, that’s completely infeasible.
+Brandon [00:10:15]: Yeah. I was going to ask that. Yeah you can’t leave your GPU sitting for a week or something.
+Liam Fedus [00:10:19]: It’s. Yeah, it’s completely infeasible
+Brandon [00:10:20]: Yeah
+Liam Fedus [00:10:20]: Because you don’t have enough agents to reduce the variance sufficiently. The rollout time is going between the different instruments. You’re waiting. There’s just some physics limits of the experiments, for the actual synthesis or furnace time. So it’s just too slow, too noisy. So the way we think about the AI program is basically constructing agents around this set of data that we’ve produced. And so in the case of characterization, you’re looking for RL environments that are rewarding the identification of the phases actually present. Are you able to given the raw experimental data, fit that effectively? So the way we do this is we’ll shoot X-rays, at the material. X-rays have a frequency or a wavelength roughly measurable or commensurate to the spacing between atoms, so you get nice diffraction patterns that kind of give a fingerprint of the crystal structure. And doing this, identification of what actually is present is highly non-trivial. And so some of our early AI work has been on basically producing systems to do this. And this allows us to move much more quickly too, because if you’re running so many experiments, you really quickly become bottlenecked on your ability to understand what was produced. But again, now the reinforcement learning environment is fairly straightforward, which is you’re going to reward the identification of the phases present. You’re going to penalize spurious phases or things that don’t have any real chemical plausibility. So that’s like a little succinct thing where you can kind of do this for the different pieces. And when you stitch this together, that’s the end-to-end discovery loop.
+Training on Novel Experimental Data, Not Memorized Answers
+Brandon [00:12:02]: Okay. You
+Liam Fedus [00:12:02]: Maybe another
+Brandon [00:12:03]: Yeah. Oh, sorry
+Liam Fedus [00:12:03]: Another piece would be as we build up, a large basket of experimental data, you can think of another thing of basically timestamping the state of the world. So you could say, “At this date, this was our experimental evidence up until that point.” And you can construct reinforcement learning environments where you say, “Okay, given that body of experimental evidence and given, the choices, what was the next choice that the scientist made, or what was an outcome of that experiment?” And. This is really interesting too, because this allows us to do types of programs that would be harder externally. Because if the pre-trained model has already memorized some of this data and then you try to do reinforcement learning on that, if it already knows the answer and you construct reinforcement learning tasks that depend on that answer, it can fake work. So, and then, because it’s like, oh, well, it already knows the answer, so it doesn’t actually have to do the hard physics reasoning. It doesn’t have to actually do the calculation simulations. And it gets to the right answer, and then you reinforce that policy and you up-weight those reasoning strategies. Those reasoning strategies will not generalize to novel systems, so it’s not useful to us. But as we build up baskets of experimental data and stitching things together, having the lineage through the whole process, that gives us the ability to construct new types of environments that are just not plausible elsewhere.
+Why Known Physics Does Not Mean Perfect Simulation
+Swyx [00:13:27]: I want to ask my question
+Brandon [00:13:28]: Seriously
+Swyx [00:13:28]: But I’m worried that I’m taking it off the rails. I’m just going to go for it because I, again, I come from the non-scientist, but engineering sort of. I’m familiar with the ML side, but not the not the physics side. Okay, there’s a few versions of this, but I think the basic question is, don’t we have most of the laws of physics worked out? And how come we don’t have perfect simulators already?
+Brandon [00:13:50]: Oh, that’s a great question.
+Swyx [00:13:52]: Like, this is very basic, like. And he was like, “Ha, that’s cute.” But like
+Brandon [00:13:56]: No, it’s a great question
+Swyx [00:13:57]: Dude like I have all these physics books. What do you mean, what do you mean we’re not done?
+Ekin Doğuş Çubuk [00:14:03]: Yeah, so there are a couple of things going on here, right? So
+Swyx [00:14:07]: Yeah
+Ekin Doğuş Çubuk [00:14:07]: I think first of all, we’re definitely not done with any of the laws of physics. Even the
+Swyx [00:14:12]: At quantum scale, okay, but. And maybe very large scale, but at human scale, at material scale, we’re, we. What’s left?
+Ekin Doğuş Çubuk [00:14:22]: We’re not. So it’s a it’s a really good question. And it’s very interesting why we’re not done yet, right? So there’s a very, common story people talk about. When Dirac was figuring out quantum mechanics, like late 1920s, he wrote a textbook about quantum mechanics, and he kind of framed it as it’s all done. And then there’s a phrase people like to quote. I’m not sure actually how accurate it is, but apparently Dirac said, “The rest is chemistry.” The idea being he could solve the hydrogen atom
+Swyx [00:14:50]: Just compose everything.
+Ekin Doğuş Çubuk [00:14:51]: Yeah. He could maybe solve a chain of 1D hydrogen atoms, but then he cannot currently solve, say, nitrogen interacting with oxygen, but that’s okay, that’s just chemistry.
+Swyx [00:15:00]: Yeah.
+Brandon [00:15:00]: Physics physicists really love single atom rep. Really simple systems.
+Ekin Doğuş Çubuk [00:15:05]: Simple systems.
+Brandon [00:15:05]: And that’s all you can solve.
+Ekin Doğuş Çubuk [00:15:07]: Spherical cow.
+Brandon [00:15:07]: Yeah, spherical cow.
+Ekin Doğuş Çubuk [00:15:08]: But it turns out, I think what we learned in the last hundred years is, first of all, that’s not true. It’s not like a simple extension of what it was to do just hydrogen. And it’s not just. The rest is not just chemistry. There’s actually a lot of physics there. I guess one of the things we still haven’t figured out is high-temperature superconductivity. But there are a lot of other
+Swyx [00:15:25]: And high for you is 175, 200?
+Ekin Doğuş Çubuk [00:15:28]: Oh, when people say high-temperature superconductivity, what they mean there is unconventional superconductivity. So there’s the conventional superconductivity that’s just mainly driven by electron-phonon coupling. And in that case, you can kind of see the isotope effect. If you take the same system but just different weight for one of the elements, you can see the superconducting temperature drops at the rate you expect. So that one is conventional. But then higher-temperature superconductors like cuprates, like the ones that are above 77 kelvin, like 93 kelvin, turns out don’t obey that physics. But we don’t know what physics they obey. They’re just incredible superconductors. But it’s not just that. So that definitely is one of these very, popular topics we don’t know the theory for yet. But there’s so many other things we don’t understand. For example, even strong correlation in simple quantum mechanical systems, we cannot simulate yet. Density functional theory is a very powerful tool. It’s incredibly accurate on some things, but as long as. As soon as there’s some strong electron correlation, it actually fails to capture some of the effects. There’s so much to figure out. That’s why I’m really excited for AI to be applied to this field, because theoretically, computationally, and experimentally, there’s so much to figure out. And every improvement we make here should improve human life, because, the better we can understand materials, solid-state physics, the better devices we can make for them.
+Brandon [00:16:41]: There’s this famous quote by Phil Anderson, which is, “More is different,” which is basically you may understand all the basic laws of something, but when you add many things, they behave qualitatively distinct, differently from how the simple physics should tell you. So understanding how lots of things behave together, it seems like it should be simple. Beginning laws are simple, but the collective behavior is so complicated that it’s really hard to model.
+Ekin Doğuş Çubuk [00:17:07]: It’s emergent and universal, which is crazy. And we’re also seeing this with deep learning models, right? We see power laws everywhere in deep learning. We don’t understand, but it is very reminiscent of physics where there is, emergence and universality.
+Brandon [00:17:20]: There’s been many theory papers in the physics world about emergence in neural networks.
+Ekin Doğuş Çubuk [00:17:24]: Yeah, absolutely, yes.
+Brandon [00:17:25]: Yeah.
+Synthesis Prediction and the Matter Compiler
+Swyx [00:17:26]: And then my other follow-up question was also just on the process of let’s call it the yeah, process and the end result. Let’s call it like, you want to have these properties that you’re targeting for materials, and then you have to figure out the process to get there. Is it worth separating these things so that you can have. You just train a model that perfectly reverse engineers any process whatsoever given, whatever theoretical end state you want? Is that, meaningful?
+Ekin Doğuş Çubuk [00:17:54]: Maybe going back to the conversation we had about how since there are more than Avogadro’s number of atoms, we’ll never know the exact context of what happened. I think that might be a reason why we’ll never be able to reverse engineer everything perfectly. But we’re just trying to reverse engineer sufficiently to be able to improve the performance of the materials, basically.
+Swyx [00:18:13]: Yeah.
+Brandon [00:18:13]: What you’re asking is there a forward model where you put in an input and you can predict the output, and you want to under
+Swyx [00:18:19]: Yeah.
+Brandon [00:18:20]: You want to create a like a surrogate model which can understand
+Liam Fedus [00:18:22]: The input is the final state of that, this configuration of atoms, and then the prediction is
+Swyx [00:18:27]: Because then you can, you can split up the work almost. You can have one team do the process side, and then the other team do the property side, and then
+Liam Fedus [00:18:33]: Yep
+Swyx [00:18:33]: You know, just race them.
+Liam Fedus [00:18:36]: Yeah, I think that there’s, a lot of progress we can make in terms of these. Splitting up these agentic workflows to these different areas, I think there’s a lot of empirical work we can make, on synthesis prediction as well.
+Swyx [00:18:49]: Yeah.
+Liam Fedus [00:18:49]: Whereas taking in that configuration of atoms, what tools can you use? How, given this experimental evidence, given prior literature, prior papers, how do you actually get to these things? And you ultimately are testing, are you able to actually replicate it or not?
+Swyx [00:19:04]: The reason I say this maybe also is just thinking about it in terms of a company. You know, in the way that TSMC is kind of like a fab for semis, but they don’t design the semis, you could be the TSMC of materials where people come to you with like, “Well, here’s what I want,” and then you can figure out the process and
+Liam Fedus [00:19:21]: Yeah, it’s like a matter compiler.
+Swyx [00:19:23]: Yeah.
+Liam Fedus [00:19:24]: So I guess given these requirements
+Swyx [00:19:26]: Very Star Trek.
+Liam Fedus [00:19:27]: Yeah. But it’s like, given these requirements, is this actually a valid set of configurations? Can this, can this exist?
+Swyx [00:19:33]: Is it a good objective function? I don’t know. It’s too big.
+Liam Fedus [00:19:37]: Yeah. We kind of talk about one of our missions as synthesis superintelligence, so I think it’s in line with this.
+Phase Transitions, X-ray Diffraction, and RL Rewards
+Swyx [00:19:44]: Yeah.
+Brandon [00:19:44]: I want to double-click on something that you said a little while back, which was you talked about phases. And I think this is, going to Doğuş’s comment about, what is emergence. The concept of a phase transition I think might be foreign to a lot of the audience. So can you explain what is a phase transition, and then why is this a helpful signal for something like an RL environment?
+Ekin Doğuş Çubuk [00:20:08]: Phase transitions are fascinating. I think the maybe the one that people can most easily relate to in their life is, ice melting probably, or water boiling. You increase the temperature of ice, and it still looks like ice and it behaves like ice, but there’s a certain temperature at which it just stops raising its temperature and then turns into liquid. So it suddenly goes from this solid phase to liquid phase. Another one that’s very relevant to us, of course, is the Ising model. And I think computer science and mathematicians also study this maybe under different names, but basically, you can have spins up and down, and they have different interaction terms if they’re both up versus one is up, one is down. And at high enough temperature, they’re usually just randomly up or down. Entropy wins. You lower the temperature, it’s still looking the same. But then at some point, suddenly they perfectly start aligning. Yeah, the phase transition. Phase transitions are really nice because it makes physicists’ life easier for studying certain things. They tend to have certain, spatial correlations that really help us, as well. Okay, so in our lab, phase transitions come about usually because we mix the precursors that are different, crystals basically, but then we raise the temperature or do something else to encourage them to react, and then atoms start reacting and they form into this new crystal. And the this shows up in the XRD pattern because usually if the geometry of the atoms change drastically, the XRD pattern changes a lot. But what really happens in a typical practical materials discovery campaign is when you first try something, it doesn’t work, and the outcome isn’t just a clear yes or no, but it’s usually a very mixed phase. It will usually have some of the precursors. It might have some amorphous phase, and then it will have a bunch of phases that you maybe didn’t try to make. So that becomes a challenge, and that’s why we find it very difficult to bring together simulations and AI to do the characterization. So the simulations can always say, “Oh, this phase doesn’t look like what we predicted, but this is a slight variation of it. Let me now do force field calculation on it to see if it’s still stable.” Or the AI can say, “Based on the previous experiment and this one, this is probably not the phase we want to make, so let’s change the conditions.”
+Liam Fedus [00:22:18]: Yeah, and in some cases
+Swyx [00:22:19]: For listeners, XRD is X-ray diffraction, which you already described.
+Liam Fedus [00:22:22]: Yeah. In some cases, there’s a phase that just hasn’t been recorded before. It doesn’t exist in any papers or database. And so the AI has to actually go and sort of use these tools to say, “Well, what configuration atoms would actually explain these phases?” But this becomes incredibly important for directing the scientific process because, let’s say we have a phase target in mind. We really need to sort of hill climb that to get better measurements on that. So if it’s, one percent and we’re like, actually, we want to increase this phase purity, we want to have a very good measurement on this experimental data to say, what is present and what’s not.
+Brandon [00:22:57]: So one of the advantages is you have just a distinct variable that you can just observe. Going back to the statement about how do you deal with uncertainty, one of your, it seems like part of your answer is you make your observable signature somewhat unambiguous. There’s no interpretation there. Is that right? Is that the logic behind this? Or is this literally you just needed to find a new phase, and so this is the thing you care about?
+Liam Fedus [00:23:20]: I think there’s still ambiguity in a lot of these cases. A very dumb thing is replicates.
+Brandon [00:23:25]: Yeah.
+Liam Fedus [00:23:26]: We run replicates, of course.
+Brandon [00:23:27]: Yeah. Yeah.
+Liam Fedus [00:23:28]: But no, I think there — You know, it’s a challenging task because it’s not just a fully deterministic, and there are well, there are ambiguities, and other things. Two different, phases can actually be consistent with the same pattern.
+Brandon [00:23:42]: Yeah.
+Liam Fedus [00:23:42]: And so I think that’s why it’s really important for the system to use some chemical intuition to say “Okay, well, this would be highly unlikely given the synthesis conditions, given this, the prior knowledge.” and so that can be used to help disambiguate.
+Chemical Priors, Multimodal Measurement, and Ambiguity
+Swyx [00:23:58]: So you’re, so you’re somewhat injecting priors there, based on what you expect.
+Ekin Doğuş Çubuk [00:24:03]: Yeah. I think thermodynamics is the biggest prior, right?
+Swyx [00:24:06]: It is.
+Ekin Doğuş Çubuk [00:24:07]: And then physics is a big prior. Another one that we really benefit from here is multimodality or materials characterization. So we can do XRD, and yes, some phases might look similar on the XRD pattern, but then we can also measure their electrical properties, magnetic properties. We can measure their morphology, like some kind of electron microscopy. And then some of the phases that look similar on XRD will look different in some of these dimensions. And that kind of multimodality really helps. And again, AI is really helpful here because humans have limited context and computation power as well. So if you give humans 10 different modalities at the same time and say, “Analyze these all consistently,” it’s a bit difficult. But it’s actually not super intelligent for an AI to do it. It’s great, yeah.
+Liam Fedus [00:24:46]: Yeah, it’s like the super intelligence is it can just do so much calculations. It can look at everything. And this is, kind of gets to that, phrase about better decision-making under uncertainty, where now it’s stitching together, the signal across many different instruments longitudinally, across different experiments, across the replicates, and then kind of getting to this underlying better model
+Swyx [00:25:08]: Yeah
+Liam Fedus [00:25:08]: Rather than just over-indexing on one measurement from one instrument.
+Information Limits, Telemetry, and Maxwell’s Demon
+Swyx [00:25:12]: And let me just, like. So you know, you started, I think a while ago also saying that there’s just more data than you can fit in any reasonable computer or process or anything. So at some point, you have to throw out data even though you have all these replicates, even though you have presumably ten different ways to measure the same thing. It’s. ‘Cause what if one of your temperature things is wrong? So when do you throw that out? How do you decide what to do? As a data-hungry ML guy, I just want everything, right? And then I just, you know
+Ekin Doğuş Çubuk [00:25:37]: So it’s, yeah.
+Swyx [00:25:37]: Waddle, learn everything. I don’t know what I don’t know, and it’s just throw it, throw it, the machine at it.
+Ekin Doğuş Çubuk [00:25:42]: Yeah. So we don’t throw any data. I think maybe what I meant was potentially. If God was observing the experiment
+Swyx [00:25:50]: Yeah.
+Ekin Doğuş Çubuk [00:25:50]: There is more data in the experiment than humans can fit in a computer. Unfortunately, us mortals cannot observe all the atoms. So even though there’s more data than we could store, we actually can’t access that data. For example, I cannot trace all the atoms’ positions. So unfortunately, we’re still in a regime where any data we collect is very precious, and we don’t delete any of it. Yeah.
+Brandon [00:26:11]: Maybe a way of thinking of it to connect to the AI side is think about probing, like linear probing of a of a foundation model, right? This model has all this data, so God has this entire picture of what the material is doing, and then the experiment is this little, tiny linear probe which has eight bits or something of output. And so you’re taking this humongous thing and coarse-graining it down to a little bit of information, and then it’s now, either traditionally a human’s job or now your agent’s job to reconstruct from those eight bits of information
+Liam Fedus [00:26:43]: It’s an analog, yeah.
+Brandon [00:26:44]: What is actually happening inside.
+Liam Fedus [00:26:45]: It’s an analog where you can’t have full visibility over every parameter weight, over every activation for that input. Yeah, you’re getting some sort of subset on it or some coarse-grained features across the whole thing.
+Ekin Doğuş Çubuk [00:26:58]: Yeah. But so you’ll probably find that. You probably, do find, Maxwell’s demon argument very interesting because that kind of
+Swyx [00:27:05]: Can you, can you res-recite it? Because I don’t. He’s mentioned it before. I keep forgetting it.
+Ekin Doğuş Çubuk [00:27:10]: So, in the 1800s, people realized that entropy of a system has to increase or a for a closed system
+Swyx [00:27:18]: Yeah.
+Ekin Doğuş Çubuk [00:27:18]: Or stay the same, but it can’t go down.
+Swyx [00:27:20]: Yeah.
+Ekin Doğuş Çubuk [00:27:21]: It’s the second law of thermodynamics. And there was a thought experiment that was asking, what would happen if there was a very tiny, all-knowing demon that could kind of look at atoms, and then whenever an atom had low energy, kind of open a door and let it into this other room and keep doing this to reduce entropy of the system, which would break second law of thermodynamics? And for a long time, I think there wasn’t a very satisfying answer for why that was the case. But then there was a more recent paper in the 1900s, more recently to us, Landauer came up with the argument that you’d have to spend energy to delete information, and Maxwell’s demon would basically have access to so much information by doing this thing he’s doing that he’d have to delete some. And for. When he’s deleting information, he’d have to spend energy, which would then make sure entropy increases. So even though we’re not at the level where we can be Maxwell’s demon, I think your, question is very visionary towards a future where we store so much data we have to delete some.
+Swyx [00:28:17]: Yeah, no, I wasn’t, I wasn’t obviously going to that, to that extent. It does remind me of air conditioning. That’s kind of how air conditioning works. But also, I think it’s just a question of why don’t you just buy every sensor in the world and just over. Ridiculously over-instrument, over-replicate everything?
+Liam Fedus [00:28:33]: Oh, we do that.
+Swyx [00:28:34]: Right? Yeah, okay, yeah, okay. There we go.
+Liam Fedus [00:28:35]: Yes, yeah.
+Swyx [00:28:35]: Okay, it works out. Right. All right.
+Liam Fedus [00:28:37]: Yeah, I think, I think it’s a matter of
+Swyx [00:28:39]: Confirmed.
+Liam Fedus [00:28:39]: Yeah, exactly. Are you getting visibility to individual atoms, which is infeasible? But no, we add a huge amount of telemetry, and that basically reduces the number of hidden variables, if you will.
+Swyx [00:28:49]: Yeah. Yeah. And just out of curiosity, you guys do you worry that you’re just in California? Don’t you want to do this in Nepal and Australia?
+Ekin Doğuş Çubuk [00:28:59]: Yeah, we could. We have plans to open more labs.
+Swyx [00:29:02]: Because obviously gravity and where you face and where you. Where you are matters.
+Ekin Doğuş Çubuk [00:29:07]: Also expertise can change, right? Here we have certain kinds of expertise. For example, Stanford Physics Department, Engineering Department has certain kinds of expertise that really helps us because we can hire from there. Our researchers can collaborate. As you said geography can matter, but then different cities can have some differences of expertise within physics, chemistry.
+Swyx [00:29:27]: Yeah. Oh, we have Zoom
+Ekin Doğuş Çubuk [00:29:28]: Yeah.
+Swyx [00:29:28]: For that.
+Ekin Doğuş Çubuk [00:29:29]: Yeah. But still
+Swyx [00:29:31]: It’s not like your experiments are going to be affected by where you are.
+Liam Fedus [00:29:34]: Yeah. Yeah, the future of Periodic is not a single lab.
+Swyx [00:29:38]: Yeah. You gotta head up your private jet and go to space and you know.
+Liam Fedus [00:29:42]: Right. Yeah, I think it’s necessary to have this sort of network of labs. And like, yeah, I think as Doğuş was just kind of pointing out there’s an optimal place for each of these based on expertise or materials constraint. There’s many different constraints, permitting.
+Connecting Simulations With Physical Experiments
+Brandon [00:29:56]: Okay, so one of them is. So one thing I-I’ve been curious about is how do you deal with computational tools? Or how do you integrate computational tools into a decision-making workflow, especially when, let’s say, computation and experiment don’t necessarily, meet? It’s also theory in terms of high-level understanding. And yeah, how does that sort of work together?
+Ekin Doğuş Çubuk [00:30:22]: Yeah. So, one thing that’s really helpful here is there are certain things that are easier to do in simulation and more accurate in simulation. There are certain things that are easier to do in experiment and more accurate in experiment. In general, of course, experiments are more accurate, but certain measurements are very hard to make with experiment. So you make a bad version of it, so you get inaccurate data. Let me just give you some examples. So one of them is, we use density functional theory to estimate formation enthalpy of materials and
+Brandon [00:30:51]: Sorry, quick pause. Can you explain densital density functional theory and formation entropy?
+Density Functional Theory and Formation Enthalpy
+Ekin Doğuş Çubuk [00:30:55]: Yeah, of course.
+Brandon [00:30:56]: Sorry, enthalpy, yeah.
+Ekin Doğuş Çubuk [00:30:57]: Yeah. So, density functional theory is probably the most commonly used simulation method for materials. It kind of comes from Hohenberg–Kohn theorem, and Kohn got a Nobel Prize for this. He. When he realized that, sure, quantum mechanics is very expensive because you basically have this exponential Hilbert space for every wave function, so you have to solve this very difficult problem, especially as the system size grows. Kohn and Hohenberg realized that turns out you don’t need to do it at exponential space. All you have to do is think about the charge density, at least for the ground state of quantum mechanical systems. So this it’s actually the theorem is pretty simple. So even I think an undergraduate in physics can understand. But the idea is all the properties of a quantum mechanical system ground state is a functional of the charge density, which is amazing because charge density is just this three-dimensional object, whereas the Hilbert space and wave functions are exponential. So that was a really interesting observation. And then Kohn published another paper, I think with his postdoc, Sham, Kohn–Sham, wave functions, kind of had a practical way to solving some approximation of quantum mechanical properties of materials. And today, we use it very much, both in our lab and externally. And then formation enthalpy is one of the measurements we can make to understand the energy of the material. Basically, we want to ask, what is the energy that this material has? Because if that energy is higher than other materials these atoms can come into, then it’s unlikely that this material will be able to be made. So stable just means like it’s on the convex hull of other materials, and their energies. Was that clear enough, or should we.
+Brandon [00:32:42]: Maybe a simple high-level point. So density functional theory is a way of taking something which is exponentially hard, in number of electrons
+Ekin Doğuş Çubuk [00:32:51]: Right
+Brandon [00:32:52]: Or number, in your system size, and then reducing it approximately with some introduced error to maybe usually an n-cubed approximation. So now you can compute quantities which are, you know. You can now compute things which are just uncomputable, but at some cost, right? If you could do it perfectly, you would — we wouldn’t need a lab. But we can’t. This might be a good callback to our, actually our second episode ever. Heather Kulik had said, she famously said, “There is no AlphaFold for materials, not just computationally, but the ground truth just doesn’t exist.” Like, we don’t really know what material crystal structures look like, and DFT is generally our best route towards.
+Ekin Doğuş Çubuk [00:33:34]: Yeah, I think so. Maybe two things I would add is DFT by definition doesn’t have to be an approximation. The Hohenberg–Kohn theorem shows it
+Brandon [00:33:42]: It doesn’t
+Ekin Doğuş Çubuk [00:33:42]: It can be exact. But I think, as you’re pointing out, the exchange correlation functional we don’t yet have access to. And then for the charge density-based models, we don’t know what the kinetic energy functional is. And then even if we had perfect DFT, I still think we’d need a lab because we. Even if we had perfect DFT, we cannot fit ten to the twenty-three atoms in a computer.
+Brandon [00:34:03]: Yeah.
+Swyx [00:34:04]: You’re very obsessed with that number.
+Brandon [00:34:06]: But. No. Well, okay. Yeah. But with exponentially growing compute, you can argue that in n-cubed scaling size, eventually you could, in principle, calculate things. You just wait till the pause long enough.
+Ekin Doğuş Çubuk [00:34:17]: Oh, yeah. We need massive computers, yeah.
+Brandon [00:34:19]: But yeah. But as long
+Ekin Doğuş Çubuk [00:34:20]: It’ll take a while.
+Brandon [00:34:20]: Yeah. But as long as n-cubed is a good scaling, you can, you can.
+Swyx [00:34:24]: As the non-scientist, I will make an observation, which I don’t know if you want to throw around or anything like that. So I came from finance. We had the Gaussian copula, which was a way of pricing credit default swaps, by doing correlations and reducing everything into a single kernel. And it’s very. It feels also spiritually similar to the VAE, in terms of like, condensing all these things into a single sort of parameter. I wonder if just there’s the same trick everywhere. Yours sounds, a bit more high-dimensional than mine, which VAE is just like, one sigma thing. But sounds the same?
+Liam Fedus [00:35:01]: Yeah, the charge density file is still quite a big file.
+Swyx [00:35:04]: Yeah. Right. You hand wave a bit, but it’s good enough. This is, this is the highest order bit. Yeah.
+Ekin Doğuş Çubuk [00:35:10]: I personally don’t know of a better method to predict the stability of a new material. It’s definitely not perfect, but it’s definitely better than other methods I can think of. And yeah, so going back to your question, the reason we use them is for certain things it’s easier to simulate than experiment, and they kind of complement each other well. And then we can do this in a loop. We feel like simulations will never be enough by themselves, but in the loop of simulations, AI, and experiments, I think we can make progress much faster than before.
+When Simulations Fail: Microstructure and Calibration
+Brandon [00:35:41]: One thing that simulations let you do is scale up much more quickly. Because now compute is, much easier to bring online
+Ekin Doğuş Çubuk [00:35:48]: Yeah
+Brandon [00:35:48]: Than bringing in bringing on new labs. How do you avoid. Or let’s say you scale up a bunch of DFT, how do you avoid in having your models over-index on that and still be grounded that the real world is ultimately the truth you care about? If you. You know, how do you sort of balance that?
+Ekin Doğuş Çubuk [00:36:05]: Well, we scale up the lab as well.
+Brandon [00:36:06]: Yeah, you scale up the lab.
+Ekin Doğuş Çubuk [00:36:07]: Right, yes.
+Brandon [00:36:07]: But you could. I could imagine scaling up DFT to millions, hundreds of millions given modern compute, whereas your lab, I would imagine, your hundreds, thousands a day? I don’t know. Something still fairly. Well, even in a really high-throughput case you’re still fairly limited by comparison, right?
+Ekin Doğuş Çubuk [00:36:27]: Yeah. One thing is humans, but also LLMs, are kind of pretty aware of the limitations of DFT. For example, even if we can do, as you said, hundred million trials with DFT
+Brandon [00:36:39]: Yeah
+Ekin Doğuş Çubuk [00:36:39]: We could never actually try their microstructure. And microstructure is this idea that DFT usually simulates the perfect crystal, but crystals usually actually aren’t perfect, and their microstructure, which is the structure at a medium order, can really affect the properties. Other issues, of course, like some properties like superconducting temperature cannot be easily simulated by DFT. Again even if you do a hundred million trials with DFT, it won’t be enough. So we have to rely on heuristics, experiments, et cetera.
+Liam Fedus [00:37:08]: And so there’s a huge filter from all those calculations to actually what gets executed in the lab.
+Swyx [00:37:13]: Is that human-mediated or LLM or a mix?
+Ekin Doğuş Çubuk [00:37:17]: Can be a mix.
+Swyx [00:37:17]: Yeah.
+Ekin Doğuş Çubuk [00:37:18]: For example, for a long time, Materials Project, which was the best open source DFT database, Use experimental calibration for DFT. So they would actually use experimental data to calibrate DFT. We also do this internally here. Whenever there’s a certain chemical system we’re interested in you get experiments, you get simulations, and you can calibrate them.
+Why Inorganic Materials Differ From Biology
+Brandon [00:37:37]: This is another thing. I’ve talked to a lot of biologist friends, and they are always very confused when you say materials, you can’t just do an XRD structure and actually know what the structure is. Because if you’re in the biology world, you can look at a crystal structure of a protein and typically more or less with sub A well order angstrom accuracy reconstructed. What is the difference between the materials XRD, X-ray disfor — X-ray diffu- no
+Ekin Doğuş Çubuk [00:38:05]: Diffraction.
+Brandon [00:38:06]: Diffraction, sorry. Experimental XRD for materials versus, let’s say, the biology world. What information do you lose, and why is this sort of like a lossy projection?
+Ekin Doğuş Çubuk [00:38:16]: It’s hard not to sound crazy when answering this question. But do you not feel like, organic chemistry and biology almost stem from a lower VC dimension, like lower Kolmogorov complexity model? Where like, you can almost represent as a one D sequence, and it can almost be compiled. So there’s a sense in which it’s, simpler in the Kolmogorov complexity sense.
+Swyx [00:38:38]: One D?
+Ekin Doğuş Çubuk [00:38:40]: Like just DNA is just
+Brandon [00:38:43]: Yeah.
+Ekin Doğuş Çubuk [00:38:44]: Or RNA.
+Brandon [00:38:44]: I think most people would argue it’s more two D, but
+Ekin Doğuş Çubuk [00:38:47]: Okay, well, yeah. I’m not a biologist, so
+Brandon [00:38:49]: Yeah.
+Ekin Doğuş Çubuk [00:38:50]: I’m sure they’re right. But with inorganic chemistry, virtually it’s crazy. It’s clearly not coming from such a low Kolmogorov complexity model because that three D inorganic crystals can host metals, insulators, superconductors, diamond. It’s really crazy different. People tried, but we could never find a one D representation. It’s very hard to find a SMILES string for three D inorganic crystals. And the way the atoms interact with each other is quite strange, like covalent bonds, ionic bonds, metallic bonds. But yeah, this is, it’s very interesting. I wonder sometimes have you ever looked into issues with solid electrolytes? Why people cannot replace liquid electrolytes in batteries with solids? There are all these dendrites that form. Basically the lithium will form these structures that go into a solid electrolyte and crack it. And you look at that, and you think this is so primitive compared to biology. In biology, these systems can do such complex nano technology- technological progress, whereas we can’t even make two interfaces work with each other because lithium will break it. Yeah, but then I guess inorganic stuff can be very resistant to high temperature. You can make space shuttles. You can make silicon, compute Moore’s law. So yeah, it’s a trade-off.
+Brandon [00:40:05]: Yeah, we’ve talked about this with several other guests. I think one of the big differences in my mind is that biology, we have a toolkit that you can basically borrow from millions of years of evolution
+Ekin Doğuş Çubuk [00:40:19]: Yeah
+Brandon [00:40:19]: That has already given us all the tools, and we can just reproduce those. But also evolution also constrains the yeah, the VC dimension to be fairly low for proteins and so on. The emergent beyond- behavior of large-scale systems like cells can be much more complicated.
+Ekin Doğuş Çubuk [00:40:36]: Yeah, and consciousness.
+Brandon [00:40:37]: Yeah. Yeah, but maybe even just more specifically for. If you just look at an X-ray, you had a perfect crystal, and you shoot an XRD at it, and you get the you get the spectrum. That still doesn’t actually tell you uniquely what the crystal structure is, right?
+Swyx [00:40:54]: No.
+Brandon [00:40:55]: So, and that’s something that
+Swyx [00:40:56]: What?
+Ekin Doğuş Çubuk [00:40:57]: It’s just average.
+Brandon [00:40:58]: Yeah.
+Ekin Doğuş Çubuk [00:40:58]: It’s just average behavior. But like, for example, disproportionation is a very complicated thing, right, where it’s possible that you have the perfect crystal, and on average, it looks like this perfect XRD. But in reality, there is some other pattern going on where atoms slightly shift to the right or left, but on average, they’re in the middle. Yeah, it’s a difficult life, yeah.
+Brandon [00:41:16]: Whereas with proteins, you basically know there’s some sort of underlying protein follows some rules, so you can, you can combine a forward model with that.
+Liam Fedus [00:41:23]: Right. And then you can kind of move and move towards single crystal XRD, and that can help.
+Swyx [00:41:29]: When we started the Science Pod, there were all these elements of AI in science, AI in math, AI in physics, and all these things. And we there was this kind of pissing contest which is harder. And I think you can make the scientific argument that materials science is the hardest.
+Liam Fedus [00:41:43]: Well, we didn’t pick it necessarily for hardness. There’s actually a lot of areas where it is easier. We have these great simulators for large classes of materials, whereas in biology, it’s incredibly difficult to model a cell or an organ or a full organism. So that’s a huge advantage.
+Swyx [00:42:01]: Yeah. That, isn’t that interesting that it, at the smallest level, it is one-dimensional or two-dimensional, but and then it just has many orders more scale and structure, and that actually introduces the complexity. It’s, that’s weird. Whereas maybe complexity in materials is more the microstructure.
+Liam Fedus [00:42:20]: Yeah, I still — you still get different complexity at the different, length scales for materials as well. So yeah, microstructure and beyond.
+Dream Materials: Superconductors, Magnets, and Batteries
+Brandon [00:42:26]: Yeah.
+Swyx [00:42:27]: Yeah. Just sort of a brief sort of palate cleanser. In terms of science fiction, let’s say you can invent whatever materials that you want. What is more valuable? You know, I have, I have a list here. There’s obviously room temperature super- superconductors. But also, you mentioned batteries. I’ve always thought batteries. Just do better than lithium-ion, you’re good. That’s stood around for a hundred years. And then the last one is carbon nanotubes, mostly for the space elevators. I don’t know if, like. Those are, those are the three that come to mind. Are there any that people talk about in your world that are the dream?
+Ekin Doğuş Çubuk [00:43:03]: Definitely superconductors
+Brandon [00:43:05]: Yes
+Ekin Doğuş Çubuk [00:43:05]: Magnets.
+Brandon [00:43:06]: Right.
+Ekin Doğuş Çubuk [00:43:06]: Especially if we can lower the dependence on rare earth or transition metals that are hard to source, like cobalt, reducing cobalt in batteries. One of the things I think is very fundamentally important is, if we can get close to Landauer limit for compute energy efficiency.
+The Landauer Limit, Reversible Computing, and Energy
+Brandon [00:43:24]: Can you, explain Landauer limit?
+Ekin Doğuş Çubuk [00:43:26]: Yeah. So if you look at how much energy we spend per, like FLOP or compute, it has followed the Moore’s Law type behavior, but it’s gotten exponentially more efficient. So we’ve been spending exponentially less energy per FLOP or compute. I haven’t checked recently. This was the case ten years ago when I last
+Brandon [00:43:44]: Yeah, that’s great. I remember when I first learned about it, looked at that, and we were, what ten, twenty orders of magnitude away from it or something.
+Liam Fedus [00:43:50]: Beyond the limit, yes, right.
+Brandon [00:43:50]: And the last time I looked, it’s. We’re weirdly close. We’re within a factor of I don’t know three or four orders of magnitude away.
+Ekin Doğuş Çubuk [00:43:59]: Yeah.
+Brandon [00:43:59]: It’s actually like
+Liam Fedus [00:44:00]: I just exponentially rolled out over many years.
+Brandon [00:44:01]: Yeah, exponentially over many years are
+Ekin Doğuş Çubuk [00:44:03]: Four or five, yeah.
+Brandon [00:44:04]: Yeah, pretty impressive.
+Swyx [00:44:05]: But in your lifetime, you
+Brandon [00:44:06]: Yeah, no I. Yeah, since, just since I discovered this, what, ten or fifteen years ago? Yeah, no.
+Ekin Doğuş Çubuk [00:44:11]: And one of the things we have to do is dissipate heat, because as these, computations are happening, it’s producing heat, which has to happen, but then we have to dissipate it. So if we can get close to the Landauer limit for how efficiently we do computation, that’s amazing for humanity, right? Because that means now we’re doing computation, which is probably one of the most fundamental things we do as humanity, but as efficiently as possible from energy perspective, which is a real occurrence in the universe.
+Swyx [00:44:34]: That get affected by quantum computing? I’m just going to throw it out there. Theoretically, massively, embarrassingly parallel compute.
+Ekin Doğuş Çubuk [00:44:41]: So it definitely gets affected by reversible computing. But honestly, I’m not an expert. I don’t understand. So if you can do reversible computing now, you’re not. You don’t actually have to spend energy to do computation because you’re not actually deleting any information. It’s reversible. But I don’t know if that works. I don’t know. Quantum computing, I assume, has to obey these laws somehow because they are still, like. They have to obey thermodynamic
+Brandon [00:45:06]: It’s unitary, so
+Ekin Doğuş Çubuk [00:45:07]: Yeah, exactly
+Brandon [00:45:07]: It’s reversible, so for now.
+Swyx [00:45:10]: One of my most memorable conversations with Elad Gil was he actually was a very skeptical person about quantum computing.
+Ekin Doğuş Çubuk [00:45:15]: I see.
+Swyx [00:45:15]: He’s like, he’s like, “Even if you had it today, there’s no applications.” I’m like, “Whoa.”
+Ekin Doğuş Çubuk [00:45:19]: I
+Swyx [00:45:19]: It breaks, it breaks the it breaks the security RSA. That’s it.
+Ekin Doğuş Çubuk [00:45:22]: I agree with that. Like for them, people talk about how if you had a quantum computer today, you could simulate things so much better. And I asked them, “Okay, let’s accept that. What would you simulate?” Like, you’re still simulating perfect crystal. You still have the issues that DFT has if DFT was perfect in its prediction ability. So yeah, I do think people are kind of glossing over some things because quantum computing is so exciting. If we can compute in a quantum logic space instead of classical logic, it’s just so exciting that people are glossing over what it would actually do when it’s made. Maybe that’s fine because maybe once it’s made, it will do amazing things we can’t even imagine.
+Putting Intelligence Into Every Laboratory Instrument
+Swyx [00:45:57]: Good. Okay. I was going to move to the automating the lab side, where you’ve closed the loop on your experimentation. You can talk about robotic arms, talk about. But it’s basically just everything you’ve done here. My favorite quote from you was that every piece of equipment in your lab is going to have a hundred and forty IQ. Okay, what does that mean?
+Liam Fedus [00:46:17]: In the early days, as we were scaling things up, we realized that we had huge bottlenecks imposed just by operating machinery. So, for one set of machinery, we would have technicians and scientists looking for particular morpho- morphology and trying to see, okay, what actually were we making, see if this is consistent with our intentions. And we really quickly, as we scaled up the lab, came into these bottlenecks where it just wasn’t keeping up. So we started doing some programmatic approaches to capturing the data on SEM. And the data that was being surfaced from this very simple program where it sort of takes a field of view, captures, zooms in captures, was just not all that useful. It was a little too dumb for what we really wanted to get. And so at that point, it was then, really pertinent to build AI systems directly onto the machines to start controlling these things. And now they have the full context as to what we were trying to achieve. So what was the intent of the experiment? What were we trying to synthesize? What were some other experimental evidence? And it’s actually looking, in the machine and capturing that data. And this is really valuable now because we’ve been talking about these hidden variables not being able to capture everything, but if you can do more intelligent data capture at the time of that experiment, your data for future AI systems and future computational predictions is that much better. You’ll have just a richer set of data. And so that’s sort of what we mean by just, everyth- everything on the lab has to be incredibly intelligent to just make the data as useful as possible. So that was, that was sort of the motivation and inspiration behind that.
+Swyx [00:47:57]: What’s the state of the art there in terms of putting intelligence on every device, right?
+Liam Fedus [00:48:02]: Well, I think one interesting aspect, is what’s the latency
+Swyx [00:48:08]: Exactly
+Liam Fedus [00:48:09]: Of controlling that instrument?
+Swyx [00:48:10]: Because there’s cloud latency, but then there’s also device compute, which
+Liam Fedus [00:48:13]: That’s right
+Swyx [00:48:13]: Also.
+Liam Fedus [00:48:14]: And then there’s sort of a time scale associated with different physical processes. And if calling out to an API or something is simply too slow, so the amount of reasoning or tokens or tool calls, is just not matched to the latency of that actual process, then that’s infeasible.
+Swyx [00:48:33]: Okay. That is right.
+Liam Fedus [00:48:34]: It’s almost like, self-driving cars, right? So.
+Brandon [00:48:37]: I. Real quick. I just am actually surprised to hear that because the latency I’d imagine for reasoning seems small compared to a lot of these things take hours to run, right? Or maybe, you know. Or maybe I. Maybe your experiments are much faster or high-throughput or something. I’m just surprised to hear that, actually.
+Liam Fedus [00:48:52]: So ultimately, the experiments do take, many hours, days, but there could be particular steps where latency would matter.
+Ekin Doğuş Çubuk [00:49:00]: Yeah. You might want to have finer control. Another thing is, how expensive it is because the same reason some of these models can be really slow in analyzing data also makes them very expensive. And then finally, the human patience. If a human wants the analysis of a certain XRD pattern and they have to wait two hours before they get a good result, that’s very different, I think, than if they can get it in two minutes.
+Brandon [00:49:25]: Oh, okay.
+Liam Fedus [00:49:26]: Yeah. And then the reasoning, it’s. You know, you’re not doing a single call to that model, right? You’re doing, potentially many tokens, to kind of get to these patterns.
+Ekin Doğuş Çubuk [00:49:35]: Run simulations in the loop.
+Liam Fedus [00:49:37]: Exactly.
+Ekin Doğuş Çubuk [00:49:38]: Deep research in the
+Liam Fedus [00:49:39]: It’s not a single tool call. It’s not a single inference thread. So then the latency can blow up quite a bit.
+Brandon [00:49:44]: I see what you mean.
+Liam Fedus [00:49:45]: Yeah.
+Brandon [00:49:46]: How much of your latency is tool calls? And I assume tool calls is largely DFT or computational- … and therefore. Yeah. So how much of your latency is derived from those versus actual reasoning?.
+Liam Fedus [00:49:59]: It’s really process dependent.
+Pragmatic Robotics, Automation, and Lab Reliability
+Brandon [00:50:01]: Okay. Yeah.
+Liam Fedus [00:50:01]: Yeah.
+Swyx [00:50:02]: And then the other thing I think about is also, I guess, building up from small things to bigger things, where I assume that the general temptation or the typical development is incremental, where everything is human, operated, and then you find ways in which to automate it, and then you sort of build up from there. I worry that sometimes that is the way that people evolve things, but that’s a local minima, optima.
+Ekin Doğuş Çubuk [00:50:25]: Like short-horizon optimization.
+Liam Fedus [00:50:26]: Right.
+Swyx [00:50:26]: Exactly. When actually you should get a humanoid and just put them in there.
+Liam Fedus [00:50:31]: We. I think we’re of the opinion that solving humanoids would actually be slower to kind of getting to some of our goals.
+Swyx [00:50:37]: Just checking. Again a lot of this is just like you do this every day. We, like
+Liam Fedus [00:50:41]: Yes
+Swyx [00:50:41]: See this, but we. I don’t know the reality of the situation. A lot of people having humanoids.
+Liam Fedus [00:50:46]: Yeah. I think maybe one process is, by having a mix of humans and automation, you can identify really quickly what are some of the bottlenecks in the experimental process, and you start alleviating those bottlenecks one at a time. And so for example, if there’s some really tricky dexterity task that humans are excellent at but you’d have to spend months automating machine, maybe don’t spend a ton of time there. And maybe a more promising thing is something very routine that takes up a huge amount of scientists’ and technicians’ time, and it’s easy to automate. So I think it’there’s this pragmatism to it. But ultimately what we want from the lab is a huge quantity of data, high-quality data, diverse data, and those are our goals. And full autonomy is a non-goal. It’s sort of in the service that we use automation in the service of achieving the goals on the data.
+Brandon [00:51:39]: Yeah.
+Liam Fedus [00:51:40]: But also, I think another aspect to automation is, robots will just be. Make fewer mistakes potentially in the lab. And it’s been really helpful having AI systems with a full view over all of our data, because sometimes if there’s a permutation in data, then it can identify it. So for example, one of our steps at one point had, a cyclic error because one of the machines was loaded incorrectly, and the patterns were inconsistent. So the AI was reading through these things and says, “Well, given what was run, this is not expected.” And it’s looking at this basket of data longitudinally, and then it realized, “If I do this cyclic permutation and reverse it, everything is consistent.” And then we were able to go back to the physical infrastructure and understand that a mistake had been made in the loading. And I think managing data quality is so foundational to doing AI in the physical world. And these are the types of things that we’re building in. And so you can improve the operating process, but at that point you’re like, “Okay, this is another great opportunity for automation. How do we make this just so reliable, so durable that we never have those types of mistakes again?”
+Ekin Doğuş Çubuk [00:52:51]: Yeah, the reducing the noise floor of experimental data I think is very important. Most experimental data in the literature have such a high noise floor that it’s actually usually worse than DFT accuracy. Because, when different people do experiments, different labs, different parts of the world, different times, it really introduces so much fluctuation to the result. So we are hoping that by standardizing these workflows, one of the biggest benefits will be that the noise floor will be lowered.
+Open Models, Proprietary Data, and Compute Efficiency
+Swyx [00:53:16]: You’ve been pretty public about how you use open source models and fine-tune them for stuff like this. Is it better. Is it basically. I can imagine a situation where, you have maybe the dumber models do one task, and then you optimize for that task, and then sort of like a generalist frontier model that supervises everything. Is that a good mental model to have? Are there more stages to this that I can think about?
+Liam Fedus [00:53:37]: We basically use a mix of open source models and closed source models. You know, we’re huge beneficiaries of this from our simulation side, building up the ML stack, the simulation stack. We don’t need to push on that axis. But there’s a lot of areas where, the latency is too high, the cost is too high. But in some cases we can actually. You know, by having access to this data, we can actually push beyond the frontier of what these systems can do under even some the highest reasoning efforts. And so it’s not necessarily just about cost or Pareto efficiency, but in some cases you can push beyond it when you have access to data that no one else has. One, way to characterize this is in terms of compute efficiencies. So by having access to this data, you can be that much more compute efficient compared to some of the frontier models. And that’s been able. Been a really instrumental thing in our program.
+Swyx [00:54:33]: Yeah. I’m so. Data quality or data access as a trade-off of compute I think there’s some amount of exchange rate of dollars for compute, for dollars for data that people. I feel like the pendulum might be swinging now towards data. Obviously you would, you would agree with that, but like.
+Liam Fedus [00:54:50]: Yeah, especially like, talking about the noise floor of experimental data. We need to have high-quality data. If you throw a huge amount of compute against a bunch of noise, you’re not going to have a good thing emerge.
+Swyx [00:55:00]: And it’s harder for you because you actively try to be sparse. You actually try to get null results and learn from that and
+Liam Fedus [00:55:06]: That’s right.
+Swyx [00:55:06]: Yeah.
+Negative Results and Learning From Failed Experiments
+Brandon [00:55:07]: Yeah, you’ve Yeah, you’ve talked about null results in several other venues. What does a null result look like for materials, and how do you use that effectively? Especially when I think your overall signal is probably quite sparse usually in terms of success.
+Liam Fedus [00:55:19]: A null result could be we intended to produce some structure, and then all of the evidence points to us not producing that structure.
+Brandon [00:55:28]: Do you ever intend to not produce a structure? Of course.
+Liam Fedus [00:55:30]: Yeah.
+Brandon [00:55:30]: Okay.
+Liam Fedus [00:55:31]: Absolutely.
+Brandon [00:55:31]: Okay. Cool. You do the negative controls
+Liam Fedus [00:55:34]: Absolutely, yes.
+Brandon [00:55:34]: Regularly. Okay.
+Ekin Doğuş Çubuk [00:55:35]: There are impurity cases that will kill your property. Yeah.
+Brandon [00:55:39]: Okay.
+Ekin Doğuş Çubuk [00:55:40]: Can be toxic.
+Liam Fedus [00:55:41]: Yeah, exactly. 100%.
+Brandon [00:55:43]: Okay.
+Liam Fedus [00:55:43]: And a negative result, in some cases is actually. You know, we intended to make this, the following thing, and then we’re actually able to identify a new structure that hadn’t previously been identified. So it’s. Negative in some respect. We intended to do something else, but something else emerged from the data.
+Ekin Doğuş Çubuk [00:56:02]: Yeah. And also in general when you’re training a machine learning algorithm, especially like at a very basic level, if it’s a classification algorithm, if you don’t have negative samples, you can’t really train if everything is positive.
+Brandon [00:56:13]: Yeah. Yeah.
+Ekin Doğuş Çubuk [00:56:13]: And this is a particularly bad problem in material science because people usually publish crystals they could synthesize, but they usually don’t publish if they fail to synthesize a crystal. Sometimes they might. And also we never know really if a crystal is not synthesizable ever, right?
+Brandon [00:56:30]: It could just be a skill issue.
+Ekin Doğuş Çubuk [00:56:31]: Exactly.
+Brandon [00:56:31]: Yeah. Yeah.
+Ekin Doğuş Çubuk [00:56:31]: It could be a skill issue.
+Brandon [00:56:32]: Especially with the literature.
+Ekin Doğuş Çubuk [00:56:33]: Synthesis method issue, technology. Yeah. So, I think it really helps us when we do our own experiments and get negative results in the context of what we tried, so then we can even train a classification algorithm.
+Liam Fedus [00:56:46]: I think there’s also another valid thing too
+Brandon [00:56:48]: Yeah
+Liam Fedus [00:56:49]: Of when you have this sort of string of negative results and then finally through process iteration, you’re able to get to that positive result, it’s a really interesting set of I’ll call it process engineering-type data. So it’s like through iteration, how did you actually get to that correct result? Because so much of material science has this ambiguity in actually how something was made. And so, yeah. And so there’s actually. Even if there’s a known material, it can be highly non-trivial to replicate that. Some things are, in like, a high school textbook, but other things are really at the frontier and we’re building up that know-how as well. And then building up a system that, given this string of negative results, how do you actually get to that
+Brandon [00:57:35]: Yeah
+Liam Fedus [00:57:35]: Positive case?
+Brandon [00:57:36]: And going to the classifier result, I would almost assume that if you are doing everything in-house, most of your results will actually be negative rather than positive, which is kind of ironic because the literature only gives you positive results. So if you are sort of cold starting this, it seems like the problem is actually the reverse, that you
+Ekin Doğuş Çubuk [00:57:52]: Yeah
+Brandon [00:57:52]: Have an abundance of negative results and not enough positive.
+Ekin Doğuş Çubuk [00:57:56]: And as you said if we were doing per experiment labels, it would be mostly negative.
+Brandon [00:57:59]: Yeah.
+Ekin Doğuş Çubuk [00:57:59]: But if we were doing per campaign and assuming campaigns end when we succeed, then it could be a bit more balanced.
+Training on the Process of Science, Not Just Its Results
+Brandon [00:58:08]: I see. So your reasoning traces could almost be over entire campaigns
+Liam Fedus [00:58:12]: Absolutely.
+Brandon [00:58:12]: And not. Okay.
+Liam Fedus [00:58:13]: This is, this is the key thing. This type of data basically doesn’t exist anywhere else, and we spend so much of our time getting the full lineage of the scientific process into the model. And so tracking all this data, like the conversations, the intuitions, what was executed in the lab, where the computations run, where was the code written, stitching all this together is so valuable. And I think the overall goal is rather than training on the final output of science, you’re training on the process of doing science.
+Brandon [00:58:44]: This feels very much like you. What you would try to do with RSI, where you are having a model trained to train better models. You’re now having a model trained to make better experiments. But
+Liam Fedus [00:58:56]: Absolutely
+Brandon [00:58:56]: The difference is, it’s not going back into the core model for. So it’s
+Ekin Doğuş Çubuk [00:59:00]: Unless the physics models you’re developing are improving chips, which then improve AI. So this is the wider
+Brandon [00:59:07]: The bigger. Yeah, the higher level RSI.
+Liam Fedus [00:59:09]: That’s the big data flywheel. Yeah.
+Brandon [00:59:10]: But does that mean that. Is it plausible that in Fable 6 or something, or GPT-8 could just have a. Which has been tuned on these sort of higher order, reasoning traces, could actually just do this without any
+Liam Fedus [00:59:30]: Mm
+Brandon [00:59:30]: Logic? Because it’s sort of the same thinking process, right?
+Liam Fedus [00:59:33]: Yeah. I think there’s, decision-making under uncertainty. Obviously in machine learning, there’s noise, in running the AI loops. But we do think there’s a different set of challenges when you’re actually interfacing with the physical world. But also I think there’s another piece too, which is getting the compression of everything into weights is still really valuable. If inference time reasoning was sufficient, all of the frontier labs would have stopped training at GPT-4 and were like, “Okay, every. From now on out, we’re going to get really good at inference time improvements.” and so we think that by. You know, because of the differences between, physical sciences and machine learning, getting that compressed into our own weights will lead to different types of systems and different types of capabilities.
+Ekin Doğuş Çubuk [01:00:20]: But also, we feel like even if Fable 7 gets really good at. Even better than what it is today, it will still have to run experiments to get results. And the reason for it is, right machine learning is really good at what it’s been trained on but scientific discovery is almost by definition what you haven’t been trained on. And that’s why we’re building these labs, so that, whether open models or closed models can use these labs to tinker with the universe, because we don’t feel like you can make a big discovery without trying things.
+Liam Fedus [01:00:50]: Yeah, there’s
+Brandon [01:00:51]: Yeah
+Liam Fedus [01:00:51]: There’s not going to be like. No one’s going to zero shot the room-temperature superconductor.
+Ekin Doğuş Çubuk [01:00:54]: Think theoretically
+Brandon [01:00:55]: That would be pretty cool. Yeah. As someone who has worked closely with wet labs before, certainly I am more skeptical about zero shotting scientific results than some.
+Liam Fedus [01:01:05]: Yeah.
+Brandon [01:01:05]: But it is something that I think, some people might ask, so.
+Liam Fedus [01:01:08]: Yeah. I think it’s really important to distinguish the results we see in math and theoretical physics from the physical world. Right? Like
+Brandon [01:01:18]: Yeah
+Liam Fedus [01:01:18]: These are two different things.
+Brandon [01:01:19]: Two very different things.
+Liam Fedus [01:01:20]: Yes.
+Ekin Doğuş Çubuk [01:01:20]: I’m not even theoretical physics. So far it’s been theoretical computer science
+Liam Fedus [01:01:22]: Yes
+Ekin Doğuş Çubuk [01:01:22]: Coding and math.
+Liam Fedus [01:01:23]: Right.
+Brandon [01:01:24]: Yeah.
+Ekin Doğuş Çubuk [01:01:25]: Maybe theoretical physics is next.
+Liam Fedus [01:01:26]: Don’t come. Yeah.
+Brandon [01:01:28]: Yeah.
+Levels of Scientific Abstraction and the Human Role
+Ekin Doğuş Çubuk [01:01:29]: Oh, yeah.
+Swyx [01:01:29]: Can I get a sort of mental model of the layers, levels of extraction that you can go? So for example, in terms of automation, and I’m just on this theme again where we talked about the campaign, talked about individual essays and running tests and how they’re. Humans are bad at it, so we should stop humans from doing it. Are there others? So for example, one level higher than campaign could be, a physics theory that you’re testing? Or one level lower than campaign is what? And like, I just. I like to think about it from that point of view and Think about it from like, okay, well, this is an API call now. You never have to touch this again. And this one is. Yeah, no, this is still ninety percent human. And maybe we can sort of draw the map of the territory that way. Is there — are there other levels?
+Ekin Doğuş Çubuk [01:02:17]: I can tell you some levels. I feel like you asked a good question. I don’t have a very systematic answer, but let’s talk about some levels. So one level is the atomistic structure. There’s an abstraction, right? There’s no perfect atomistic structure in anything we do, but it’s one approximation. Another one is the continuum model. So this one is not atomistic anymore, but it’s, a continuous mesh representing a material.
+Swyx [01:02:39]: Okay.
+Ekin Doğuş Çubuk [01:02:39]: And then in a different dimension, there’s the thermodynamics. Assuming, you do this experiment forever, what would be the final state? And then there’s another layer of abstraction, which is kinetics, acknowledging that we’re not doing this experiment forever, so time matters. So how quickly will a reaction happen or not, even if it’s lower energy or not? So thermodynamics, kinetics, atomistic, continuum. What else? Are there other levels of abstraction?
+Liam Fedus [01:03:04]: Well, I think your point about okay, there could be an overarching new theoretical advance that informs multiple campaigns right?
+Swyx [01:03:14]: It makes a difference. Kind of like as an investor, I want to go here’s the bottleneck, guys. And when we get this, we get everything else. I don’t know.
+Ekin Doğuş Çubuk [01:03:22]: To me, from the beginning, our hypothesis has been that one of the big bottlenecks is automated characterization, because it’s not that hard to mix powders to get to try stuff. But if you can’t characterize and analyze it and then decide what the next step should be intelligently, you don’t really benefit much from mixing powders randomly. So we focused a lot on automated characterization, closing the loop with simulations, because that’s how you try a lot of things, make an informed decision, and then decide what to do the next day.
+Brandon [01:03:51]: Maybe as a follow-up question, what is how do humans live in this loop? Where at what points do you pull drop the human in? I’m guessing you probably
+Swyx [01:04:02]: You could, you could randomly drop in at any part
+Ekin Doğuş Çubuk [01:04:04]: Of course.
+Swyx [01:04:04]: And add value.
+Liam Fedus [01:04:05]: Yes.
+Swyx [01:04:05]: But where do you decide to spend your time?
+Brandon [01:04:08]: It seems like it might be all levels. You have you have people in the lab who are physically moving materials, and then you also have scientists who are guiding decisions about what campaign, and then you have humans who are. What’s that? I’m just asking a question for you. Yeah.
+Liam Fedus [01:04:21]: Yeah. One hundred percent. I think it’s always shifting, too.
+Brandon [01:04:23]: Yeah.
+Liam Fedus [01:04:24]: So, I think even just using the guidance of campaigns, in the early days, that was fully human-driven. Now, increasingly, it’s a mix of AI-driven and human-driven. And then Doğuş was saying early on we identified that characterization was a big bottleneck. In the early days, it was human-driven, and the scientists were very much overwhelmed, and the balance has shifted significantly towards AI-driven. And this has allowed the scientists who were previously spending all of their time doing these refinements to now elevate their work to something else. But I think we’re. It’s really sort of a function of time. There’it’s always changing at each of these levels.
+Search, Optimization, and Design of Experiments
+Swyx [01:05:04]: Yeah. In terms of just general search, are there things that perform well in let’s say, the physical world that don’t perform well in the other worlds or vice versa? Like so evolutionary search is pretty popular in LLMs. I don’t imagine it works well here.
+Ekin Doğuş Çubuk [01:05:21]: So especially in simulations, people have been using evolutionary search, for a long time. It’s pretty good at structure prediction, for example, finding low energy structures.
+Swyx [01:05:31]: Okay, so it works. Yeah.
+Ekin Doğuş Çubuk [01:05:33]: And then process engineers in semiconductor industry will do DOE, design of experiments, and they’ll often use some kind of zeroth order whether it’s Bayesian optimization or evolutionary search or. I don’t think they use RL, but similar idea, yeah.
+Swyx [01:05:47]: You have to have some kind of algorithm
+Ekin Doğuş Çubuk [01:05:48]: Yeah
+Swyx [01:05:49]: To just figure it out.
+Ekin Doğuş Çubuk [01:05:50]: And all zeroth order optimization behaves the same anyway, right? So.
+Scaling Labs and Reusing Data for Reinforcement Learning
+Brandon [01:05:54]: Yeah. Okay, I want to go back to the question I had earlier, which was one of scaling. And so I-I’m curious, what is your vision for scaling the lab? So there’s different ways. Coming from the biology world there’s a lot of cool tricks you can do in biology. You can tag things, you can use DNA sequencing for all sorts of interesting readouts. And if you can map your complicated assay onto sequencing, you can now scale to millions or hundreds of millions or something. Can you do tricks like this? Ultimately, every assay has its own runtime. I’ll, I’I have a favorite blog post I would want to. I’ll quote in the show notes. But what does the runtimes look like for these labs? Is it. Is your scaling just for mater-materials just fundamentally linear in terms of you do you just need more resources to do more things, or can you paralyze things in clever ways and combine things, and are there tricks there?
+Liam Fedus [01:06:52]: Well, I think one way to think about it is, the RL environment is not quite trivially run the experiment, wait for that agent to fully roll out, doing the calculations, going through all the instruments to the final outcome. We basically start producing data across all the different instruments and all these different campaigns. And one way you can begin to expand that for machine learning is now reinforcement learning environments can be constructed based on again dates for the experimental campaigns or computational campaigns at that point. Or you can also, start taking, subsets of instruments, and you’re like, “Okay, we’re going to create reinforcement learning environments on the basis of this instrument alone.” Or maybe it’s, across these different instruments to kind of get to some reward state. So that’s a way where. This finite basket of data, when viewed in different ways, can then be expanded, for training purposes. So it doesn’t get at the actual experiment run, but from an ML perspective.
+Ekin Doğuş Çubuk [01:07:55]: Maybe I can give you some analogs for the bio examples you gave. So, one thing people have tried is combinatorial sputtering. I don’t know if you’ve ever heard of this. You have these sputtering targets, and you create this compositional gradient. So when you look at the final product, because there is gradient from each precursor, it creates different crystals at different spatial locations. So in one go, you maybe try hundreds, thousands of crystals. That’s an that’s similar, right, to your example.
+Liam Fedus [01:08:23]: Oh, yeah, that makes sense.
+Ekin Doğuş Çubuk [01:08:24]: And as far as I know, this hasn’t worked very well so far because it turns out there is diffusivity, so things move around. Another one that we thought about, but we haven’t done yet, but a lot of people talk about this is superconductivity measurements are a bottleneck because unlike XRD, there’s no high-throughput superconductivity measurement, and it can take one hour per measurement. So people have thought about taking the different candidates, mixing them all into one sample, and putting it in. And if, it has superconductivity, you know that one of the sources that. And then you can do a bit like how people are doing COVID testing to. So there are ideas like this exist. Some of them work well, some of them don’t. Yeah.
+Custom Hardware, New Labs, and Scaling Ambition
+Brandon [01:09:00]: So you, I think, are about to announce a big fundraise. How are you thinking about, scaling?
+Liam Fedus [01:09:06]: We’ve been doing our design of our labs for a while, and so I think the resources allow us to continue to scale up the labs significantly, but also the compute, both from the AI side and the computational side. But I think really importantly too, it’s what are the new types of labs we’re able to build? So I think we’ve been proving out this loop, in our initial labs here in Menlo Park, but we’ll be continuing to expand to new types of labs and repeat the same process.
+Ekin Doğuş Çubuk [01:09:33]: Yeah, like the kind of lab we’re trying to build, I think haven’t been built before at this scale or at this approach. So we have learned a lot from our own build-ups so far, and those lessons guide us for the next version and the next version. And then we can, as you said increase the scale, the ambition, the quality of instruments. Some instruments are very expensive. As we get a really good understand for what we get a lot of return from we can invest into those more.
+Liam Fedus [01:09:58]: And it makes. Hardware engineering has become so core to it. So for example, in the early days, just for speed, we’d buy some off-the-shelf instruments. And as we kind of push the scale of the lab
+Brandon [01:10:08]: You make your own.
+Liam Fedus [01:10:09]: We have to make our own. So we realize, okay, for this instrument, it’s pretty fast. These components are actually pretty quick, but this weighing machine actually becomes the bottleneck. Or there can be things pertinent to data quality where, well, the resting position of this robotic arm actually is above the plate of previously mixed things, so there’s a contamination risk. So in our hardware design, we’re going to redesign it so that the resting position lies away from the-those things. These are the kind of subtle details that allow us to kind of push the noise floor down for our experimental campaign. So, basically take these learnings and scale it up.
+Assembling the Team Behind Synthesis Superintelligence
+Brandon [01:10:45]: You ship your org chart. You have many teams. I think the. We were surprised when we looked at your jobs page, and we were like, “Okay, we don’t think we fully map what Periodic does.”
+Liam Fedus [01:10:56]: Maybe some organizing principles, so to kind of make sense of the job page. So we hire for AI research and infrastructure, computational, experimental roles, and then hardware engineering roles, and then product roles.
+Ekin Doğuş Çubuk [01:11:10]: We want to achieve synthesis superintelligence, right? And we feel like for that, we need the right chemistry expertise, the right physics expertise, simulation theory, and thin films, powder. So hardware engineering these seem like very diverse roles, which they are, but they’re all actually, coherent in what they’re trying to do, which is a synthesis for intelligence. And this also applies to the LLM researchers, the infra, even the product engineers, because the product engineers kind of make sure all the research gets made into a product that the experimentals in the lab can use.
+Liam Fedus [01:11:42]: Yeah. So in order to do the end-to-end loop with the physical world, it really requires your ability to have agency over the physical world to build these labs, to run the campaigns effectively, to create AI systems against that, to make them good users of the computational tools. That’s like the difficulty, but also the opportunity of Periodic. It’s like this group of people has just never been brought together before. It’s irreducibly a multidisciplinary problem.
+Ekin Doğuş Çubuk [01:12:07]: Yeah. And one other guiding principle for us that is really important for us is we want the people who are very good at what they do and experienced to do it hands-on. You know the modern life has gotten us to this place where, especially in academia, when someone is really good at research in some area, we give them so much responsibility for grant writing, teaching, that they stop having the time to do research in that area hands-on. But if you look back at Bell Labs, IBM, institutions that made really good progress, it was really experienced people doing hands-on work. Like Bardeen was in the lab every day, even though he’s a theorist. Alex Müller was in the lab doing experiments, even though he was the lab lead. So we try to do that here too. So we have some of the world’s leaders in different fields, but they’re doing hands-on work.
+Brandon [01:12:52]: Do you want to brag or just call them out? You know.
+Ekin Doğuş Çubuk [01:12:54]: Oh, I would love to yeah. So, when I was doing my PhD, my favorite computational material scientist who’s kind of from my age group is Muratan Aykol. He did his PhD with one of our advisors, Christopher Wolverton. And he is kind of like our computational material science expert. He’s incredible. He’s sometimes, a really good experimentalist, even though he does simulations. He understands systems really well. Our lab lead is Joe Checkelsky, who is a professor at MIT, but he’s on leave to work with us full-time. And Joe is this incredible physicist, understands superconductivity really well, but he also was a professor in Japan for a bit, so learned synthesis and chemistry really well, especially for a physicist. We have Daniel Chica, who was a graduate student in Mercury Canasides’ group, which is maybe the best solid-state chemistry group in the world. And Daniel was one of his synthesis experts, so he’s like a magician with his fingers. There’s so many examples like this.
+Liam Fedus [01:13:50]: No, I know. I think Dima Bahdanau, so he’s been leading a lot of our AI and LLM efforts. He was the inventor of neural network attention.
+Brandon [01:13:59]: Oh, Bahdanau. The Bahdanau attention.
+Liam Fedus [01:14:01]: Exactly. Yeah.
+Brandon [01:14:03]: Yeah.
+Liam Fedus [01:14:03]: Yeah. Yeah, so very hands-on in sort of getting into the traces, the training distribution, how to connect it to the lab.
+Ekin Doğuş Çubuk [01:14:10]: The chemistry.
+Brandon [01:14:11]: Chemistry.
+Ekin Doğuş Çubuk [01:14:11]: He’ll go deep.
+Liam Fedus [01:14:12]: He was very deep. He actually has solid-state synthesis books at his lab in Montreal. Ray Nakano, so he used to tech lead some of the operator work at OpenAI. He’s in the lab. So when we were doing some lab tours, we were initially, we’re like, “Oh, this new, scientist, this new technician really looks like Ray.” And no, it was literally this was Ray actually in the lab, with the scientists automating the machines. And it’s like this is sort of the DNA and the type of people we need to kind of pull this off.
+Forward-Deployed Engineering for Semiconductor Partners
+Swyx [01:14:43]: So, we also saw that you have forward-deployed engineering, roles. We happen to be spinning up a forward-deployed engineering podcast because there’s so many engineers that would do that role. They may not necessarily know that there even is a role for them at Periodic. What is it, and how do they work with customers?
+Liam Fedus [01:15:01]: So we’ve been building our own products, our own tools, our own AI and computational
+Swyx [01:15:06]: For yourself. Yeah.
+Liam Fedus [01:15:06]: For ourselves. So we’ve been customer zero. Now what we’re doing is we’re taking these same tools to different industries, and we’we have a huge focus right now in the semiconductor industry. However, in order to do this these are very, private companies. We need to be able to operate within some of the most secure environments. And so our Periodic forward-deployed engineers and researchers will actually be on site working and actually integrating our AI systems, our computational systems to help our partners get to their goal states more quickly. So basically the tools, the know-how that we’ve built in doing our own materials discovery, materials engineering, we’re now bringing to industry. And we think this is the most effective way to get partners to their end states and to their goals, rather than just throwing some technology over the wall and telling them to figure it out. Then these forward-deployed engineers will also do the inference locally, but then also can, train on the data. So again, once we take our system that understands these different areas and we deploy, we can make it expert on the customers or the partners’ data so that they can own their own intelligence and have systems that understand this much more effectively than just hitting some API or some untrained model. And so this is a much expanded, forward-deployment engineering role than typical because this really requires some very deep, machine learning expertise. You have to be incredibly precise from a data training perspective, infrastructure perspective, but also a physics perspective. So we’re working with highly technical industries. They have to understand, different areas of chemistry, material science, some of the devices. And so that, those are the roles we’re building out right now.
+Swyx [01:16:53]: Part of it is willingness to spend extended periods on site in Taiwan. It’s like, okay, well, I know that kind of customer.
+Swyx [01:17:01]: It’s interesting that you’re monetizing. That is the primary way that you’re monetizing now, but it might change in the future. But like, that’s like a model that I think people don’t really get about APL Research Lab. It’s. And when you compare yourself to Bell Labs, that’s what people are thinking, right? Which is.
+Commercializing Scientific Discovery
+Liam Fedus [01:17:19]: I think a really great analog would be software engineering.
+Swyx [01:17:22]: Right.
+Liam Fedus [01:17:22]: So in the early days of software engineering we had GitHub Copilot, then we had early versions of ChatGPT. People were using these things as copilots to help them get to their solutions. And as the automation improved, now we have things like Codex, and very few of our engineers are writing code the way they used to. And we think a very similar thing could play out for Periodic as well, where you can have systems to accelerate the researchers, the material scientists, the materials engineers, the process engineers. But as the autonomy, intelligence, and capability grows, you can begin to price outcomes. So help me get to this kind of goal state, and I think that’s, a really interesting area for us.
+Ekin Doğuş Çubuk [01:18:03]: Yeah. We kind of feel like our best contribution to solid-state physics and science could be if we made these tools and topics profitable, similar to how ChatGPT made CS and LLM majors way more popular in colleges before and after. We’d love to show that solid-state physics, material science research can make a big impact commercially, and then that will attract more attention. Young people will want to study physics, which will be, a dream. And Bell Labs did make a huge commercial impact, right? So they failed to commercialize some of their incredible advances. They, of course, did some research that just couldn’t be commercialized like the cosmic, background. But they did benefit a lot from the vacuum tube connecting, East Coast to West Coast by phone lines.
+Liam Fedus [01:18:49]: Yeah. And I think it’s really also interesting to think that technology and capital are incredibly intertwined. So if you look at what was the progress on chatbots for many years imagine recounting, okay, what was the progress from chatbots from I’ll say 2010 to 2015? We’d be kind of at a loss to say over that five-year period, how much did they improve? Whereas if you look at the period from, 2021 to 2026, it’s night and day. And what happened was ChatGPT and these other systems were able to achieve a product market fit, and it changed the capital landscape entirely. This changes the landscape for hiring, compute, data, et cetera.
+Swyx [01:19:31]: The virtuous cycle.
+Liam Fedus [01:19:32]: Exactly. And so
+Swyx [01:19:32]: Like success breeds success.
+Liam Fedus [01:19:33]: Exactly. So technology, it’s incredibly coupled to the capital and those resources, and we want to achieve the same thing in the physical world.
+Open-Source Contributions and Academic Research
+Swyx [01:19:41]: Yeah.
+Brandon [01:19:42]: So one thing I’ve been seeing is there’s this move from science being funded from government grants and so on to VCs and private funding. Do you all plan on making anything you’re doing, open source, like either releasing data sets or actual models? Is this something in the future even. You know, there are many models which may be not well, your state of the art, but which could still be you know, useful releases.
+Ekin Doğuş Çubuk [01:20:07]: Absolutely. So, we have a couple of things. So we have been contributing to open source to kind of like PyTorch and the Materials Project, code base, Custodian, their DFT runner. TorchSim was actually created by one of the researchers here, Abhijit Ganggan, and he maintains it still. JAX-MD, Abhijit maintains it. So we do a lot of open source contributions, including LLMs.
+Liam Fedus [01:20:31]: XLANG, Megatron.
+Ekin Doğuş Çubuk [01:20:32]: Yeah.
+Liam Fedus [01:20:32]: Yeah. So we’ve been very active contributors back into open source.
+Ekin Doğuş Çubuk [01:20:36]: And we also have an academic grant program where we give academic gift grants to academic groups in universities that we feel like are really advancing this direction towards synthesis superintelligence. So that’s also been great to see. I think the first paper from this funding is about to come out, so it’ll be exciting to just get more papers come out like this. Yeah.
+The Path to Better Superconductors
+Brandon [01:20:57]: Okay. Let’s steelman this, say that you’ve achieved 100% lab automation, which does everything, characterizes everything correctly. You have all of the fun agents which can do everything. I still am somewhat unclear about how you actually get to superconductivity. There’s a lot of hard problems to solve. What is the path there when there is no sort of theory for model for most of the strongly correlated systems or high-temperature systems?
+Ekin Doğuş Çubuk [01:21:23]: Yeah. So, our view is that it’s not hard to think of chemical spaces that would host superconductivity. What’s really hard is to synthesize them. That’s why we’re really emphasizing synthesis superintelligence. So maybe one example to give historically is Alex Müller, when he thought that transition metal oxides might be a good path to superconductivity, he was actually trying nickelates, the nickel, oxygen, and some, cations, and that didn’t work. And then he tried cuprates, which is copper, oxygen, and some cations, and that worked, and then he got a Nobel Prize. But then we know that later on turns out nickelates was a good idea. Nickel and copper are next to each other on the periodic table.
+Brandon [01:21:59]: But only as two layers, right?
+Ekin Doğuş Çubuk [01:22:00]: Yeah. Like there are only so many 3D transition metals.
+Brandon [01:22:03]: Yeah.
+Ekin Doğuş Çubuk [01:22:03]: And then, Harold Hwang, one of our, Stanford professors here who’s incredible, he realized he can make nickelates in thin film form and show the superconductivity. So, if we have a really good synthesis superintelligence in the lab and we can really scale up these things, I think we won’t run out of ideas, or the LLM won’t run out of ideas about what directions to try, like 3D transition metals, oxygen. There are very related ideas here. Many people have been trying cobaltates, which is like instead of copper or nickel, you try cobalt. So I think that’s super exciting. Maybe one historical example to also study is the Japanese group that discovered magnesium diboride. As you know, that’s the highest temperature, ambient pressure, conventional superconductor, and they discovered it by just trying a bunch of materials. I think they tried 30,000 different things. Thirty of them seemed to host interesting superconductivity, and MgB₂ was one of them. But magnesium diboride sat on people’s shelves as a precursor for decades before then, and BCS theory had been invented back in 1957. So the way people found these materials wasn’t projected from theory. It wasn’t because they couldn’t synthesize until then. It was just like they tried a bunch of things. So now imagine if we had this perfect automation that you’re describing, which sounds like a dream, and we tried the 30,000 the Taketo group tried in over his career in a month. We just really increased the surface area for luck.
+Closing: Increasing the Surface Area for Discovery
+Swyx [01:23:30]: No, but yeah, it’s very inspiring what you’ve done. Congrats on all your success. I feel, I feel like you’re creating, yeah, the modern playground. I imagine recruiting must be super easy for you, so I’m just a little bit jealous, but you’ve worked hard for it to get here, so yeah.
+Ekin Doğuş Çubuk [01:23:44]: Yeah.
+Swyx [01:23:44]: Yeah. Well, thank you so much. Yeah, it was great chatting with you both.
+Ekin Doğuş Çubuk [01:23:46]: Yeah, super fun. Yeah.
+Swyx [01:23:47]: Yeah. Thank you.
+Discussion about this episode
+Comments Restacks
+Latent Space: The AI Engineer Podcast
+The podcast by and for AI Engineers! In 2025, over 10 million readers and listeners came to Latent Space to hear about news, papers and interviews in Software 3.0.
+We cover Foundation Models changing every domain in Code Generation, Multimodality, AI Agents, GPU Infra and more, directly from the founders, builders, and thinkers involved in pushing the cutting edge. Striving to give you both the definitive take on the Current Thing down to the first introduction to the tech you'll be using in the next 3 months! We break news and exclusive interviews from OpenAI, Anthropic, Gemini, Meta (Soumith Chintala), Sierra (Bret Taylor), tiny (George Hotz), Databricks/MosaicML (Jon Frankle), Modular (Chris Lattner), Answer.ai (Jeremy Howard), et al.
+Full show notes always on https://latent.space
+Sponsorship and business inquiries: [email protected]
+The podcast by and for AI Engineers! In 2025, over 10 million readers and listeners came to Latent Space to hear about news, papers and interviews in Software 3.0.
+We cover Foundation Models changing every domain in Code Generation, Multimodality, AI Agents, GPU Infra and more, directly from the founders, builders, and thinkers involved in pushing the cutting edge. Striving to give you both the definitive take on the Current Thing down to the first introduction to the tech you'll be using in the next 3 months! We break news and exclusive interviews from OpenAI, Anthropic, Gemini, Meta (Soumith Chintala), Sierra (Bret Taylor), tiny (George Hotz), Databricks/MosaicML (Jon Frankle), Modular (Chris Lattner), Answer.ai (Jeremy Howard), et al.
+Full show notes always on https://latent.space
+Sponsorship and business inquiries: [email protected]
+Listen on
+Substack App
+Apple Podcasts
+Spotify
+RSS Feed
+Recent Episodes
+Academia is for Ambition — Alex Zhang, MIT
+Oct 2
+Why Dwarkesh is Wrong about Computer Use + How OpenAI shipped its Jev competitor in 1 Week
+Sep 30
+Claude Code’s Next Era — Thariq Shihipar, Anthropic
+Sep 29
+OpenRouter: from Seed to Stripe — with OpenRouter’s Alex Atallah & AMP’s Anjney Midha
+Sep 25
+Runway’s WorldPrompt and the Engineering of Real-Time Worlds
+Sep 25 • Richard MacManus
+🔬Bio-security is an AI Arms Race - Eric Nguyen (CEO, Radical Numerics)
+Sep 23 • RJ Honicky
+🔬 An Oscar, Two Asteroids, and the Algorithm in Your sklearn: John Platt on AI for Science
+Sep 22 • Brandon Anderson
+Ready for more?
+© 2026 Latent.Space · Privacy ∙ Terms ∙ Collection notice
+Start your Substack Get the app
+Substack is the home for great culture
