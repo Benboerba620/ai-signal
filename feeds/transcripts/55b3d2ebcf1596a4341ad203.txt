@@ -1,0 +1,177 @@
+Why AlphaFold Didn't Solve Protein Folding — Pushmeet Kohli, Google DeepMind & Sal Candido, Biohub
+Sign in
+Latent Space: The AI Engineer Podcast
+Why AlphaFold Didn't Solve Protein Folding — Pushmeet Kohli, Google DeepMind & Sal Candido, Biohub
+25
+1
+1 ×
+0:00
+Current time : 0:00 / Total time : -31:55
+-31:55
+Audio playback is not supported on your browser. Please upgrade.
+Why AlphaFold Didn't Solve Protein Folding — Pushmeet Kohli, Google DeepMind & Sal Candido, Biohub
+Oct 10, 2026
+25
+1
+Transcript
+From the Bitter Lesson of AI scaling to the unsolved mysteries of protein folding , Google DeepMind’s Pushmeet Kohli and Biohub’s Sal Candido are rethinking what it takes to build AI that truly understands biology. In this special panel moderated by Brandon Anderson , they explore why AlphaFold’s breakthrough was only the beginning , why scaling compute and data alone won’t solve biology, and how the next generation of AI models could transform our understanding of proteins, cells, and human disease.
+We go deep on the future of AI-driven biology : finding scaling laws in biological data, the tradeoffs between scientific intuition and general-purpose architectures, why protein structure prediction is far from solved, and what it would take to build predictive models of living systems. Pushmeet reflects on the lessons behind AlphaFold , the limits of human interpretability, and whether future frontier models could understand other AI systems better than we can. Sal explains why protein language models may already contain scientific knowledge we haven’t unlocked, how biological modeling must move beyond individual proteins, and why achieving Biohub’s mission to cure all disease requires thinking in terms of 10x breakthroughs rather than incremental improvements.
+We discuss:
+The Bitter Lesson for biology : why scaling compute and data isn’t enough
+Why finding the right scaling law matters more than blindly increasing model size
+How low-quality metagenomic data can improve protein language models
+Why AI researchers optimize for available data instead of the most important scientific problems
+Lessons from DeepMind on balancing modeling, data generation, and scientific expertise
+Why building a virtual cell requires fundamentally different datasets
+AlphaFold’s handcrafted architecture and the role of scientific intuition
+Why good data matters more than simply having more data
+Inductive biases, scaling laws, and the future of specialized AI architectures
+Why we aren’t in a post-Transformer world , but architectures are evolving
+Why AlphaFold didn’t actually solve all of protein folding
+Protein dynamics, disorder , and the limitations of static structure prediction
+How cryo-EM micrographs could unlock richer biological representations
+Moving from models of individual proteins to whole biological systems
+Feynman’s famous principle and why AI can now create things we don’t understand
+The hidden biological knowledge inside protein language models
+Why trustworthiness and uncertainty calibration matter more than full interpretability
+Whether frontier AI models could interpret other AI systems better than humans
+When AI could deliver 10x–100x acceleration in drug discovery
+Why curing all disease requires thinking about 10x breakthroughs instead of 10% improvements
+Pushmeet Kohli — Google DeepMind
+X: https://x.com/pushmeet
+LinkedIn: https://www.linkedin.com/in/pushmeet-kohli-4838994/
+Sal Candido — Biohub
+Biohub: https://biohub.org/team/salvatore-candido/
+X: https://x.com/salcandido
+LinkedIn: https://www.linkedin.com/in/salcandido/
+Brandon Anderson — Moderator
+LinkedIn: https://www.linkedin.com/in/brandon--anderson
+Timestamps
+00:00:00 Introduction: The Bitter Lesson for Biological Data
+00:01:00 Finding Scaling Laws and the Right Data for Biology
+00:04:54 DeepMind’s Bitter Lesson: Solving Problems vs. Scaling Models
+00:06:50 AlphaFold, Data Limitations, and Building the Virtual Cell
+00:09:52 Handcrafted Architectures vs. Scaling Compute
+00:11:53 Good Data, Inductive Bias, and Model Design
+00:13:39 Beyond Transformers: The Future of AI Architectures
+00:14:38 Why AlphaFold Hasn’t Solved Protein Folding
+00:17:39 Protein Dynamics, Design, and Cryo-EM
+00:19:09 From Individual Proteins to Whole Biological Systems
+00:20:43 Feynman’s Principle: Creating Without Understanding
+00:22:18 The Hidden Knowledge Inside Protein Language Models
+00:23:48 AlphaFold, Trustworthiness, and Interpretability
+00:25:56 Could AI Understand Other AI Models Better Than Humans?
+00:27:43 When Will AI Revolutionize Drug Discovery?
+00:29:47 Why Curing All Disease Requires 10x Breakthroughs
+Transcript
+Introduction: Is There a Bitter Lesson for Data?
+Brandon Anderson [00:00:04]: Great to be here. What an exciting morning. So many cool announcements. I think the future of bioscience is being announced right here. This is the modeling session. We’re all modelers, so of course it’s natural for us to talk about data.
+One of the things I like to think about when it comes to data is how to scale it properly. This has brought me to the question of the bitter lesson, but recast in the frame of data. The bitter lesson, for those of you who are not AI people, is the statement that methods that scale win eventually. If you can scale enough, it wins. So my question, starting with Sal, is: Is there a bitter lesson for data?
+Sal Candido [00:01:00]: For sure. You obviously need the right data in order for it to work. One misconception of scaling laws is that scaling laws are everywhere and they always exist. A lot of the work is actually finding that scaling law. A lot of what we do is trying to figure out: What’s a situation where, if you put more compute into it, if you put more data into it, you get a better result out?
+That’s a great situation because, once that happens, you can turn the crank. It becomes an engineering problem, which is something I like. That has to do with architecture, but it also very much has to do with data. If you don’t have data with the right information and statistics to solve the problem you want, you’re not going to get a model that has the capabilities and understanding you want. You can only really pull information from the data you have and use that to generalize beyond it.
+Choosing the Right Data: Availability vs. Scientific Impact
+Brandon Anderson [00:02:09]: When it comes to data collection, how do you think about which modalities are best? A related question: Do modelers tend to work on problems where the data is available, rather than the problems that best serve their goals or have the greatest impact on translational medicine?
+Sal Candido [00:02:32]: For sure. I won’t speak for all modelers, but I’m lazy, so I’m going to work with what’s available. There’s a good side and a bad side to this.
+The good side is that, when you’re doing conventional machine learning, you’re often looking for the most pristine, high-quality data examples you can find. But if you’re like me, you’re rooting around in the back room, looking through people’s junk to see what’s there. A concrete example is training a protein language model on metagenomic sequences, which are not the highest-quality data. In fact, much of that data, I can guarantee you, isn’t even a real, whole protein. And yet it makes the performance of the model go up for designing real proteins that work and understanding proteins that we know exist.
+That’s the positive side. But it can lead you to a negative place where you say, “Let’s just scale up the data that we can generate easily.” I don’t think that’s necessarily the way to do it. That’s one of the things that’s exciting to me about what we’re talking about here today with the BBI. It’s going out and asking, “What is the data that we need to solve the problem?”
+It’s about the right resources, but also the right community. One thing we try to do at Biohub is work in the open, work with the community, and move the whole community forward. That’s critical because, if you just have people building models, we’re going to lean toward the data that exists. If you just have people generating data, they’re going to lean toward the things that can be generated. But if you can work together as a community, every step of the way, in an open fashion, you can figure out what data you actually need. Then you can find that scaling law.
+The Problem Comes First: Modeling, Data, and Expertise
+Brandon Anderson [00:04:50]: Pushmeet, what do you think about the bitter lesson for data?
+Pushmeet Kohli [00:04:54]: I was at DeepMind when Rich was with us and thinking about this idea of the bitter lesson. What I took from Rich’s original lecture at DeepMind wasn’t about the specific notion of whether data is useful or how we should think about machine learning. My take was that he was talking about something more conceptual.
+Sometimes when we’re looking at problems, we think about solutions in a very religious way: “I’m a modeler,” or “I’m a data generation person.” I think that is the bitter lesson. If you approach a problem with that mindset, you might not succeed. The problem comes first, and you should be flexible in your solution space. You should try both things. You should understand the problem you’re trying to solve. If it requires modeling effort, do the modeling effort. If it requires collecting more data, then collect data.
+What happened in machine learning at the time was people saying, “We’re machine learning researchers. The dataset is there. Here’s some training data, here’s some test data, and we’ll just optimize the model.” That is broken in the sense that, if your eventual goal is to solve the problem, you have to look at both aspects of what goes into the process.
+And what goes into the process is not just data or modeling. It’s also expertise. With AlphaFold, for example, we looked at what was possible with existing datasets because we didn’t have the core expertise, or even the resources, to say, “Let’s augment the PDB by a significant order of magnitude.” The investment that organizations and scientists across the world had put into constructing that data was invaluable. So there, you had to focus on getting the biggest bang for your buck by investing in modeling.
+But in other areas, say cell genomics, we took the same approach and asked, “What can you do with cell-by-gene data?” After a lot of work, it was very clear that the data was not there yet to pursue that grand ambition of building the virtual cell. This brings people together to focus on the actual challenges of advancing science rather than religiously following advances in data generation or modeling.
+Brandon Anderson [00:08:23]: I really like that answer. What’s the actionable takeaway? Always define the problem first and then figure out which solution space to search over. But more broadly, how should the community think about this as we move toward the next generation of translational medicine?
+Pushmeet Kohli [00:08:47]: The advice I give to anyone starting in this area is to think of yourself as a multidisciplinary person. Understand the problem first. Why are you working on it? What are you trying to achieve? Then think about what’s needed, whether that’s modeling, compute scaling, or data generation. Understanding the problem is extremely important, and of course you need to build your expertise.
+There are constraints, too. Maybe there’s only a certain amount of data you can generate, or a certain model size you can afford to train. Understand those constraints, try to fail fast, and look at which approaches will be feasible in the long term to get you to the level of impact you’re aiming for.
+Scientific Inductive Bias vs. Scaling: The Craft of Building Models
+Brandon Anderson [00:09:52]: This leads right into my next question. When I look at the evolution of modeling, AlphaFold 2 was essentially a work of art, with a lot of carefully handcrafted features. There was very intentional thought put into every part of the solution. Some of Google’s or Alphabet’s work still stays in that space, but the general consensus seems to be moving toward more scalable, general strategies.
+Do we still need artisanal, craft solutions for certain problems? Or are resources better spent focusing on scale first? With fixed resources and money, you can invest in compute, talent, or data. How should we think about that trade-off?
+Pushmeet Kohli [00:10:48]: Let’s approach it from first principles. The art and craft of constructing a better model wasn’t accidental. We did a lot of experimentation, but there was a vision behind it. Scientific intuition from biophysics and biochemistry told us that amino acid residues are not just doing their own thing. They’re influenced by other residues. So let’s bake that in. If you’ve learned something from the scientific community, use that information. Give the model that unfair advantage.
+That makes the model much more data-efficient because it doesn’t have to relearn everything. I also have to mention that curating good data is an art in itself. It’s not as if you can just say, “Put in more data.” If you replicate the same data, you’re not going anywhere. It’s not just about big data; it’s about good data and understanding the coverage of the data necessary to make progress. That’s a much more interesting and challenging problem in itself.
+Brandon Anderson [00:12:20]: It looks like you have a thought, Sal. What do you think?
+Sal Candido [00:12:24]: I very much agree. It depends on the problem to be solved. If you have a smaller amount of data, having more inductive bias in the model is going to help you. You actually need that to get results at smaller data scales. As you get more and more data, sometimes the model finds things you didn’t necessarily know about, and sometimes that inductive bias, if it wasn’t exactly correct, can hold you back. There’s a tipping point as things get better.
+But I also object to your question a little because there’s a lot of craft in the scaling part of things as well. There’s a lot of algorithmic work that goes into taking models, training them on more data, putting more compute into them, and making them bigger. And that isn’t only from an infrastructure perspective or about making the models run inference faster. We’re seeing things go beyond standard transformers to more bespoke architectures. I don’t think we’re in a post-transformer world in any way, shape, or form, but we’re modifying those architectures to make them more fit for purpose and work better, even with internet-scale data.
+As more data comes in, the challenge isn’t only curating that data or selecting the next batch of information the models need. It’s also asking, at every step and at every scale, what the right architecture is to get the most out of that information.
+Why AlphaFold Didn’t Solve All of Protein Biology
+Brandon Anderson [00:14:36]: If you think about the state of protein structure prediction right now, the news will say that protein structure prediction has been solved. But if you talk to my friends, they’ll say, “We have so much left to do here.” Function, dynamics, and design are still wide-open problems. It’s been about five years since AlphaFold 2 was announced, and progress has been made.
+Pushmeet, do you think there’s another big leap coming? Are there blockers to solving these problems? Do we not have the right data, algorithms, or ideas? Or is it just a matter of time?
+Pushmeet Kohli [00:15:28]: Science operates by isolating something and then making progress step by step. When people say the protein-folding problem has been solved, at a conceptual level there have been advances. But think about the narrative of proteins being the building blocks. Proteins aren’t blocks, and they don’t act as blocks. I say proteins are the building blocks all the time, but I don’t actually believe it.
+Proteins are extremely complex. They’re disordered. Their shape might change depending on the context. John Jumper and I used to discuss this: What are we trying to solve? We don’t know the actual true ground state that proteins take, or the actual distribution of structures that proteins take. What we were trying to do was replicate a structure that somebody had obtained and deposited in the PDB. That’s what we did. And it just so happens that it’s useful.
+But that doesn’t mean we’ve understood all of protein dynamics. At the top level, it’s easier to communicate that we’ve made progress, but the scientists in this crowd know how much remains to be done. There’s a lot to celebrate, but let’s not stop funding protein structure prediction and protein dynamics, because we’re just getting started.
+Cryo-EM, Molecular Dynamics, and the Missing Information
+Brandon Anderson [00:17:39]: What’s the biggest blocker? If you could wave a magic wand and say, “We have more of this,” and that would accelerate function, dynamics, or design, what would you bring into existence?
+Pushmeet Kohli [00:17:54]: My background is quite eclectic. I started as a security researcher, then went into computer vision, Bayesian theory, discriminative machine learning, deep learning, AI for coding, and finally science. So when you ask me that question, the computer vision researcher in me gets very excited about cryo-EM micrographs.
+I thought, “What is this PDB data? I should be working at the source. I should be looking at cryo-EM micrographs. I don’t want those structures. They must be missing out on all the data. I should just operate directly on cryo-EM micrographs.”
+Getting models that can scale at that level, with the right amount of data, and extract the dynamics and distributional information captured there would be amazing. I tried it, but it requires more work.
+Brandon Anderson [00:18:57]: There’s still work to do, but you believe that’s a route that could give you that information?
+Pushmeet Kohli [00:19:00]: Yeah. I think at some point maybe some people better than me will take a stab at it, and we’ll get somewhere.
+From Protein Structures to Larger Biological Systems
+Brandon Anderson [00:19:07]: What do you think, Sal?
+Sal Candido [00:19:09]: It’s interesting because these models are quite useful, but they’re not exactly the problem that most people want to solve. They solve a very specific purpose, and you can also use them to do other things. For example, you can use them to design new proteins, which isn’t necessarily what you would start with.
+I think of the models we’re building now as someone who’s trying to understand how a bicycle works, but is modeling a spoke on it. Those models can get better and better over time, but what you really need to do is move from models of spokes to wheels to whole bicycles, because that’s what people want to understand. To continue the analogy, it seems like people want to use a model of the bicycle to design a part for a pickup truck.
+As we put these models into the particular biological context in which they’re operating, we’ll be able to learn more about these interactions on a broader scale. That’s where I think things are going. But I agree that we should keep working on folding models, because they’re going to keep getting better.
+Protein Design vs. Scientific Understanding
+Brandon Anderson [00:20:43]: With regard to design, there’s a famous Feynman quote: “That which I cannot create, I do not understand.” Now we’re in a world where it’s really easy to create things without understanding them at all. How important is it to have models that help humans understand things, versus magical black boxes that can effectively one-shot a picomolar binder or something like that?
+Sal Candido [00:21:18]: We were designing things with magical black boxes long before AI came around. In some sense that’s still useful. But understanding is really important, and it’s one of the big things I think about with AI.
+There’s so much for these models to learn. As intelligence gets cheaper and more available, you can deploy it to learn more and more about what’s going on in the world. But how do you pull that knowledge out of the machine so that I can understand it? Maybe that’s just my esoteric curiosity. I think there are so many things to learn.
+Brandon Anderson [00:22:05]: A lot of scientists really want to understand things, and the endpoints may not be as important to them. But we’re here to solve translational medicine as a problem, right?
+Sal Candido [00:22:18]: I think the more you dig into things, the more you find the right way to keep pushing them forward. One thing that’s really salient to me is that these models have a lot more information in them than we know.
+We’ve worked a lot on interpretability for our models, for example, and you find a lot of information there. People know that protein language models learn some notion of structure within their representations, but we find information about functions and motions as well. There’s a lot still to be unlocked, even from the models we have now. That’s important for us to understand as we raise their capabilities.
+At the end of the day, you expect a world model to emerge from compressing all this information into a model. How does it do its job? How does it design a protein? It has compressed information from evolution into that model. In addition to being able to produce something useful to us, there’s certainly something to learn just by looking at what’s inside.
+AlphaFold Confidence, Calibration, and Interpretability
+Brandon Anderson [00:23:48]: What do you think, Pushmeet? Design versus understanding?
+Pushmeet Kohli [00:23:53]: I have a different take in the sense that some level of understanding is necessary. Let me explain what level I mean.
+AlphaFold isn’t perfect. AlphaFold 2 had a GDT score of about 90 on that set at the time. But even if it had a GDT score of 95, if its pLDDT score were completely uncalibrated, who would trust it? Imagine that it magically gave good answers but told you it was very confident, and then you worked on it for the next year only to find out it was completely wrong. Calibration of the uncertainty measure was extremely important.
+In that sense, we do understand AlphaFold 2, and we made a lot of progress in understanding how it behaves. That’s different from understanding how it worked internally to find the solution. There I agree with Sal that interpretability asks: Why did it work? Why did it give this answer?
+At the highest level, AlphaFold 2 was interpretable in terms of its behavior and ability to generalize, and we didn’t discover everything about that before launching. When we launched AlphaFold 2 and made the weights available, people found that it was a great disordered-protein predictor. It could figure out which elements of the protein are disordered. That shows it generalizes.
+But interpretability asks another question: Interpretable by whom? If you’re saying interpretable by a human rational system, with the cognitive and computational limitations of the human brain, then no, AlphaFold 2 is not interpretable. But if you’re asking whether AlphaFold 2 is interpretable to a much larger, more sophisticated model in terms of how it works, maybe it is. We just don’t get it.
+As users of AlphaFold 2, we do need to understand what it can and cannot do. Understanding its behavioral characteristics, strengths, and limitations is extremely important. We can’t just use these models without that characterization, because otherwise, rather than being helpful, they can harm us.
+Brandon Anderson [00:26:53]: So your take is that interpretability, strictly speaking, isn’t necessary, but ensuring that a model is trustworthy so humans can make actionable decisions is what people should focus on.
+Pushmeet Kohli [00:27:04]: Exactly. Interpretability is also in the eye of the beholder. Who is interpreting it? If it’s a human scientist trying to interpret how the model makes a prediction, that’s a different question from giving another, much larger LLM access to the activation layers and saying, “Can you predict what AlphaFold will do?” Maybe those frontier models of the future will be able to predict that and come up with a theory of how AlphaFold 2 was interpreting and producing its results.
+When Will AI Transform Drug Discovery and Clinical Medicine?
+Brandon Anderson [00:27:43]: We have a two-minute warning, so one last question for both of you. There’s a real chance that AI will make dramatic improvements in human health in the immediate future. I like quantitative predictions. Best guess: How long until we start seeing AI results in the clinic? Pushmeet, do you want to start?
+Pushmeet Kohli [00:28:08]: I think “AI results in the clinic” is an ill-posed question. AI is already being used today in every part of the drug discovery process. From that perspective, it’s already there.
+But if you’re asking when we’ll see a 10x or 100x acceleration in timelines, then the next question is: What are we accelerating? Is it lead optimization? Target discovery? Preclinical work or toxicology?
+Over the next few years, and this is why the effort announced today is extremely important, we need to tackle some of the hard challenges of biology. Only then will we get the true unlocks of acceleration that dramatically transform drug discovery. AI will continue to be used in things that go into the clinic all the time, but larger acceleration will only be unlocked with a better understanding of the biological models this effort is trying to create.
+Brandon Anderson [00:29:43]: All right, thanks. Sal, a quick answer, if you can. We’re almost out of time.
+Sal Candido [00:29:47]: I’m tempted to literally put on my biohacker hat to answer this question. It’s important to think about what it means to push the field forward. What we really want to see is outcomes being affected. When will a drug be made entirely by AI? I don’t know. That’s hard to predict. But I do think we’re going to see rapid progress very quickly, because all these tools are already being used.
+Going back to your point about basic research and basic understanding, one thing I learned a long time ago in my career, back at Google, is that sometimes it’s easier to approach a problem by asking what it would take to make a 10x improvement rather than a 10% improvement. That’s not because the 10x path is necessarily easier. It’s because it allows you to take a broader view and see solutions you haven’t been approaching. You go back to first principles and ask, “How are we going to do this? How are we going to really push this?”
+Both approaches, the 10% and the 10x, are valuable, and we should do both. I’m very happy that at Biohub we have a beautiful and lofty mission statement: to cure all disease. If you want to do that, you really need to figure out what the 10x approach is. It’s a great opportunity to be able to go do that.
+Brandon Anderson [00:31:46]: Awesome. Thank you both. Thank you for being in the literal hot seat. Very interesting.
+Discussion about this episode
+Comments Restacks
+Latent Space: The AI Engineer Podcast
+The podcast by and for AI Engineers! In 2025, over 10 million readers and listeners came to Latent Space to hear about news, papers and interviews in Software 3.0.
+We cover Foundation Models changing every domain in Code Generation, Multimodality, AI Agents, GPU Infra and more, directly from the founders, builders, and thinkers involved in pushing the cutting edge. Striving to give you both the definitive take on the Current Thing down to the first introduction to the tech you'll be using in the next 3 months! We break news and exclusive interviews from OpenAI, Anthropic, Gemini, Meta (Soumith Chintala), Sierra (Bret Taylor), tiny (George Hotz), Databricks/MosaicML (Jon Frankle), Modular (Chris Lattner), Answer.ai (Jeremy Howard), et al.
+Full show notes always on https://latent.space
+Sponsorship and business inquiries: [email protected]
+The podcast by and for AI Engineers! In 2025, over 10 million readers and listeners came to Latent Space to hear about news, papers and interviews in Software 3.0.
+We cover Foundation Models changing every domain in Code Generation, Multimodality, AI Agents, GPU Infra and more, directly from the founders, builders, and thinkers involved in pushing the cutting edge. Striving to give you both the definitive take on the Current Thing down to the first introduction to the tech you'll be using in the next 3 months! We break news and exclusive interviews from OpenAI, Anthropic, Gemini, Meta (Soumith Chintala), Sierra (Bret Taylor), tiny (George Hotz), Databricks/MosaicML (Jon Frankle), Modular (Chris Lattner), Answer.ai (Jeremy Howard), et al.
+Full show notes always on https://latent.space
+Sponsorship and business inquiries: [email protected]
+Listen on
+Substack App
+Apple Podcasts
+Spotify
+RSS Feed
+Recent Episodes
+Synthesis Superintelligence: from Semiconductors to Superconductors — Periodic Labs’ Liam Fedus and Ekin Dogus Cubuk
+Oct 8
+Academia is for Ambition — Alex Zhang, MIT
+Oct 2
+Why Dwarkesh is Wrong about Computer Use + How OpenAI shipped its Jev competitor in 1 Week
+Sep 30
+Claude Code’s Next Era — Thariq Shihipar, Anthropic
+Sep 29
+OpenRouter: from Seed to Stripe — with OpenRouter’s Alex Atallah & AMP’s Anjney Midha
+Sep 25
+Runway’s WorldPrompt and the Engineering of Real-Time Worlds
+Sep 25 • Richard MacManus
+🔬Bio-security is an AI Arms Race - Eric Nguyen (CEO, Radical Numerics)
+Sep 23 • RJ Honicky
+Ready for more?
+© 2026 Latent.Space · Privacy ∙ Terms ∙ Collection notice
+Start your Substack Get the app
+Substack is the home for great culture
