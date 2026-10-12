@@ -140,8 +140,11 @@ def download_audio(url, destination, client, max_bytes=MAX_AUDIO_BYTES):
             if response.headers.get("content-encoding", "identity").lower() != "identity":
                 raise PilotError("Unexpected compressed HTTP body")
             length = response.headers.get("content-length")
-            if length is not None and (not length.isdigit() or not 1024 <= int(length) <= max_bytes):
-                raise PilotError("Invalid or out-of-budget Content-Length")
+            if length is not None:
+                if not length.isdigit() or int(length) < 1024:
+                    raise PilotError("Invalid Content-Length")
+                if int(length) > max_bytes:
+                    raise PilotError(f"Audio Content-Length exceeds download byte budget ({length} > {max_bytes} bytes)")
             received = 0
             with Path(destination).open("wb") as stream:
                 for chunk in response.iter_raw(chunk_size=64 * 1024):

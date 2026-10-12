@@ -60,3 +60,28 @@ class ConsumerHealthTests(unittest.TestCase):
         sources, warnings = p.annotate_feed_sources({'x': {'source': 'remote'}}, {'x': feed})
         self.assertEqual(sources['x']['health'], 'ok')
         self.assertEqual(warnings, [])
+
+    def test_transcription_failure_is_visible_without_calling_rss_broken(self):
+        feed = {'generated_at': datetime.now(timezone.utc).isoformat(), 'podcasts': [
+            {'channel': "Lenny's Podcast", 'guid': 'one', 'title': 'Josh interview',
+             'transcription': {'status': 'failed', 'failure_kind': 'source_denied', 'attempts': 1}},
+            {'channel': 'All-In', 'guid': 'two', 'title': 'Long episode',
+             'transcription': {'status': 'failed', 'failure_kind': 'resource_budget'}},
+            {'channel': 'Other', 'guid': 'three', 'title': 'Retry later',
+             'transcription': {'status': 'retry', 'failure_kind': 'worker_error'}},
+            {'channel': 'Complete', 'transcript_available': True,
+             'transcription': {'status': 'failed', 'failure_kind': 'source_denied'}},
+        ]}
+        sources, warnings = p.annotate_feed_sources({'podcasts': {'source': 'remote'}}, {'podcasts': feed})
+        self.assertEqual(sources['podcasts']['health'], 'partial')
+        self.assertEqual(sources['podcasts']['upstream_errors'], [])
+        self.assertEqual(len(sources['podcasts']['transcription_issues']), 3)
+        self.assertEqual(len(warnings), 3)
+        self.assertIn('拒绝访问', warnings[0])
+        self.assertIn('资源上限', warnings[1])
+        self.assertIn('退避', warnings[2])
+        output = io.StringIO()
+        with mock.patch('sys.stdin', io.StringIO(json.dumps({'warnings': warnings}))), mock.patch('sys.stdout', output):
+            render_digest.main()
+        self.assertIn('Josh interview', output.getvalue())
+        self.assertIn('资源上限', output.getvalue())

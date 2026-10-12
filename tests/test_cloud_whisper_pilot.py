@@ -58,8 +58,16 @@ class PilotTests(unittest.TestCase):
             self.download(headers={'content-length': '3000'})
 
     def test_declared_length_budget(self):
-        with self.assertRaisesRegex(pilot.PilotError, 'Content-Length'):
+        with self.assertRaisesRegex(pilot.PilotError, 'exceeds download byte budget'):
             self.download(headers={'content-length': '999999999'})
+
+    def test_declared_length_boundary_and_invalid_header_are_distinct(self):
+        self.assertEqual(self.download(headers={'content-length': '2048'}, max_bytes=2048)['download_bytes'], 2048)
+        with self.assertRaisesRegex(pilot.PilotError, '2048 > 2047 bytes'):
+            self.download(headers={'content-length': '2048'}, max_bytes=2047)
+        for length in ('bogus', '-1', '0', '1023'):
+            with self.subTest(length=length), self.assertRaisesRegex(pilot.PilotError, 'Invalid Content-Length'):
+                self.download(headers={'content-length': length})
 
     def test_streamed_body_budget_without_content_length(self):
         with self.assertRaisesRegex(pilot.PilotError, 'byte budget'):
