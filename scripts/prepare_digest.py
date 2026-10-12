@@ -527,6 +527,24 @@ def annotate_feed_sources(feed_sources, feeds):
             # Keep detailed diagnostics in metadata, show a compact source hint.
             source = str(error).split(":", 1)[0][:120]
             warnings.append(f"{key}: {source} 本轮抓取失败；已有内容不代表该来源已更新")
+        if key == "podcasts":
+            issues = []
+            reasons = {"source_denied": "音频来源拒绝访问，不会自动重试",
+                       "resource_budget": "超出转录资源上限，不会自动重试",
+                       "invalid_audio": "音频未通过下载校验（格式、大小或完整性），不会自动重试"}
+            for episode in (feed or {}).get("podcasts", []):
+                outcome = episode.get("transcription") or {}
+                status = outcome.get("status")
+                if episode.get("transcript_available") or status not in ("failed", "retry", "skipped"):
+                    continue
+                issues.append({"channel": episode.get("channel"), "guid": episode.get("guid"),
+                               "title": episode.get("title"), **outcome})
+                reason = ("转录失败，等待退避后重试" if status == "retry" else
+                          reasons.get(outcome.get("failure_kind"), "转录未完成，不会自动重试"))
+                warnings.append(f"podcasts: {episode.get('channel')}: {episode.get('title')} — {reason}；仅可阅读简介")
+            item["transcription_issues"] = issues
+            if issues:
+                item["health"] = "partial"
         age = feed_age_hours(feed)
         if age is not None:
             item["age_hours"] = round(age, 2)
@@ -868,6 +886,7 @@ def main():
                 "transcript_available": ep.get("transcript_available", False),
                 "transcript_path": ep.get("transcript_path"),
                 "transcript_chars": ep.get("transcript_chars", 0),
+                "transcription": ep.get("transcription"),
             }
             for ep in slim_episodes
         ],
