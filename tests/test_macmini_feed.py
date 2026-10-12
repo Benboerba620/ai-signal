@@ -38,10 +38,12 @@ class LocalRunnerTests(unittest.TestCase):
             git('push', '-u', 'origin', 'main')
             (root/'feeds/feed-podcasts.json').write_text('{"fresh":true}\n')
             (root/'feeds/transcripts/new.txt').write_text('New transcript\n')
+            (root/'feeds/transcripts/.partial.txt.tmp').write_text('Do not publish')
             (root/'unrelated.tmp').write_text('Do not publish')
             head = local.checkpoint(root)
             self.assertEqual(head, git('rev-parse', 'origin/main'))
             self.assertNotIn('unrelated.tmp', git('ls-tree', '-r', '--name-only', 'HEAD'))
+            self.assertNotIn('.partial.txt.tmp', git('ls-tree', '-r', '--name-only', 'HEAD'))
             self.assertEqual(git('show', 'HEAD:feeds/feed-x.json'), '{"original":true}')
             self.assertEqual(git('show', 'HEAD:feeds/transcripts/new.txt'), 'New transcript')
 

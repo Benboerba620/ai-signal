@@ -51,9 +51,13 @@ def preflight_publish(root):
 
 def checkpoint(root):
     command([sys.executable, str(root/'scripts/validate_feeds.py'), '--scope', 'all'], root)
-    command(['git', 'add', '-A', '--', *PATHS], root)
+    paths = PATHS[:-1]
+    sidecars = ':(glob)feeds/transcripts/*.txt'
+    if command(['git', 'ls-files', '--', sidecars], root) or list((root/'feeds/transcripts').glob('*.txt')):
+        paths = [*paths, sidecars]
+    command(['git', 'add', '-A', '--', *paths], root)
     staged = command(['git', 'diff', '--cached', '--name-only'], root).splitlines()
-    if any(path not in PATHS and not path.startswith('feeds/transcripts/') for path in staged):
+    if any(path not in PATHS[:-1] and not (path.startswith('feeds/transcripts/') and Path(path).suffix == '.txt') for path in staged):
         raise RuntimeError('Unexpected staged path; publication refused')
     if staged:
         command(['git', '-c', 'user.name=yibo-mini', '-c', 'user.email=gpttyb@gmail.com',
