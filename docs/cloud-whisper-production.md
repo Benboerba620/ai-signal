@@ -1,5 +1,7 @@
 # 云端 CPU Whisper 生产转录
 
+2026-10-13：日常自动运行迁至 [Mac mini](macmini-production.md)。以下云端参数保留供显式手动运行参考；手动运行前需暂停本地任务。
+
 2026-10-08：维护者在完成 5 分钟样本和约 35 分钟整集试跑后，授权将播客转录切换到 GitHub Actions 云端 CPU Whisper。试跑数据和质量限制保留在 [试跑记录](cloud-whisper-pilot.md)。
 
 ## 运行边界

@@ -404,7 +404,7 @@ def worker(task_path):
     pilot.atomic_json(output / "result.json", result)
     caption_note = task.get("public_caption_unavailable")
     try:
-        with pilot.public_network():
+        with pilot.public_network(task.get("local_engine", {}).get("proxy")):
             public = None
             if not caption_note:
                 try:
@@ -449,14 +449,18 @@ def worker(task_path):
         return 1
 
 
-def run_episode(entry, sources, output, timeout, max_rss_mib):
+def run_episode(entry, sources, output, timeout, max_rss_mib, local_engine=None):
     item = entry["episode"]
     model, language = model_policy(item, sources)
+    if local_engine:
+        model = "medium"
     request = {"schema": 1, "guid": item["guid"], "channel": item["channel"], "title": item.get("title"),
                "source_url": pilot.artifact_url(item["audio_url"]),
                "source_url_sha256": hashlib.sha256(item["audio_url"].encode()).hexdigest(),
                "model": model, "language": language, "threads": 4, "sample_seconds": 0, "start_seconds": 0,
                "device": "cpu", "compute_type": "int8", "beam_size": 5}
+    if local_engine:
+        request.update(device="mlx", compute_type="local_cached_model")
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="ai-signal-production-whisper-") as temporary:
         work = Path(temporary)
@@ -464,6 +468,8 @@ def run_episode(entry, sources, output, timeout, max_rss_mib):
                 "expected_seconds": duration_seconds(item.get("duration")),
                 "policy": channel_policy_map(sources).get(item["channel"], {}),
                 "public_caption_unavailable": entry.get("public_caption_unavailable")}
+        if local_engine:
+            task["local_engine"] = local_engine
         pilot.atomic_json(work / "task.json", task)
         pilot.atomic_json(output / "result.json", {"request": request, "status": "running", "stage": "starting"})
         try:
@@ -524,7 +530,7 @@ def summary(state, now):
     return {"counts": counts, "due": len(due_entries(state, now)), "total": len(state["entries"]), "items": details}
 
 
-def run(args, root=ROOT, now=None):
+def run(args, root=ROOT, now=None, episode_runner=None):
     root = Path(root).resolve()
     now = now or utcnow()
     state = load_state(root)
@@ -555,7 +561,7 @@ def run(args, root=ROOT, now=None):
             if getattr(args, "checkpoint_git", False):
                 # Fixed repository-owned helper, no shell/user command injection.
                 checkpoint_git(root)
-            text, metadata = run_episode(entry, sources, attempt_output, args.timeout_seconds, args.max_rss_mib)
+            text, metadata = (episode_runner or run_episode)(entry, sources, attempt_output, args.timeout_seconds, args.max_rss_mib)
             publish(root, entry, text, metadata, now)
         except (Exception, KeyboardInterrupt) as exc:
             kind, retryable, error = classify_error(exc)
