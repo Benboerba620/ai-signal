@@ -182,6 +182,44 @@ class QueueTests(unittest.TestCase):
         result, runner = self.successful_run()
         runner.assert_not_called()
 
+    def test_terminal_status_reaches_feed_and_survives_refresh_without_retry(self):
+        with patch.object(queue, 'run_episode', side_effect=queue.QueueError('Audio HTTP status 403', 'source_denied')):
+            self.assertEqual(self.run_queue(), 1)
+        feed = json.loads((self.root/queue.FEED_PATH).read_text())
+        outcome = feed['podcasts'][0]['transcription']
+        self.assertEqual(outcome['status'], 'failed')
+        self.assertEqual(outcome['failure_kind'], 'source_denied')
+        self.assertEqual(outcome['attempts'], 1)
+        self.assertNotIn('last_error', outcome)
+        self.assertNotIn('audio_url', outcome)
+        self.assertEqual(feed['generated_at'], 'preserve')
+        self.assertEqual(feed['errors'], ['existing error'])
+        self.write(queue.FEED_PATH, {'generated_at': 'fresh', 'podcasts': [self.item]})
+        with patch.object(queue, 'run_episode') as runner:
+            self.run_queue(enqueue_only=True)
+            runner.assert_not_called()
+        self.assertEqual(json.loads((self.root/queue.FEED_PATH).read_text())['podcasts'][0]['transcription'], outcome)
+
+    def test_retry_status_clears_after_successful_publication(self):
+        with patch.object(queue, 'run_episode', side_effect=queue.QueueError('timeout', 'worker_error', True)):
+            self.assertEqual(self.run_queue(), 1)
+        feed = json.loads((self.root/queue.FEED_PATH).read_text())
+        self.assertEqual(feed['podcasts'][0]['transcription']['status'], 'retry')
+        with patch.object(queue, 'run_episode', return_value=('Full recovered transcript.\n', {})), patch('builtins.print'):
+            self.assertEqual(queue.run(self.args, self.root, NOW+timedelta(hours=7)), 0)
+        feed = json.loads((self.root/queue.FEED_PATH).read_text())
+        self.assertNotIn('transcription', feed['podcasts'][0])
+        self.assertTrue(feed['podcasts'][0]['transcript_available'])
+
+    def test_audio_budget_remains_terminal_failure_not_invalid_audio(self):
+        error = pilot.PilotError('Audio Content-Length exceeds download byte budget (134265006 > 134217728 bytes)')
+        with patch.object(queue, 'run_episode', side_effect=error):
+            self.assertEqual(self.run_queue(), 1)
+        self.assertEqual(self.entry()['failure_kind'], 'resource_budget')
+        self.assertEqual(self.entry()['status'], 'failed')
+        _, runner = self.successful_run()
+        runner.assert_not_called()
+
     def test_running_attempt_recovered_with_backoff_not_immediate_retry(self):
         self.run_queue(enqueue_only=True)
         state = self.state()

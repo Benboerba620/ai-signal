@@ -80,7 +80,7 @@ def public_url(url):
 
 
 @contextmanager
-def public_network():
+def public_network(local_proxy=None):
     """Validate the resolver result used by the actual socket connection.
 
     A preflight lookup alone is insufficient: DNS could change before connect.
@@ -88,9 +88,17 @@ def public_network():
     httpcore's connect-time lookup without relying on private transport APIs.
     """
     original = socket.getaddrinfo
+    transport = None
+    if local_proxy:
+        proxy = urlsplit(local_proxy)
+        if proxy.scheme != "http" or proxy.hostname != "127.0.0.1" or not proxy.port or proxy.username or proxy.password:
+            raise PilotError("Local transport must be a credential-free loopback HTTP proxy")
+        transport = (proxy.hostname, proxy.port)
 
     def checked(*args, **kwargs):
         addresses = original(*args, **kwargs)
+        if transport and len(args) >= 2 and (args[0], int(args[1])) == transport:
+            return addresses
         if not addresses or any(not ipaddress.ip_address(row[4][0]).is_global for row in addresses):
             raise PilotError("Connection resolved to a private or non-global destination")
         return addresses
@@ -140,8 +148,11 @@ def download_audio(url, destination, client, max_bytes=MAX_AUDIO_BYTES):
             if response.headers.get("content-encoding", "identity").lower() != "identity":
                 raise PilotError("Unexpected compressed HTTP body")
             length = response.headers.get("content-length")
-            if length is not None and (not length.isdigit() or not 1024 <= int(length) <= max_bytes):
-                raise PilotError("Invalid or out-of-budget Content-Length")
+            if length is not None:
+                if not length.isdigit() or int(length) < 1024:
+                    raise PilotError("Invalid Content-Length")
+                if int(length) > max_bytes:
+                    raise PilotError(f"Audio Content-Length exceeds download byte budget ({length} > {max_bytes} bytes)")
             received = 0
             with Path(destination).open("wb") as stream:
                 for chunk in response.iter_raw(chunk_size=64 * 1024):
@@ -237,7 +248,8 @@ def worker(task_path):
     resource.setrlimit(resource.RLIMIT_FSIZE, (1024 ** 3, 1024 ** 3))
     audio = work / "source.audio"
     with httpx.Client(timeout=httpx.Timeout(30, connect=15), follow_redirects=False,
-                      trust_env=False, headers={"User-Agent": "ai-signal-whisper-pilot/1.0"}) as client:
+                      trust_env=False, proxy=task.get("local_engine", {}).get("proxy"),
+                      headers={"User-Agent": "ai-signal-whisper-pilot/1.0"}) as client:
         result.update(download_audio(task["audio_url"], audio, client))
     episode_seconds = probe_audio(audio, task["expected_seconds"])
     eligible, reason = asr_eligibility({"audio_url": task["audio_url"], "duration": str(math.floor(episode_seconds)),
@@ -266,8 +278,12 @@ def worker(task_path):
         raise PilotError("Decoded sample is unexpectedly truncated")
     result["stage"] = "model_and_inference"
     atomic_json(output / "result.json", result)
-    text, segments, stats = transcribe(wav, request["model"], request["language"],
-                                       request["threads"], work / "models")
+    if task.get("local_engine"):
+        from macmini_whisper import transcribe_local
+        text, segments, stats = transcribe_local(wav, request["language"], task["local_engine"], work)
+    else:
+        text, segments, stats = transcribe(wav, request["model"], request["language"],
+                                           request["threads"], work / "models")
     result.update(stats)
     # These are experimental artifacts, not a production transcript or accuracy score.
     (output / "transcript.txt").write_text(text + "\n", encoding="utf-8")
@@ -290,7 +306,12 @@ def work_bytes(path):
 
 
 def process_group_rss_bytes(group):
-    """Linux RSS watchdog, including decoder descendants in the worker group."""
+    """RSS watchdog, including decoder descendants in the worker group."""
+    if sys.platform == "darwin":
+        process = subprocess.run(["/bin/ps", "-axo", "pgid=,rss="],
+                                 capture_output=True, text=True, check=True, timeout=10)
+        rows = (line.split() for line in process.stdout.splitlines() if line.strip())
+        return sum(int(rss) * 1024 for pgid, rss in rows if int(pgid) == group)
     if not Path("/proc/self/statm").exists():
         raise PilotError("RSS enforcement requires Linux /proc")
     total = 0

@@ -1,5 +1,7 @@
 # 云端 CPU Whisper 生产转录
 
+2026-10-13：日常自动运行迁至 [Mac mini](macmini-production.md)。以下云端参数保留供显式手动运行参考；手动运行前需暂停本地任务。
+
 2026-10-08：维护者在完成 5 分钟样本和约 35 分钟整集试跑后，授权将播客转录切换到 GitHub Actions 云端 CPU Whisper。试跑数据和质量限制保留在 [试跑记录](cloud-whisper-pilot.md)。
 
 ## 运行边界
@@ -42,6 +44,14 @@ python scripts/cloud_whisper_queue.py --status
 首次部署可由 main 上专用 `.github/whisper-production-request.txt` 的变更和 `[run-whisper-production]` 提交标记共同触发，同样走上述队列路径，仅播客转录。普通本地收件目录推送仍仅导入，普通源码或文档提交不会启动生产转录。
 
 每輪保存 7 天独立 artifact，包含逐项 stats/字幕/错误和队列状态。即使部分项失败，先完成的正文和失败状态仍提交；最后用失败状态标记 workflow，不能把绿灯当成覆盖率证明。
+
+### 部分失败的诊断
+
+主轮先发布原始 feed，再补齐转录。因此最后 `Report unsuccessful transcription attempts` 失败并不意味着原始 feed 未更新；需要分别核对提交、各 feed 的 `generated_at` 和队列。工作日 arXiv 专用轮成功也不代表播客已经恢复。
+
+队列每轮会把当前 feed 内未完成项的 `transcription` 状态投影到播客条目（状态、次数、失败类型、下次重试和状态更新时间）；不会复制音频 URL 或原始错误，也不会改变 feed 生成时间。消费端 `prepare_digest.py` 将失败、退避及策略跳过显示为部分降级，保留每集原因。旧客户端需要更新脚本才能显示这些提示。节目退出 feed 后，历史失败仍可在队列查看。
+
+下载 `Content-Length` 超限或实际流量超限标记为 `resource_budget`；非法长度、过小或格式错误仍按下载校验失败处理。128 MiB 硬上限保持不变，超限不意味着音频损坏，也不会自动重试或截断后冒充全文。旧队列记录保留当时的分类与错误，不自动重置终止项。403 拒绝仍终止处理、保留失败退出；恢复受限源或调整资源策略需另行审阅。
 
 暂停自动转录可将现有 `podcasts.transcription.enabled_by_default` 设为 false（需要维护者授权的配置变更）；队列仍可保留。显式手动 `transcribe_missing=true` / `transcribe_only=true` 可处理一次。不会自动回退到收费后端。
 

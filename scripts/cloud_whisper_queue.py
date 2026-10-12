@@ -83,6 +83,32 @@ def save_state(root, state, now):
     pilot.atomic_json(root / QUEUE_PATH, state)
 
 
+def sync_transcription_status(root, state):
+    """Expose queue outcomes for current episodes without changing feed freshness.
+
+    Publish only status fields, never queue snapshots, audio URLs or raw errors.
+    Old terminal entries stay in the queue but do not reappear in the feed.
+    """
+    feed = load_json(root / FEED_PATH)
+    changed = False
+    for item in feed.get("podcasts", []):
+        entry = state["entries"].get(identity(item))
+        if entry and entry.get("publication"):
+            continue  # Leave interrupted publication intact for recovery.
+        status = None
+        if entry and entry.get("status") != "completed" and not valid_transcript(root, item):
+            status = {field: entry.get(field) for field in
+                      ("status", "attempts", "failure_kind", "next_retry_at", "updated_at")}
+        if item.get("transcription") != status:
+            if status is None:
+                item.pop("transcription", None)
+            else:
+                item["transcription"] = status
+            changed = True
+    if changed:
+        pilot.atomic_json(root / FEED_PATH, feed)
+
+
 def transcript_path(root, value):
     if not value:
         return None
@@ -362,11 +388,11 @@ def classify_error(error, stage=""):
         return "source_denied", False, message
     if re.search(r"HTTP status 4\d\d\b", message):
         return "source_unavailable", False, message
-    if any(word in message for word in ("RSS memory", "temporary storage")):
+    if any(word in message for word in ("RSS memory", "temporary storage", "byte budget")):
         return "resource_budget", False, message
     if any(word in message for word in ("Measured audio", "duration is missing", "Private", "private", "public HTTPS", "standard HTTPS")):
         return "source_policy", False, message
-    if any(word in message for word in ("Content-Type", "Content-Length", "byte budget", "HTML, JSON", "no decodable", "compressed HTTP")):
+    if any(word in message for word in ("Content-Type", "Content-Length", "HTML, JSON", "no decodable", "compressed HTTP")):
         return "invalid_audio", False, message
     return ("model_error" if stage == "model_and_inference" else "worker_error"), True, message
 
@@ -378,7 +404,7 @@ def worker(task_path):
     pilot.atomic_json(output / "result.json", result)
     caption_note = task.get("public_caption_unavailable")
     try:
-        with pilot.public_network():
+        with pilot.public_network(task.get("local_engine", {}).get("proxy")):
             public = None
             if not caption_note:
                 try:
@@ -423,14 +449,18 @@ def worker(task_path):
         return 1
 
 
-def run_episode(entry, sources, output, timeout, max_rss_mib):
+def run_episode(entry, sources, output, timeout, max_rss_mib, local_engine=None):
     item = entry["episode"]
     model, language = model_policy(item, sources)
+    if local_engine:
+        model = "medium"
     request = {"schema": 1, "guid": item["guid"], "channel": item["channel"], "title": item.get("title"),
                "source_url": pilot.artifact_url(item["audio_url"]),
                "source_url_sha256": hashlib.sha256(item["audio_url"].encode()).hexdigest(),
                "model": model, "language": language, "threads": 4, "sample_seconds": 0, "start_seconds": 0,
                "device": "cpu", "compute_type": "int8", "beam_size": 5}
+    if local_engine:
+        request.update(device="mlx", compute_type="local_cached_model")
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="ai-signal-production-whisper-") as temporary:
         work = Path(temporary)
@@ -438,6 +468,8 @@ def run_episode(entry, sources, output, timeout, max_rss_mib):
                 "expected_seconds": duration_seconds(item.get("duration")),
                 "policy": channel_policy_map(sources).get(item["channel"], {}),
                 "public_caption_unavailable": entry.get("public_caption_unavailable")}
+        if local_engine:
+            task["local_engine"] = local_engine
         pilot.atomic_json(work / "task.json", task)
         pilot.atomic_json(output / "result.json", {"request": request, "status": "running", "stage": "starting"})
         try:
@@ -498,7 +530,7 @@ def summary(state, now):
     return {"counts": counts, "due": len(due_entries(state, now)), "total": len(state["entries"]), "items": details}
 
 
-def run(args, root=ROOT, now=None):
+def run(args, root=ROOT, now=None, episode_runner=None):
     root = Path(root).resolve()
     now = now or utcnow()
     state = load_state(root)
@@ -529,7 +561,7 @@ def run(args, root=ROOT, now=None):
             if getattr(args, "checkpoint_git", False):
                 # Fixed repository-owned helper, no shell/user command injection.
                 checkpoint_git(root)
-            text, metadata = run_episode(entry, sources, attempt_output, args.timeout_seconds, args.max_rss_mib)
+            text, metadata = (episode_runner or run_episode)(entry, sources, attempt_output, args.timeout_seconds, args.max_rss_mib)
             publish(root, entry, text, metadata, now)
         except (Exception, KeyboardInterrupt) as exc:
             kind, retryable, error = classify_error(exc)
@@ -542,6 +574,7 @@ def run(args, root=ROOT, now=None):
                              ("status", "attempts", "last_error", "failure_kind", "next_retry_at", "transcript_path", "public_caption_unavailable")}
     else:
         report["outcome"] = {"status": "enqueued" if args.enqueue_only else "no_due_items"}
+    sync_transcription_status(root, state)
     report["queue"] = summary(state, now)
     pilot.atomic_json(output / "run-report.json", report)
     if report.get("id"):
