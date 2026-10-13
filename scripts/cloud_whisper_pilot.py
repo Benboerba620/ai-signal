@@ -23,6 +23,7 @@ import time
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import httpx
+from feed_resilience import retry_after, TRANSIENT_STATUS
 
 from transcribe_missing_podcasts import asr_eligibility, candidate_items, channel_policy_map, duration_seconds
 
@@ -35,6 +36,13 @@ MODELS = ("small.en", "small")
 
 class PilotError(RuntimeError):
     pass
+
+
+class TemporaryAudioError(PilotError):
+    def __init__(self, status, header=None):
+        super().__init__(f"Audio HTTP status {status}; deferred bounded retry")
+        until = retry_after(header)
+        self.retry_not_before = until.isoformat() if until else None
 
 
 def atomic_text(path, text):
@@ -140,6 +148,8 @@ def download_audio(url, destination, client, max_bytes=MAX_AUDIO_BYTES):
                     raise PilotError("Audio redirect has no Location")
                 url = urljoin(url, location)
                 continue
+            if response.status_code in TRANSIENT_STATUS:
+                raise TemporaryAudioError(response.status_code, response.headers.get("retry-after"))
             if response.status_code != 200:
                 raise PilotError(f"Audio HTTP status {response.status_code}; no bypass or retry")
             mime = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()

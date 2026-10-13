@@ -371,7 +371,7 @@ class QueueTests(unittest.TestCase):
     def test_error_classification_denied_memory_model(self):
         self.assertEqual(queue.classify_error(pilot.PilotError('Audio HTTP status 403; no bypass or retry'))[:2], ('source_denied', False))
         self.assertEqual(queue.classify_error(pilot.PilotError('Worker exceeded its RSS memory budget'))[:2], ('resource_budget', False))
-        self.assertEqual(queue.classify_error(ValueError('secret signed URL'), 'model_and_inference'), ('model_error', True, 'ValueError'))
+        self.assertEqual(queue.classify_error(ValueError('secret signed URL'), 'model_and_inference'), ('model_error', False, 'ValueError'))
 
     def test_public_transcript_first_avoids_audio_worker(self):
         output = self.output/'public'

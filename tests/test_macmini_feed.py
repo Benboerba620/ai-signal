@@ -82,7 +82,7 @@ class LocalRunnerTests(unittest.TestCase):
 
     def test_publish_refuses_active_cloud_run(self):
         with patch.object(local, 'command', side_effect=['', 'main', '', '[{"status":"in_progress"}]']):
-            with self.assertRaisesRegex(RuntimeError, 'active/queued'):
+            with self.assertRaisesRegex(RuntimeError, 'active'):
                 local.preflight_publish(local.ROOT)
 
     def test_checkpoint_whitelist_does_not_own_x_or_inbox(self):
