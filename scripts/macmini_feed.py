@@ -14,6 +14,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import traceback
 
 import cloud_whisper_queue as queue
 import cloud_whisper_pilot as pilot
@@ -149,6 +150,19 @@ def interrupted(signum, frame):
     raise OperationError('interrupted')
 
 
+def accept_generation(root, args, report):
+    try:
+        return health.accept(root, args.scope, report['started_at'])
+    except OperationError as exc:
+        if exc.kind == 'stale_artifacts' and args.publish:
+            # The contract validator already passed. Preserve valid partial
+            # updates so a known upstream outage does not wedge the next run
+            # behind dirty files. Freshness acceptance still fails; no green report.
+            report['commits'].append(checkpoint(root, args.scope))
+            ACTIONS.append({'operation': 'publication', 'kind': 'preserved_valid_partial_refresh'})
+        raise
+
+
 def run(args, root=ROOT):
     global DEADLINE, ACTIONS, EVIDENCE, JOURNAL
     root, state_dir = Path(root).resolve(), Path(args.state_dir).resolve()
@@ -207,7 +221,7 @@ def run(args, root=ROOT):
             if args.scope == 'all':
                 queue.run(qargs, root)
             command([sys.executable, str(root/'scripts/validate_feeds.py'), '--scope', args.scope], root)
-            report['feeds'] = health.accept(root, args.scope, report['started_at'])
+            report['feeds'] = accept_generation(root, args, report)
             if args.publish:
                 report['commits'].append(checkpoint(root, args.scope))
             if args.scope == 'all':
@@ -240,13 +254,20 @@ def run(args, root=ROOT):
             report.update(status='failed', pipeline_health='failed', failure_kind=kind, error_type=type(exc).__name__)
             # Exceptions/logs are diagnostic data. Unknown errors are not rerun.
             pilot.atomic_json(run_dir/'diagnostic.json', {'kind': kind, 'error_type': type(exc).__name__,
+                              'frames': [{'file': f.filename, 'line': f.lineno, 'function': f.name}
+                                         for f in traceback.extract_tb(exc.__traceback__)[-12:]],
                               'manual_action': 'Inspect local evidence; test a candidate patch in an isolated checkout.'})
             code = 1
         finally:
             report.update(finished_at=health.now().isoformat(), elapsed_seconds=round(time.monotonic()-started, 1),
                           recovery_actions=ACTIONS)
             try:
-                health.record(state_dir, report)
+                try:
+                    health.record(state_dir, report)
+                except (ValueError, TypeError, KeyError):
+                    # Preserve corrupt health state for inspection, never reset it.
+                    report.update(status='failed', pipeline_health='failed', failure_kind='health_state_corrupt')
+                    code = 1
                 pilot.atomic_json(run_dir/'report.json', report)
                 pilot.atomic_json(state_dir/'latest.json', report)
                 pilot.atomic_json(state_dir/f'latest-{args.scope}.json', report)

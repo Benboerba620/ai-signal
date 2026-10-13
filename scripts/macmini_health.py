@@ -28,6 +28,7 @@ def date(value):
 def accept(root, scope, started_at):
     """A zero exit code alone is insufficient. Validate timestamp and sidecar bytes."""
     feeds = {}
+    stale = False
     for name, key in (('podcasts', 'podcasts'), ('arxiv', 'papers'), ('blogs', 'articles')):
         if scope == 'arxiv' and name != 'arxiv':
             continue
@@ -38,8 +39,9 @@ def accept(root, scope, started_at):
             stamp = date(feed.get('generated_at'))
         except (ValueError, TypeError):
             raise OperationError('invalid_artifacts') from None
-        if stamp < date(started_at) - timedelta(seconds=2) or stamp > now() + timedelta(minutes=5):
-            raise OperationError('stale_artifacts')
+        if stamp > now() + timedelta(minutes=5):
+            raise OperationError('invalid_artifacts')
+        stale = stale or stamp < date(started_at) - timedelta(seconds=2)
         feeds[name] = {'generated_at': stamp.isoformat(), 'items': len(feed[key]),
                        'upstream_failure_count': len(feed.get('errors') or [])}
     if scope == 'all':
@@ -71,6 +73,8 @@ def accept(root, scope, started_at):
                 # Expired tombstones legitimately outlive their pruned sidecars.
                 if path.is_file() and ((root/'feeds/transcripts').resolve() not in path.parents or pilot.digest(path) != digest):
                     raise OperationError('invalid_artifacts')
+    if stale:
+        raise OperationError('stale_artifacts')
     return feeds
 
 

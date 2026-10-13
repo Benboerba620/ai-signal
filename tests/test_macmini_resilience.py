@@ -126,7 +126,7 @@ class RecoveryTests(unittest.TestCase):
             root = Path(d); (root/'feeds').mkdir()
             for delta in (-24*60, 10):
                 p.atomic_json(root/'feeds/feed-arxiv.json', {'papers': [], 'generated_at': (h.now()+timedelta(minutes=delta)).isoformat()})
-                with self.assertRaisesRegex(r.OperationError, 'stale_artifacts'):
+                with self.assertRaisesRegex(r.OperationError, 'stale_artifacts' if delta < 0 else 'invalid_artifacts'):
                     h.accept(root, 'arxiv', h.now().isoformat())
             p.atomic_json(root/'feeds/feed-arxiv.json', {'papers': [], 'generated_at': h.now().isoformat()})
             self.assertEqual(h.accept(root, 'arxiv', h.now().isoformat())['arxiv']['items'], 0)
@@ -238,6 +238,29 @@ class RecoveryTests(unittest.TestCase):
             transcript.write_text('tampered\n')
             with self.assertRaisesRegex(r.OperationError,'invalid_artifacts'):
                 h.accept(root,'all',stamp)
+
+    def test_valid_partial_refresh_is_preserved_but_never_accepted(self):
+        report={'started_at':h.now().isoformat(),'commits':[]}
+        args=argparse.Namespace(publish=True,scope='all')
+        with patch.object(h,'accept',side_effect=r.OperationError('stale_artifacts')), patch.object(runner,'checkpoint',return_value='published-partial') as checkpoint:
+            with self.assertRaisesRegex(r.OperationError,'stale_artifacts'):
+                runner.accept_generation(Path('/unused'),args,report)
+            checkpoint.assert_called_once()
+            self.assertEqual(report['commits'],['published-partial'])
+        with patch.object(h,'accept',side_effect=r.OperationError('invalid_artifacts')), patch.object(runner,'checkpoint') as checkpoint:
+            with self.assertRaises(r.OperationError):
+                runner.accept_generation(Path('/unused'),args,report)
+            checkpoint.assert_not_called()
+
+    def test_corrupt_health_state_keeps_evidence_and_failure_report(self):
+        with tempfile.TemporaryDirectory() as d:
+            state,root=Path(d)/'state',Path(d)/'repo'
+            state.mkdir(); root.mkdir()
+            path=state/'health-arxiv.json'; path.write_text('broken original')
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(runner.run(self.args(state),root),1)
+            self.assertEqual(path.read_text(),'broken original')
+            self.assertEqual(h.read(state/'latest-arxiv.json')['failure_kind'],'health_state_corrupt')
 
 
 if __name__ == '__main__':

@@ -214,7 +214,7 @@ def publish(root, entry, text, metadata, now, preserve_bytes=False):
     """
     text = text if preserve_bytes else normalize_transcript_text(text)
     if not text.strip() or "\x00" in text or "\ufffd" in text:
-        raise QueueError("Transcript content failed validation", "invalid_artifacts", True)
+        raise QueueError("Transcript content failed validation", "invalid_artifacts", False)
     episode = entry["episode"]
     path_text = metadata.get("transcript_path") or f"feeds/transcripts/{transcript_id(episode)}.txt"
     path = transcript_path(root, path_text)
@@ -504,7 +504,7 @@ def run_episode(entry, sources, output, timeout, max_rss_mib, local_engine=None)
             pilot.atomic_json(output / "result.json", result)
             raise QueueError(error, kind, retryable) from exc
         if not pilot.cached_success(output, request):
-            raise QueueError("Worker output failed content/hash verification", "invalid_artifacts", True)
+            raise QueueError("Worker output failed content/hash verification", "invalid_artifacts", False)
         result = load_json(output / "result.json")
         if result.get("public_caption_unavailable"):
             entry["public_caption_unavailable"] = result["public_caption_unavailable"]
