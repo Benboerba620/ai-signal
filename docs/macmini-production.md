@@ -30,3 +30,39 @@ The runner locks both local scopes, preserves unexpected edits, validates feeds,
 ## Rollback
 
 Unload only the two new ai-signal launchd jobs first. Preserve the dedicated checkout, queue, reports and unpushed commits. The existing X/podcast-report/delivery jobs remain untouched. Once no local production run remains, the retained manual cloud workflow can run with `confirm_local_paused=true`. Restoring automatic cloud schedules is a separate reviewed change; never run both automatic producers together. No workflow history, queue or feed deletion is necessary.
+
+## Bounded recovery (pending deployment approval)
+
+The recovery code does not modify itself, interpret logs as instructions, call an LLM, change credentials, increase quotas, or use paid ASR. Merge and launcher replacement require operator approval. Existing X and podcast delivery jobs keep their schedules.
+
+- HTTP GETs: at most three attempts for transport errors or 408/429/500/502/503/504, exponential waits, at most 30 seconds sleeping per request. A longer `Retry-After` is deferred rather than shortened. The local generator persists host cooldowns in `http-deferred.json` across runs. Audio/caption throttling is persisted in the existing queue, at least the server deadline or existing 6h/12h backoff, with three lifetime attempts. Audio is not downloaded repeatedly within one attempt.
+- Denied sources, malformed audio and resource limits are terminal; prior terminal queue entries are never reset. Unknown worker errors also require inspection. The original 128 MiB, two-hour, 6 GiB and two-episode caps remain. SIGTERM/interruptions checkpoint the queue and stop work; subprocess timeouts kill the process group.
+- `run.lock` uses an OS advisory lock, released automatically after process death. Replace the old outer `mkdir launch.lock` wrapper; do not automatically remove a directory lock while an old producer could still be running. Preflight failures now create reports. The whole producer has a 65-minute deadline; individual generation and ASR budgets remain bounded.
+- Git transport failures retry at most three times. `publication.json` records the exact owned paths, hashes, base and pending commit. An interrupted checkpoint can resume only if those bytes/commit still match, no other edits exist, and the cloud writer is paused. No force push, reset, conflict clearing or arbitrary file deletion. A crash between committing/rebasing and saving its journal can require manual review. A crash during generation can leave unrecognized edits, which are intentionally preserved.
+- Feed JSON writes are atomic. Acceptance checks the existing feed contracts plus actual timestamps, transcript character counts/content and available hashes. A stale retained feed is not accepted as a successful refresh. arXiv publication validates its own scope so unrelated stale podcast retention does not block it.
+- Reports distinguish `pipeline_health`, `source_health`, current source failures and historical terminal entries. A published valid refresh with a source failure is degraded at the source level; it does not count as a pipeline failure. After three consecutive pipeline failures **per scope**, the circuit latches open and starts no fetch/inference/publication. There is no timer-based circuit reset.
+
+Inspect `runs/latest-all.json`, `runs/latest-arxiv.json`, `runs/health-*.json`, the per-run `diagnostic.json`, redacted Git `diagnostic.log`, and private `generation.log`/worker evidence. State directories are mode 0700, raw generation logs 0600. Do not attach raw logs to public issues: source URLs can contain signed parameters. Diagnostic records never contain command suggestions derived from external text. Unknown errors need a candidate patch and isolated tests reviewed by a human.
+
+After repairing and inspecting the cause, explicitly reset one scope (this command performs no production run):
+
+```sh
+python scripts/macmini_feed.py --state-dir /existing/runs --scope arxiv --reset-circuit
+```
+
+### Existing notification channel and health observer
+
+Pass `--notifier-module /existing/workspace/scripts/telegram_direct.py` to reuse the already-configured Telegram private recipient. No new destination, token or external service is provisioned. Messages include fixed failure categories, last accepted success, recovery action count and manual next steps; they contain no raw URLs, feed titles, logs or credentials. A local receipt reserves the incident fingerprint **before** sending. The same incident is suppressed, including uncertain delivery; confirmed recovery creates one recovery message. Inspect `alert-*.json` if delivery is uncertain rather than blindly resending.
+
+An optional hourly launchd observer can run:
+
+```sh
+python scripts/macmini_feed.py --state-dir /existing/runs --health-only \
+  --notifier-module /existing/workspace/scripts/telegram_direct.py
+```
+
+It checks Beijing 04:13 daily (80-minute grace) and weekday 09:30 arXiv (25-minute grace), actual feed integrity/freshness, and the active bounded run. It does not start or restart the producer. Host sleep/offline means launchd cannot alert until the Mac is running; the existing machine-alive monitor remains responsible for host availability. Notifications cannot be guaranteed while Telegram or its credentials are unavailable; local reports remain the evidence.
+
+Deployment: first back up the existing launcher and the two launchd plists, verify no active producer/old directory lock, then replace the launcher with an `exec` call to this runner (no outer mkdir lock or pre-run Git command). Keep the same repository, state path, cached engine and 04:13/09:30 schedules. Run an approved acceptance refresh; enable the hourly observer only after accepted state exists for both scopes (or after their first scheduled runs). Inspect remote commits and Telegram receipt. Do not send synthetic failure alerts to the real recipient during tests.
+
+Rollback: boot out only the optional health observer, wait for producer idle, restore the backed-up launcher and approved prior code. Preserve all feed/queue commits, pending journal, circuit state and logs; do not reset the checkout or clear terminal failures. Keep the manual-only cloud workflow. Moving production back to GitHub remains a separate approved action.

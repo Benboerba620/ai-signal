@@ -44,10 +44,11 @@ TRANSCRIPT_FIELDS = ("transcript_path", "transcript_chars", "transcript_sha256",
 
 
 class QueueError(RuntimeError):
-    def __init__(self, message, kind="state_error", retryable=False):
+    def __init__(self, message, kind="state_error", retryable=False, retry_not_before=None):
         super().__init__(message)
         self.kind = kind
         self.retryable = retryable
+        self.retry_not_before = retry_not_before
 
 
 def utcnow():
@@ -186,7 +187,7 @@ def model_policy(item, sources):
     return ("small", "zh") if language == "zh" else ("small.en", "en")
 
 
-def record_failure(entry, now, error, kind, retryable):
+def record_failure(entry, now, error, kind, retryable, retry_not_before=None):
     retryable = retryable and entry.get("attempts", 0) < MAX_ATTEMPTS
     policy_skip = kind in ("source_policy", "resource_policy", "unsupported_language")
     if policy_skip:
@@ -196,6 +197,10 @@ def record_failure(entry, now, error, kind, retryable):
                  last_error=error, failure_kind=kind,
                  next_retry_at=(now + timedelta(hours=RETRY_HOURS * 2 ** max(0, entry.get("attempts", 1) - 1))).isoformat()
                  if retryable else None)
+    if retryable and retry_not_before:
+        until = parse_datetime(retry_not_before)
+        if until and until > parse_datetime(entry["next_retry_at"]):
+            entry["next_retry_at"] = until.isoformat()
     entry.setdefault("history", []).append({"at": now.isoformat(), "attempt": entry.get("attempts", 0),
                                             "status": entry["status"], "kind": kind, "error": error})
 
@@ -345,7 +350,9 @@ def fetch_public(item, policy):
                 if response.status_code in (301, 302, 303, 307, 308):
                     url = urljoin(url, response.headers.get("location", ""))
                     continue
-                if response.status_code in (401, 403, 429, 451):
+                if response.status_code in pilot.TRANSIENT_STATUS:
+                    raise pilot.TemporaryAudioError(response.status_code, response.headers.get('retry-after'))
+                if response.status_code in (401, 403, 451):
                     raise QueueError(f"Public transcript feed denied HTTP {response.status_code}", "source_denied")
                 if response.status_code != 200:
                     raise QueueError(f"Public transcript feed HTTP {response.status_code}", "source_error",
@@ -356,10 +363,10 @@ def fetch_public(item, policy):
                 for chunk in response.iter_bytes():
                     body.extend(chunk)
                     if len(body) > 2 * 1024 * 1024:
-                        raise QueueError("Public transcript RSS exceeds budget", "source_error", True)
+                        raise QueueError("Public transcript RSS exceeds budget", "resource_budget", False)
                 break
         else:
-            raise QueueError("Too many public transcript feed redirects", "source_error", True)
+            raise QueueError("Too many public transcript feed redirects", "source_error", False)
     if re.search(br"<(?:!doctype\s+html|html)(?:\s|>)", bytes(body[:1024]).lower()):
         raise QueueError("Public transcript feed returned HTML; no bypass attempted", "source_denied")
     episodes = generate_feed.parse_rss(bytes(body).decode("utf-8"))
@@ -381,20 +388,26 @@ def fetch_public(item, policy):
 
 
 def classify_error(error, stage=""):
+    if isinstance(error, KeyboardInterrupt) or getattr(error, 'kind', None) == 'interrupted':
+        return 'interrupted', True, 'Worker interrupted; deferred bounded retry'
+    if isinstance(error, pilot.TemporaryAudioError):
+        return "temporary_http", True, str(error)
+    if isinstance(error, httpx.TransportError):
+        return "temporary_network", True, type(error).__name__
     if isinstance(error, QueueError):
         return error.kind, error.retryable, str(error)
     message = str(error) if isinstance(error, pilot.PilotError) else type(error).__name__
-    if re.search(r"HTTP status (401|403|429|451)\b", message):
+    if re.search(r"HTTP status (401|403|451)\b", message):
         return "source_denied", False, message
     if re.search(r"HTTP status 4\d\d\b", message):
         return "source_unavailable", False, message
-    if any(word in message for word in ("RSS memory", "temporary storage", "byte budget")):
+    if any(word in message for word in ("RSS memory", "temporary storage", "byte budget", "wall-time budget")):
         return "resource_budget", False, message
     if any(word in message for word in ("Measured audio", "duration is missing", "Private", "private", "public HTTPS", "standard HTTPS")):
         return "source_policy", False, message
     if any(word in message for word in ("Content-Type", "Content-Length", "HTML, JSON", "no decodable", "compressed HTTP")):
         return "invalid_audio", False, message
-    return ("model_error" if stage == "model_and_inference" else "worker_error"), True, message
+    return ("model_error" if stage == "model_and_inference" else "worker_error"), False, message
 
 
 def worker(task_path):
@@ -411,6 +424,8 @@ def worker(task_path):
                     public = fetch_public(task["episode"], task["policy"])
                 except Exception as exc:
                     kind, _, error = classify_error(exc, "public_transcript")
+                    if kind in ('temporary_http', 'temporary_network'):
+                        raise  # Keep Retry-After; do not replace a transient error with a terminal caption note.
                     caption_note = {"status": "unavailable", "failure_kind": kind, "error": error,
                                     "fallback": "original_public_rss_audio"}
                     # Never retry/bypass a denied caption resource. The original
@@ -442,7 +457,8 @@ def worker(task_path):
     except Exception as exc:
         result = load_json(output / "result.json", result)
         kind, retryable, error = classify_error(exc, result.get("stage"))
-        result.update(status="failed", error=error, failure_kind=kind, retryable=retryable)
+        result.update(status="failed", error=error, failure_kind=kind, retryable=retryable,
+                      retry_not_before=getattr(exc, "retry_not_before", None))
         if caption_note:
             result["public_caption_unavailable"] = caption_note
         pilot.atomic_json(output / "result.json", result)
@@ -482,7 +498,7 @@ def run_episode(entry, sources, output, timeout, max_rss_mib, local_engine=None)
                 entry["public_caption_unavailable"] = result["public_caption_unavailable"]
             if result.get("status") == "failed":
                 raise QueueError(result.get("error", "Worker failed"), result.get("failure_kind", "worker_error"),
-                                 result.get("retryable", True)) from exc
+                                 result.get("retryable", False), result.get("retry_not_before")) from exc
             kind, retryable, error = classify_error(exc, result.get("stage"))
             result.update(status="failed", failure_kind=kind, retryable=retryable, error=error)
             pilot.atomic_json(output / "result.json", result)
@@ -565,7 +581,10 @@ def run(args, root=ROOT, now=None, episode_runner=None):
             publish(root, entry, text, metadata, now)
         except (Exception, KeyboardInterrupt) as exc:
             kind, retryable, error = classify_error(exc)
-            record_failure(entry, now, error, kind, retryable)
+            record_failure(entry, now, error, kind, retryable, getattr(exc, "retry_not_before", None))
+            if kind == 'interrupted':
+                save_state(root, state, now)
+                raise
             code = 0 if entry["status"] == "skipped" else 1
         # Write only after publication is fully consistent, or with an explicit
         # failed attempt and retry policy. Publication intent survives failures.

@@ -34,6 +34,7 @@ from pathlib import Path
 from urllib.parse import quote_plus, urljoin, urlparse
 
 import httpx
+from feed_resilience import bounded_get, redact
 
 from podcast_transcripts import externalize_transcripts, hydrate_transcripts
 from local_podcast_import import load_local, merge_local
@@ -123,7 +124,10 @@ def load_feed(filename):
 
 
 def write_json(path, data):
-    path.write_text(json.dumps(clean_data(data), ensure_ascii=False, indent=2), encoding="utf-8")
+    from cloud_whisper_pilot import atomic_json
+    if isinstance(data, dict) and data.get('errors'):
+        data = {**data, 'errors': [redact(error) for error in data['errors']]}
+    atomic_json(path, clean_data(data))
 
 
 def load_sources():
@@ -341,7 +345,7 @@ def is_reply_tweet(tweet):
 
 
 def fetch_text_url(url, timeout=30):
-    resp = httpx.get(url, headers={"User-Agent": UA}, timeout=timeout, follow_redirects=True)
+    resp = bounded_get(url, headers={"User-Agent": UA}, timeout=timeout, follow_redirects=True)
     resp.raise_for_status()
     return resp.text, str(resp.url), resp.headers.get("content-type", "")
 
@@ -360,28 +364,21 @@ def rss_url_candidates(channel):
 def fetch_rss_with_fallback(channel, attempts=3):
     errors = []
     for url in rss_url_candidates(channel):
-        for attempt in range(1, attempts + 1):
-            try:
-                resp = httpx.get(url, headers={"User-Agent": UA}, timeout=45, follow_redirects=True)
-                resp.raise_for_status()
-                if not parse_rss(resp.text):
-                    errors.append(f"{url}: response contains no parseable episodes")
-                    break
-                if errors:
-                    log(f"  ↪ RSS fallback selected: {resp.url}")
-                return resp.text, str(resp.url), None
-            except httpx.HTTPStatusError as e:
-                errors.append(f"{url} attempt {attempt}/{attempts}: {e}")
-                if e.response.status_code in (401, 403, 404, 410):
-                    # Retrying the same rejected route does not help; try the
-                    # configured publisher-owned alternative immediately.
-                    break
-                if attempt < attempts:
-                    time.sleep(1.5 * attempt)
-            except Exception as e:
-                errors.append(f"{url} attempt {attempt}/{attempts}: {e}")
-                if attempt < attempts:
-                    time.sleep(1.5 * attempt)
+        try:
+            resp = bounded_get(url, attempts=attempts, headers={"User-Agent": UA}, timeout=45, follow_redirects=True)
+            resp.raise_for_status()
+            if not parse_rss(resp.text):
+                errors.append(f"{url.split('?')[0]}: response contains no parseable episodes")
+                continue
+            if errors:
+                log("  ↪ RSS fallback selected")
+            return resp.text, str(resp.url), None
+        except httpx.HTTPStatusError as e:
+            errors.append(f"{url.split('?')[0]}: HTTP {e.response.status_code}")
+            if e.response.status_code == 429 or e.response.headers.get('retry-after'):
+                break  # Do not evade publisher throttling through another URL.
+        except Exception as e:
+            errors.append(f"{url.split('?')[0]}: {type(e).__name__}")
     return None, None, " | ".join(errors[-5:]) or "No RSS URL configured"
 
 
@@ -1363,7 +1360,7 @@ def parse_youtube_published_date(html):
 def fetch_video_page_published_date(vid, timeout=30):
     """Fallback for datacenter runs where yt-dlp's full metadata is blocked."""
     try:
-        resp = httpx.get(
+        resp = bounded_get(
             f"https://www.youtube.com/watch?v={vid}",
             timeout=timeout,
             headers={"User-Agent": UA},
@@ -1696,7 +1693,7 @@ def fetch_arxiv(sources):
         url = (f"https://export.arxiv.org/api/query?search_query={cat_query}"
                f"&sortBy={sort_by}&sortOrder=descending&max_results={max_papers * 3}")
         try:
-            resp = httpx.get(url, timeout=30, headers={"User-Agent": UA})
+            resp = bounded_get(url, timeout=30, headers={"User-Agent": UA})
             resp.raise_for_status()
             roots.append(ET.fromstring(resp.text))
         except Exception as e:
@@ -1877,7 +1874,7 @@ def parse_visible_date(html):
 def blog_page_meta(url):
     """Fetch an article page: <title>, meta description, visible publish date."""
     try:
-        resp = httpx.get(url, timeout=20, headers={"User-Agent": UA}, follow_redirects=True)
+        resp = bounded_get(url, timeout=20, headers={"User-Agent": UA}, follow_redirects=True)
         resp.raise_for_status()
     except Exception:
         return "", "", None
@@ -1965,7 +1962,7 @@ def fetch_blogs(sources):
     for src in blog_sources:
         name = src.get("name", src.get("id", "?"))
         try:
-            resp = httpx.get(src["url"], timeout=30, headers={"User-Agent": UA}, follow_redirects=True)
+            resp = bounded_get(src["url"], timeout=30, headers={"User-Agent": UA}, follow_redirects=True)
             resp.raise_for_status()
             if src.get("type") == "sitemap":
                 found = blog_items_from_sitemap(resp.text, src, since, max_per_source)

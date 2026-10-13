@@ -10,6 +10,7 @@
 
 ## 最近更新
 
+- `2026-10-13`：增加有界故障恢复、产物验收和现有私聊告警支持；启用需更新本机启动器。[恢复边界与部署说明](docs/macmini-production.md#bounded-recovery-pending-deployment-approval)。
 - `2026-10-13`：日常 feed 与缺失全文转录迁至 Mac mini；复用本地 MLX 模型，保留持久队列。GitHub 保留测试与显式手动运行入口。[运行与回滚说明](docs/macmini-production.md)。
 
 - `2026-10-08`：播客无公开字幕的转录接入云端 CPU Whisper，持久队列跨 feed 窗口保留待办、逐集保存与失败退避；不再自动调用火山 ASR。[维护说明](docs/cloud-whisper-production.md)。
