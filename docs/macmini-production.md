@@ -126,3 +126,14 @@ For an operator-requested backlog, add `--repair-transcripts --publish` to the n
 
 
 When origin is unavailable, the consumer resolves the latest public main commit once through the unauthenticated GitHub API and uses immutable commit URLs for the existing CDN endpoints. Feed and transcript requests share that revision. API failure retains the existing mirrored fallback; custom mirror URLs are preserved. The health observer can verify the identical pinned route against the published content hash when a branch alias remains stale. It records `delivery=commit_pinned` and retains `alias_status=pending`, rather than claiming the old alias was purged. The existing purge cooldown and 45-second shared budget still apply.
+
+
+## Alerts
+
+生产任务失败后立即尝试原私人 Telegram 通道。通知未确认时，在后续检查中至少间隔一小时发送新的状态提醒。持续故障每六小时提醒，验收恢复后提醒一次。重复提醒可能包含此前已送达但回执丢失的事件，正文会明确上次送达未确认。`notification-history.jsonl` 追加保存每次尝试和结果，消息回执不代表用户已读。
+
+独立的 `Published Feed Watchdog` 每小时 UTC 第 7 分钟运行。它只读取主分支公开数据，不抓取、不转录、不修改数据。按北京时间主任务 04:13 加 80 分钟、X 04:20 加 60 分钟、工作日论文 09:30 加 25 分钟判断过期。没有新文章但当天完成抓取不算失败。检查来源错误、全文是否存在及内容校验值。
+
+维护者配置仓库 Secrets `AI_SIGNAL_ALERT_BOT_TOKEN` 和 `AI_SIGNAL_ALERT_CHAT_ID`，指向原私人目的地。可通过手动运行的 `test_alert` 验证发送。状态通过 Actions cache 保留；缓存丢失可能导致额外提醒。每次检查的脱敏回执保留为 30 天 artifact，通知失败会让 workflow 失败。GitHub 定时调度可能延迟，不提供严格分钟级送达保证。主机和 GitHub 同时不可用、Telegram 本身故障仍可能影响提醒。
+
+停用云端检查可禁用此 workflow；停用本机提醒不应停掉生产任务。

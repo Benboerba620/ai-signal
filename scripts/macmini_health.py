@@ -8,6 +8,7 @@ from pathlib import Path
 
 import cloud_whisper_pilot as pilot
 from feed_resilience import OperationError
+from signal_alerts import deliver
 
 
 def now():
@@ -96,7 +97,7 @@ def record(state_dir, report):
 
 
 def notify(state_dir, report, module_path=None):
-    """Reserve dedup key before sending; uncertain delivery is never resent."""
+    """Serialize delivery and retain bounded follow-ups and durable receipts."""
     if not module_path or not report.get('publish'):
         return
     with (state_dir/'alert.lock').open('a') as lock:
@@ -110,35 +111,25 @@ def notify(state_dir, report, module_path=None):
 def _notify_locked(state_dir, report, module_path):
     scope = report['scope']
     problem = report['status'] != 'completed' or report.get('source_health') == 'degraded'
-    previous = read(state_dir/f'alert-{scope}.json', {})
     signature = json.dumps([report.get('failure_kind'), report.get('source_health'),
                             report.get('current_failure_kinds', []),
                             {k: v['upstream_failure_count'] for k, v in report.get('feeds', {}).items()},
                             bool(report.get('circuit', {}).get('open'))], sort_keys=True)
     key = hashlib.sha256(signature.encode()).hexdigest() if problem else 'recovered'
-    if previous.get('key') == key or (not problem and not previous):
-        return
-    receipt = {'key': key, 'at': now().isoformat(), 'delivery': 'reserved'}
-    destination = state_dir/f'alert-{scope}.json'
-    pilot.atomic_json(destination, receipt)
     state = report.get('circuit', {})
-    text = (f"AI Signal / {scope}: " + ('需要检查' if problem else '已验收恢复') + '\n'
-            f"主链路: {report['status']}; 来源: {report.get('source_health', 'unknown')}\n"
-            f"分类: {report.get('failure_kind') or ', '.join(report.get('current_failure_kinds', [])) or 'none'}\n"
-            f"最近验收成功: {state.get('last_success', '尚无')}\n"
-            f"已执行: {len(report.get('recovery_actions', []))} 次有界恢复动作；未重置历史队列。\n"
-            f"人工步骤: {'检查本地诊断；修复后显式解除熔断' if state.get('open') else ('检查本地报告中的失败分类' if problem else '无需操作')}\n"
-            '证据: runs/latest-' + scope + '.json（详细日志仅保留本机）')
-    try:
-        # Explicit operator-provided local module; never derived from remote output.
+    labels = {'all':'播客、博客和论文', 'arxiv':'论文', 'x':'X', 'cache':'公开下载'}
+    text = (f"AI Signal / {labels.get(scope, scope)}：" + ('抓取或数据异常' if problem else '已验收恢复') + '\n'
+            f"最近成功：{state.get('last_success', '请查看下方数据时间')}\n"
+            f"问题分类：{report.get('failure_kind') or ', '.join(report.get('current_failure_kinds', [])) or report.get('source_health', '无')}\n")
+    for name, feed in report.get('feeds', {}).items():
+        text += f"{name} 数据时间：{feed.get('generated_at', '未知')}\n"
+    text += ('旧数据不能当作今日更新。系统会有限补试；持续失败请检查抓取和网络。' if problem else '当前检查通过，无需操作。')
+    def send(text):
         spec = importlib.util.spec_from_file_location('existing_telegram_direct', module_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        result = module.send(text)  # Keep the existing module's default private destination.
-        receipt['delivery'] = result.get('status', 'delivery_unknown')
-    except Exception as exc:
-        receipt.update(delivery='local_error', error_type=type(exc).__name__)
-    pilot.atomic_json(destination, receipt)
+        return module.send(text)
+    return deliver(state_dir, scope, key, problem, text, send, at=now())
 
 
 def monitor(state_dir, root, module_path=None, at=None):
@@ -179,6 +170,12 @@ def monitor(state_dir, root, module_path=None, at=None):
             except Exception:
                 healthy = False
                 outcomes[scope] = 'invalid_or_stale_artifacts'
+        if healthy:
+            current = dict(report, scope=scope, publish=True, status='completed')
+            if scope == 'arxiv' and success != state.get('last_success'):
+                current.update(source_health='ok', failure_kind=None)
+            if (state_dir/f'alert-{scope}.json').exists() or current.get('source_health') == 'degraded':
+                notify(state_dir, current, module_path)
         if not healthy:
             if (report.get('status') in ('failed', 'circuit_open') and
                     date(report['finished_at']) >= expected):

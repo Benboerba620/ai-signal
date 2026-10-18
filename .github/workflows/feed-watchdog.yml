@@ -1,0 +1,54 @@
+name: Published Feed Watchdog
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: 'Send a clearly labelled notification test to the configured private destination.'
+        required: false
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: published-feed-watchdog
+  cancel-in-progress: false
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/cache/restore@v4
+        with:
+          path: .watchdog-state
+          key: watchdog-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: watchdog-v1-
+      - name: Check published data and notify
+        id: watch
+        env:
+          AI_SIGNAL_ALERT_BOT_TOKEN: ${{ secrets.AI_SIGNAL_ALERT_BOT_TOKEN }}
+          AI_SIGNAL_ALERT_CHAT_ID: ${{ secrets.AI_SIGNAL_ALERT_CHAT_ID }}
+          TEST_ALERT: ${{ inputs.test_alert }}
+        shell: bash
+        run: |
+          args=()
+          if [ "$TEST_ALERT" = 'true' ]; then args+=(--test-alert); fi
+          python scripts/public_feed_watchdog.py --state-dir .watchdog-state "${args[@]}"
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .watchdog-state
+          key: watchdog-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: notification-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .watchdog-state/*.json*
+          retention-days: 30

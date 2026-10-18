@@ -228,6 +228,7 @@ class AutomaticRepairTests(unittest.TestCase):
             root = Path(directory); repo = root/'repo'; repo.mkdir()
             (repo/'source.py').write_text('changed')
             entry = root/'entry.py'; entry.write_text((Path(runner.__file__).parent/'macmini_runtime.py').read_text())
+            (root/'signal_alerts.py').write_text((Path(runner.__file__).parent/'signal_alerts.py').read_text())
             (root/'manifest.json').write_text(json.dumps({'repository': str(repo), 'baselines': {'source.py': 'wrong'}}))
             sent = root/'sent.txt'; notifier = root/'notifier.py'
             notifier.write_text('from pathlib import Path\ndef send(text):\n p=Path(%r)\n p.write_text((p.read_text() if p.exists() else "")+"sent\\n")\n return {"status":"sent"}\n' % str(sent))

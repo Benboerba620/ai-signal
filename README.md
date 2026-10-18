@@ -10,6 +10,8 @@
 
 ## 最近更新
 
+- `2026-10-18`：补齐告警重试和历史回执；GitHub 每小时独立检查数据是否按时更新，主机离线也能提醒。[告警说明](docs/macmini-production.md#alerts)。
+
 - `2026-10-18`：Mac mini 增加有界自动修复，修正长音频和二进制音频误拒，并更新公共下载镜像；沿用原定时任务。[自动修复说明](docs/macmini-production.md#opt-in-automatic-repair)。
 - `2026-10-13`：增加有界故障恢复、产物验收和现有私聊告警支持；启用需更新本机启动器。[恢复边界与部署说明](docs/macmini-production.md#bounded-recovery)。
 - `2026-10-13`：日常 feed 与缺失全文转录迁至 Mac mini；复用本地 MLX 模型，保留持久队列。GitHub 保留测试与显式手动运行入口。[运行与回滚说明](docs/macmini-production.md)。

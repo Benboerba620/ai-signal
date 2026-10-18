@@ -76,21 +76,19 @@ def startup_failure(error):
     with (state/'runtime-error.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         kind = type(error).__name__
-        if path.exists() and json.loads(path.read_text()).get('error_type') == kind:
-            return
-        receipt = {'status': 'blocked', 'error_type': kind, 'at': datetime.now(timezone.utc).isoformat(),
-                   'delivery': 'reserved'}
-        save(receipt)
-        if '--notifier-module' in sys.argv:
-            try:
-                module_path = sys.argv[sys.argv.index('--notifier-module')+1]
-                spec = importlib.util.spec_from_file_location('existing_runtime_notifier', module_path)
-                module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-                result = module.send('AI Signal 启动失败，自动抓取已停止。\n运行补丁的版本或依赖需要人工检查。\n原队列和故障现场已保留。详见本机 runs/runtime-error.json。')
-                receipt['delivery'] = result.get('status', 'delivery_unknown')
-            except Exception as exc:
-                receipt.update(delivery='local_error', notification_error=type(exc).__name__)
-            save(receipt)
+        from signal_alerts import deliver
+        def send(text):
+            if '--notifier-module' not in sys.argv:
+                return {'status': 'credentials_unavailable'}
+            module_path = sys.argv[sys.argv.index('--notifier-module')+1]
+            spec = importlib.util.spec_from_file_location('existing_runtime_notifier', module_path)
+            module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+            return module.send(text)
+        receipt = deliver(state, 'runtime', kind, True,
+            'AI Signal 启动失败，自动抓取已停止。\n运行版本或依赖需要人工检查。\n原队列和故障现场已保留。', send)
+        if receipt:
+            save(dict(receipt, status='blocked', error_type=kind))
+
 
 
 def main():
