@@ -320,6 +320,22 @@ HTTP_TIMEOUT = httpx.Timeout(20.0, connect=5.0)
 # Once a base succeeds, later fetches try it first instead of re-walking
 # the mirror list from a base that already failed once.
 _preferred_base = None
+_mirror_commit = None
+_mirror_resolution_attempted = False
+
+
+def pinned_mirror_bases(bases, resolve=False):
+    """Resolve a public immutable revision once when origin is unavailable."""
+    global _mirror_commit, _mirror_resolution_attempted
+    if not any(base in MIRROR_BASES[1:] for base in bases):
+        return bases
+    if resolve and not _mirror_resolution_attempted:
+        _mirror_resolution_attempted = True
+        metadata = fetch_json('https://api.github.com/repos/Benboerba620/ai-signal/commits/main')
+        value = metadata.get('sha') if isinstance(metadata, dict) else None
+        if isinstance(value, str) and re.fullmatch(r'[0-9a-f]{40}', value):
+            _mirror_commit = value
+    return [base+'@'+_mirror_commit if _mirror_commit and base in MIRROR_BASES[1:] else base for base in bases]
 
 
 def fetch_json(url):
@@ -349,6 +365,7 @@ def candidate_bases():
         bases = []
     if not bases:
         bases = list(MIRROR_BASES)
+    bases = pinned_mirror_bases(bases)
     if _preferred_base in bases:
         bases.remove(_preferred_base)
         bases.insert(0, _preferred_base)
@@ -381,6 +398,7 @@ def fetch_json_any(path):
             _preferred_base = RAW_BASE
             return data, f"{RAW_BASE}/{path}"
         bases.remove(RAW_BASE)
+    bases = pinned_mirror_bases(bases, resolve=True)
     if bases:
         # Network calls retain the existing per-request timeout. Compare in
         # parallel so an unreachable mirror does not multiply the wait.

@@ -12,6 +12,26 @@ import render_digest
 
 
 class ConsumerHealthTests(unittest.TestCase):
+    def test_origin_failure_uses_one_public_revision_for_feeds_and_text(self):
+        revision = 'a'*40
+        base = p.MIRROR_BASES[1]
+        data = {'generated_at': datetime.now(timezone.utc).isoformat(), 'podcasts': []}
+        def fetch(url):
+            if '/commits/main' in url: return {'sha': revision}
+            if '@'+revision+'/' in url: return data
+            return None
+        with mock.patch.dict('os.environ', {'AI_SIGNAL_BASE_URLS': p.RAW_BASE+','+base}), \
+             mock.patch.object(p, '_mirror_commit', None), \
+             mock.patch.object(p, '_mirror_resolution_attempted', False), \
+             mock.patch.object(p, '_preferred_base', None), \
+             mock.patch.object(p, 'fetch_json', side_effect=fetch) as request, \
+             mock.patch.object(p, 'fetch_text', return_value='complete transcript') as text:
+            self.assertEqual(p.fetch_json_any('feeds/feed-podcasts.json'),
+                             (data, base+'@'+revision+'/feeds/feed-podcasts.json'))
+            self.assertEqual(p.fetch_text_any('feeds/transcripts/one.txt'), 'complete transcript')
+            text.assert_called_once_with(base+'@'+revision+'/feeds/transcripts/one.txt')
+            self.assertEqual(sum('/commits/main' in call.args[0] for call in request.call_args_list), 1)
+
     def test_selects_newest_valid_mirror_after_origin_failure(self):
         now = datetime.now(timezone.utc)
         old = {'generated_at': (now - timedelta(hours=24)).isoformat(), 'podcasts': []}

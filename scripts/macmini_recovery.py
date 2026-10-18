@@ -273,6 +273,7 @@ def sync_public_cache(root, state_dir, *, proxy=None, x_generated_at=None, x_con
         state = json.loads(path.read_text()) if path.exists() else {}
         deadline = time.monotonic()+45
         outcomes = {}
+        revision = None
         def get(url):
             remaining = deadline-time.monotonic()
             if remaining <= 0:
@@ -309,17 +310,30 @@ def sync_public_cache(root, state_dir, *, proxy=None, x_generated_at=None, x_con
                 return (stamp(expected) <= value <= now()+timedelta(minutes=5) and
                         (expected_digest is None or content_digest(data) == expected_digest))
             try:
-                if not fresh(get('https://cdn.jsdelivr.net'+relative)):
-                    last = record.get('purge_at')
-                    if not last or now()-stamp(last) >= timedelta(hours=6):
-                        record.update(status='pending', purge_at=now().isoformat())
-                        state[name] = record
-                        pilot.atomic_json(path, state)  # Reserve even if acknowledgement is lost.
-                        get('https://purge.jsdelivr.net'+relative)
-                    else:
-                        raise ValueError('Mirror pending; purge cooldown active')
+                try:
                     if not fresh(get('https://cdn.jsdelivr.net'+relative)):
-                        raise ValueError('Mirror remains stale')
+                        last = record.get('purge_at')
+                        if not last or now()-stamp(last) >= timedelta(hours=6):
+                            record.update(status='pending', purge_at=now().isoformat())
+                            state[name] = record
+                            pilot.atomic_json(path, state)
+                            get('https://purge.jsdelivr.net'+relative)
+                        else:
+                            raise ValueError('Mirror pending; purge cooldown active')
+                        if not fresh(get('https://cdn.jsdelivr.net'+relative)):
+                            raise ValueError('Mirror remains stale')
+                    record.update(delivery='branch_alias', alias_status='verified')
+                except Exception:
+                    # Same route as the consumer's origin-failure fallback.
+                    # A purge acknowledgement alone never reaches this state.
+                    if revision is None:
+                        revision = get('https://api.github.com/repos/Benboerba620/ai-signal/commits/main').get('sha')
+                    if not isinstance(revision, str) or len(revision) != 40 or any(c not in '0123456789abcdef' for c in revision):
+                        raise ValueError('Invalid public revision')
+                    pinned = f'/gh/Benboerba620/ai-signal@{revision}/feeds/feed-{name}.json'
+                    if not fresh(get('https://cdn.jsdelivr.net'+pinned)):
+                        raise ValueError('Pinned mirror does not match published content')
+                    record.update(delivery='commit_pinned', alias_status='pending', pinned_commit=revision)
                 record.update(status='verified', verified_at=now().isoformat())
                 record.pop('error_type', None)
             except Exception as exc:

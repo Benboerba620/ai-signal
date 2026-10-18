@@ -287,6 +287,30 @@ class AutomaticRepairTests(unittest.TestCase):
             self.assertEqual(json.loads((state/'public-cache.json').read_text())['podcasts']['expected_content_sha256'],
                              repair.content_digest(new))
 
+    def test_stale_alias_uses_verified_immutable_consumer_route(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)/'repo'; root.mkdir(); state = Path(directory)/'state'; state.mkdir()
+            (root/'feeds').mkdir(); at = repair.now().isoformat(); revision = 'b'*40
+            data = {'generated_at': at, 'podcasts': []}
+            pilot.atomic_json(root/'feeds/feed-podcasts.json', data)
+            calls = []
+            def request(args, **kwargs):
+                if args[0] == 'git': return subprocess.CompletedProcess(args, 0, stdout='')
+                url = args[-1]; calls.append(url)
+                if '/commits/main' in url: body = {'sha': revision}
+                elif '@'+revision+'/' in url: body = data
+                elif 'purge.' in url: body = {'status': 'finished'}
+                else: body = {'generated_at': '2026-10-14T00:00:00+00:00'}
+                return subprocess.CompletedProcess(args, 0, stdout=json.dumps(body))
+            with patch.object(repair.subprocess, 'run', side_effect=request):
+                self.assertEqual(repair.sync_public_cache(root, state), {'podcasts': 'verified'})
+                self.assertEqual(repair.sync_public_cache(root, state), {'podcasts': 'verified'})
+            record = json.loads((state/'public-cache.json').read_text())['podcasts']
+            self.assertEqual(record['delivery'], 'commit_pinned')
+            self.assertEqual(record['alias_status'], 'pending')
+            self.assertEqual(record['pinned_commit'], revision)
+            self.assertEqual(sum('purge.' in url for url in calls), 1)
+
     def test_checked_in_runtime_routes_workers_through_same_patched_entry(self):
         import macmini_runtime as runtime
         with patch.object(queue, 'RUNTIME_ENTRY', None), patch.object(queue, 'LOCAL_VALIDATION_REPAIR', False):
