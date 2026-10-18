@@ -41,10 +41,10 @@ RAW_BASE = "https://raw.githubusercontent.com/Benboerba620/ai-signal/main"
 # Override with AI_SIGNAL_BASE_URLS="https://base1,https://base2" if needed.
 MIRROR_BASES = [
     RAW_BASE,
-    "https://cdn.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://fastly.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://gcore.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://testingcf.jsdelivr.net/gh/Benboerba620/ai-signal@main",
+    "https://cdn.jsdelivr.net/gh/Benboerba620/ai-signal",
+    "https://fastly.jsdelivr.net/gh/Benboerba620/ai-signal",
+    "https://gcore.jsdelivr.net/gh/Benboerba620/ai-signal",
+    "https://testingcf.jsdelivr.net/gh/Benboerba620/ai-signal",
 ]
 PROMPT_FILES = [
     "summarize-podcast.md",

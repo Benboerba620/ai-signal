@@ -81,6 +81,8 @@ class OperationError(RuntimeError):
 
 def command_failure(output):
     value = output.lower()
+    if value.startswith('invalid transcript retention index:') and 'expired transcript remains indexed' in value:
+        return OperationError('expired_retention')
     if any(word in value for word in ('permission denied', 'authentication failed', 'bad credentials',
                                       'could not read username', 'http 401', 'http 403')):
         return OperationError('credentials_or_permission')

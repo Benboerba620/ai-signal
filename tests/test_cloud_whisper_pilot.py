@@ -41,6 +41,19 @@ class PilotTests(unittest.TestCase):
         self.assertEqual(result['download_bytes'], 2048)
         self.assertEqual(len(result['audio_sha256']), 64)
 
+    def test_generic_binary_mime_requires_recognized_audio_signature(self):
+        for mime in ('application/octet-stream', 'binary/octet-stream', 'application/binary'):
+            with self.subTest(mime=mime):
+                self.assertEqual(self.download(mime=mime)['download_bytes'], 2048)
+                with self.assertRaisesRegex(pilot.PilotError, 'not recognized audio'):
+                    self.download(body=b'not an audio file'*128, mime=mime)
+                with self.assertRaisesRegex(pilot.PilotError, 'HTML'):
+                    self.download(body=b'<html>'+b'x'*2048, mime=mime)
+
+    def test_local_budget_is_separate_and_still_bounded(self):
+        self.assertEqual(pilot.MAX_AUDIO_BYTES, 128*1024*1024)
+        self.assertEqual(pilot.LOCAL_MAX_AUDIO_BYTES, 160*1024*1024)
+
     def test_reject_html_content_type_even_if_status_200(self):
         with self.assertRaisesRegex(pilot.PilotError, 'Content-Type'):
             self.download(mime='text/html')

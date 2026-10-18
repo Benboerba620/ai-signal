@@ -2,7 +2,7 @@
 
 The daily non-X feed runs on the Mac at 04:13 Asia/Shanghai; arXiv-only refresh runs on weekdays at 09:30. The existing 04:20 X writer and existing user delivery jobs remain separate. The destination stays the public repository's `feeds/` tree, not a new notification channel.
 
-`scripts/macmini_feed.py` defaults to preview. It reuses the durable queue, original source policy, public-caption preference, per-episode checkpoints, terminal denials and retry backoff. It processes at most two episodes. Audio stays capped at 128 MiB and two hours, each worker at 30 minutes / 6 GiB, and the full run at a 65-minute processing budget. Historical failed entries are retained, not reset during migration.
+`scripts/macmini_feed.py` defaults to preview. It reuses the durable queue, original source policy, public-caption preference, per-episode checkpoints, terminal denials and retry backoff. It processes at most two episodes. Local audio stays capped at 160 MiB and two hours (the standalone CPU/cloud path retains 128 MiB), each worker at 30 minutes / 6 GiB, and the full run at a 65-minute processing budget. Historical failed entries are retained, not reset during migration.
 
 The Mac adapter calls the already-installed shared `podcast_rss_transcribe.py` through its existing Python runtime and cached MLX medium model. Inference is offline, receives no API keys or HF token, and does not download models. Its user-site library path is explicitly passed because the worker isolates HOME. The existing loopback HTTP network transport is configured explicitly for public audio; every source/redirect still passes public URL checks, and HTTP denials remain terminal. Linux manual runs keep CPU small/small.en.
 
@@ -17,7 +17,7 @@ The Mac adapter calls the already-installed shared `podcast_rss_transcribe.py` t
 Example (paths are machine-specific, with existing credentials and dependencies):
 
 ```sh
-python scripts/macmini_feed.py --publish --scope all \
+python scripts/macmini_runtime.py --publish --auto-repair --scope all \
   --state-dir /path/outside/checkout/runs \
   --transcriber /existing/workspace/scripts/podcast_rss_transcribe.py \
   --asr-python /usr/bin/python3 \
@@ -31,16 +31,16 @@ The runner locks both local scopes, preserves unexpected edits, validates feeds,
 
 Unload only the two new ai-signal launchd jobs first. Preserve the dedicated checkout, queue, reports and unpushed commits. The existing X/podcast-report/delivery jobs remain untouched. Once no local production run remains, the retained manual cloud workflow can run with `confirm_local_paused=true`. Restoring automatic cloud schedules is a separate reviewed change; never run both automatic producers together. No workflow history, queue or feed deletion is necessary.
 
-## Bounded recovery (pending deployment approval)
+## Bounded recovery
 
-The recovery code does not modify itself, interpret logs as instructions, call an LLM, change credentials, increase quotas, or use paid ASR. Merge and launcher replacement require operator approval. Existing X and podcast delivery jobs keep their schedules.
+The recovery code does not modify itself, interpret logs as instructions, call an LLM, change credentials, increase quotas, or use paid ASR. Deploy source and launcher changes under the operator's repair authorization. Existing X and podcast delivery jobs keep their schedules.
 
 - HTTP GETs: at most three attempts for transport errors or 408/429/500/502/503/504, exponential waits, at most 30 seconds sleeping per request. A longer `Retry-After` is deferred rather than shortened. The local generator persists host cooldowns in `http-deferred.json` across runs. Audio/caption throttling is persisted in the existing queue, at least the server deadline or existing 6h/12h backoff, with three lifetime attempts. Audio is not downloaded repeatedly within one attempt.
-- Denied sources, malformed audio and resource limits are terminal; prior terminal queue entries are never reset. Unknown worker errors also require inspection. The original 128 MiB, two-hour, 6 GiB and two-episode caps remain. SIGTERM/interruptions checkpoint the queue and stop work; subprocess timeouts kill the process group.
+- Denied sources, malformed audio and resource limits are terminal. The local runtime recognizes only the prior false binary/octet-stream rejection and a known Content-Length rejection within the local 160 MiB cap. Eligible current entries receive one revision-specific retry within three lifetime attempts, retaining history. HTTP denials and unknown errors require inspection. The two-hour, 6 GiB and two-episode caps remain. SIGTERM/interruptions checkpoint the queue and stop work; subprocess timeouts kill the process group.
 - `run.lock` uses an OS advisory lock, released automatically after process death. Replace the old outer `mkdir launch.lock` wrapper; do not automatically remove a directory lock while an old producer could still be running. Preflight failures now create reports. The whole producer has a 65-minute deadline; individual generation and ASR budgets remain bounded.
 - Git transport failures retry at most three times. `publication.json` records the exact owned paths, hashes, base and pending commit. An interrupted checkpoint can resume only if those bytes/commit still match, no other edits exist, and the cloud writer is paused. No force push, reset, conflict clearing or arbitrary file deletion. A crash between committing/rebasing and saving its journal can require manual review. A crash during generation can leave unrecognized edits, which are intentionally preserved.
 - Feed JSON writes are atomic. Acceptance checks the existing feed contracts plus actual timestamps, transcript character counts/content and available hashes. A stale retained feed is not accepted as a successful refresh. If its data contract is valid, other valid partial updates are checkpointed so the next scheduled attempt starts clean; the run still records a freshness failure. arXiv publication validates its own scope so unrelated stale podcast retention does not block it.
-- Reports distinguish `pipeline_health`, `source_health`, current source failures and historical terminal entries. A published valid refresh with a source failure is degraded at the source level; it does not count as a pipeline failure. After three consecutive pipeline failures **per scope**, the circuit latches open and starts no fetch/inference/publication. There is no timer-based circuit reset.
+- Reports distinguish `pipeline_health`, `source_health`, current source failures and historical terminal entries. Coverage records total podcast items, complete transcripts and pending current transcripts. A healthy capture with a transcript backlog remains degraded until the backlog clears. A published valid refresh with a source failure is degraded at the source level; it does not count as a pipeline failure. After three consecutive pipeline failures **per scope**, the circuit latches open and starts no fetch/inference/publication. There is no timer-based circuit reset.
 
 Inspect `runs/latest-all.json`, `runs/latest-arxiv.json`, `runs/health-*.json`, the per-run `diagnostic.json`, redacted Git `diagnostic.log`, and private `generation.log`/worker evidence. State directories are mode 0700, raw generation logs 0600. Do not attach raw logs to public issues: source URLs can contain signed parameters. Diagnostic records never contain command suggestions derived from external text. Unknown errors need a candidate patch and isolated tests reviewed by a human.
 
@@ -57,7 +57,7 @@ Pass `--notifier-module /existing/workspace/scripts/telegram_direct.py` to reuse
 An optional hourly launchd observer can run:
 
 ```sh
-python scripts/macmini_feed.py --state-dir /existing/runs --health-only \
+python scripts/macmini_runtime.py --state-dir /existing/runs --health-only --auto-repair \
   --notifier-module /existing/workspace/scripts/telegram_direct.py
 ```
 
@@ -66,3 +66,60 @@ It checks Beijing 04:13 daily (80-minute grace) and weekday 09:30 arXiv (25-minu
 Deployment: first back up the existing launcher and the two launchd plists, verify no active producer/old directory lock, then replace the launcher with an `exec` call to this runner (no outer mkdir lock or pre-run Git command). Keep the same repository, state path, cached engine and 04:13/09:30 schedules. Run an approved acceptance refresh; enable the hourly observer only after accepted state exists for both scopes (or after their first scheduled runs). Inspect remote commits and Telegram receipt. Do not send synthetic failure alerts to the real recipient during tests.
 
 Rollback: boot out only the optional health observer, wait for producer idle, restore the backed-up launcher and approved prior code. Preserve all feed/queue commits, pending journal, circuit state and logs; do not reset the checkout or clear terminal failures. Keep the manual-only cloud workflow. Moving production back to GitHub remains a separate approved action.
+
+
+## Opt-in automatic repair
+
+Add `--auto-repair` to the existing producer and hourly health command. Keep
+04:13 daily, 09:30 weekday arXiv and 04:20 X schedules. The observer can start
+one missed/failed scope per invocation. The shared producer lock still applies.
+Each scope gets at most one extra recovery attempt per 24 hours, reserved before
+work. An open circuit closes only after a genuinely accepted success. Unknown
+failures, real local edits, credentials, conflicts and corruption remain blocked.
+
+Repairs back up exact originals outside the checkout. A lone unstaged queue edit
+can be restored only when parsed content differs solely in the top-level
+`updated_at`, and restored bytes match the original Git blob. No attempt, denial,
+backoff or publication intent is reset. No-op queue saves preserve the timestamp.
+Before checkpoints, inactive expired transcripts are backed up and pruned under
+the existing 14-day rule. Verified active entries can renew that same window.
+Feed freshness never changes during maintenance. Publication intent is recorded
+before validation, so a validation failure retains a recoverable manifest.
+
+Automatic mode separates arXiv, blogs and podcasts within the same 15-minute
+generation budget. Valid partial updates can publish, but failed scopes stay
+failed in the report. The configured loopback HTTP transport reaches RSS and
+people searches as well as audio. No new proxy or credential is created.
+ASR attempt, time and memory limits remain unchanged.
+
+For private deployment before a public source release, `macmini_runtime.py`
+loads six operator-installed modules pinned in an adjacent manifest. It checks
+both original production source and patch hashes. Logical paths remain those of
+the clean production checkout, so only data commits are public. Keep this patch
+outside the checkout. Back up the launcher and plists first, then point the same
+launcher to this entry. Review the patch if production source changes. Rollback
+restores the old launcher; keep backups, journals, queue and reports.
+
+The private health entry also reuses `com.yibo.x-feed` only after its last log
+explicitly reports a proxy failure and the existing guard has fresh healthy
+Google/Telegram checks. It uses `launchctl kickstart` without `-k`, leaves running
+jobs alone and reserves at most one attempt per 24 hours. A later read of the
+actual public X feed confirms recovery. Login failures do not qualify. Unknown X failures, missing jobs and failed publication checks use the same private deduplicated alerts; in-progress jobs remain untouched.
+
+The checked-in `macmini_runtime.py` also runs directly from a Git checkout and routes isolated workers through that same entry. Private patch directories still require a valid manifest. The original pinned private patch remains available for rollback.
+
+After a run or existing health check, the private entry checks changed public
+feed aliases on jsDelivr. Consumers and verification use the default-branch CDN URLs rather than the stale `@main` aliases observed on October 18. Verified timestamp-plus-content versions make no further CDN requests. Stale
+aliases use the official purge API, at most once per version per six hours, and
+must return a sufficiently recent `generated_at` and the expected JSON content hash on a subsequent read. This detects transcript-only publication without falsifying the capture timestamp. Requests
+share a 45-second budget with an eight-second request limit. Failed/uncertain
+purges remain pending and use the same existing notification channel. A CDN purge
+acknowledgement is never publication acceptance. Queue files and private logs
+never enter this path.
+
+
+## Transcript catch-up
+
+The existing a16z AI title filter and The Acquirers Podcast now allow missing-transcript fallback. Other channels, filters and models remain unchanged. Generic binary Content-Types require recognized audio signatures and successful media probing before inference. HTML and other non-audio downloads remain rejected.
+
+For an operator-requested backlog, add `--repair-transcripts --publish` to the normal runtime arguments. Each invocation shares the producer lock, processes at most two due episodes and checkpoints each outcome. It preserves podcast/arXiv/blog capture timestamps and does not claim a new capture success. A bounded one-off sequence may invoke it again after completion; it is not a recurring scheduler. Queue attempts, completed transcripts and terminal denials remain intact.

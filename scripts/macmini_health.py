@@ -160,6 +160,14 @@ def monitor(state_dir, root, module_path=None, at=None):
         report = read(state_dir/f'latest-{scope}.json', {})
         state = circuit(state_dir, scope)
         success = state.get('last_success')
+        if scope == 'arxiv':
+            daily = read(state_dir/'latest-all.json', {})
+            refreshed = daily.get('feeds', {}).get('arxiv', {}).get('generated_at')
+            if daily.get('status') == 'completed' and refreshed and date(refreshed) >= expected:
+                # A verified all-scope run also refreshed arXiv. Do not report
+                # a false outage or start another fetch based on an older
+                # arXiv-only report.
+                success = daily['finished_at']
         healthy = bool(success and date(success) >= expected)
         if active.get('scope') == scope and date(active['deadline']) > at:
             outcomes[scope] = 'running'

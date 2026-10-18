@@ -29,7 +29,9 @@ class QueueTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name) / 'repository'
+        # Match run()'s resolved paths so I/O fault injection also works on
+        # macOS, where /var is a symlink to /private/var.
+        self.root = (Path(self.temporary.name) / 'repository').resolve()
         self.output = Path(self.temporary.name) / 'results'
         (self.root/'feeds/transcripts').mkdir(parents=True)
         (self.root/'config').mkdir()
@@ -450,6 +452,28 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(metadata['transcript_source'], 'local_whisper')
         self.assertEqual(metadata['transcript_model'], 'small')
         self.assertEqual(metadata['transcript_language'], 'zh')
+
+    def test_local_validation_repair_preserves_attempts_and_denials(self):
+        self.run_queue(enqueue_only=True)
+        original = self.state(); key = queue.identity(self.item)
+        messages = [('invalid_audio', 'Rejected non-audio Content-Type: binary/octet-stream', True),
+                    ('resource_budget', 'Audio Content-Length exceeds download byte budget (135502263 > 134217728 bytes)', True),
+                    ('source_denied', 'Audio HTTP status 403; no bypass or retry', False),
+                    ('invalid_audio', 'arbitrary malformed file', False)]
+        for kind, message, retry in messages:
+            with self.subTest(kind=kind, message=message):
+                state = copy.deepcopy(original); entry = state['entries'][key]
+                entry.update(status='failed', attempts=1, failure_kind=kind, last_error=message)
+                item = {**self.item, 'audio_bytes': 135502263}; self.write(queue.FEED_PATH, {'podcasts': [item]})
+                entry['episode']['audio_bytes'] = 135502263
+                with patch.object(queue, 'LOCAL_VALIDATION_REPAIR', True):
+                    queue.refresh(self.root, state, self.sources, NOW)
+                    self.assertEqual(entry['status'], 'retry' if retry else 'failed')
+                    self.assertEqual(entry['attempts'], 1)
+                    if retry:
+                        entry['status'] = 'failed'
+                        queue.refresh(self.root, state, self.sources, NOW)
+                        self.assertEqual(entry['status'], 'failed')
 
     def test_corrupt_worker_artifacts_are_never_published(self):
         output = self.output/'worker'

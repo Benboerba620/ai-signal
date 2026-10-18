@@ -19,6 +19,7 @@ import traceback
 import cloud_whisper_queue as queue
 import cloud_whisper_pilot as pilot
 import macmini_health as health
+import macmini_recovery as recovery
 from feed_resilience import OperationError, command_failure, process, redact
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +31,7 @@ DEADLINE = None
 ACTIONS = []
 EVIDENCE = None
 JOURNAL = None
+REPAIR_DIR = None
 
 
 def command(args, cwd=ROOT, timeout=120):
@@ -64,7 +66,13 @@ def preflight_publish(root):
     if JOURNAL and JOURNAL.exists():
         recover_publication(root)
     if command(['git', 'status', '--porcelain'], root):
-        raise OperationError('unrecognized_local_edits')
+        if not REPAIR_DIR:
+            raise OperationError('unrecognized_local_edits')
+        if command(['git', 'branch', '--show-current'], root) != 'main':
+            raise OperationError('publication_branch_changed')
+        recovery.repair_timestamp(root, REPAIR_DIR, command, ACTIONS)
+        if command(['git', 'status', '--porcelain'], root):
+            raise OperationError('unrecognized_local_edits')
     if command(['git', 'branch', '--show-current'], root) != 'main':
         raise OperationError('publication_branch_changed')
     command(['git', 'pull', '--ff-only', 'origin', 'main'], root)
@@ -115,10 +123,15 @@ def recover_publication(root):
 
 
 def checkpoint(root, scope='all'):
-    command([sys.executable, str(root/'scripts/validate_feeds.py'), '--scope', scope], root)
     if JOURNAL:
         pending = {'base': command(['git', 'rev-parse', 'HEAD'], root), 'files': manifest(root), 'scope': scope}
         pilot.atomic_json(JOURNAL, pending)
+    if REPAIR_DIR and scope != 'arxiv':
+        recovery.prune_retention(root, REPAIR_DIR, ACTIONS)
+        if JOURNAL:
+            pending['files'] = manifest(root)
+            pilot.atomic_json(JOURNAL, pending)
+    command([sys.executable, str(root/'scripts/validate_feeds.py'), '--scope', scope], root)
     paths = ['feeds/feed-arxiv.json'] if scope == 'arxiv' else PATHS[:-1]
     sidecars = ':(glob)feeds/transcripts/*.txt'
     if scope != 'arxiv' and (command(['git', 'ls-files', '--', sidecars], root) or list((root/'feeds/transcripts').glob('*.txt'))):
@@ -163,8 +176,17 @@ def accept_generation(root, args, report):
         raise
 
 
+def transcript_coverage(root, state):
+    items = queue.load_json(root/'feeds/feed-podcasts.json').get('podcasts', [])
+    active = {queue.identity(item) for item in items}
+    entries = [value for key, value in state['entries'].items() if key in active]
+    return {'podcast_items': len(items),
+            'full_transcripts': sum(bool(item.get('transcript_available')) for item in items),
+            'pending_transcripts': sum(value.get('status') in ('pending', 'running') for value in entries)}
+
+
 def run(args, root=ROOT):
-    global DEADLINE, ACTIONS, EVIDENCE, JOURNAL
+    global DEADLINE, ACTIONS, EVIDENCE, JOURNAL, REPAIR_DIR
     root, state_dir = Path(root).resolve(), Path(args.state_dir).resolve()
     if root == state_dir or root in state_dir.parents:
         raise RuntimeError('State/logs must be outside the checkout')
@@ -182,14 +204,19 @@ def run(args, root=ROOT):
         run_dir.mkdir(mode=0o700)
         EVIDENCE = run_dir/'diagnostic.log'
         JOURNAL = state_dir/'publication.json' if args.publish else None
+        REPAIR_DIR = run_dir/'repairs' if args.publish and getattr(args, 'auto_repair', False) else None
         report = {'started_at': health.now().isoformat(), 'scope': args.scope,
                   'publish': args.publish, 'commits': [], 'log_dir': str(run_dir)}
         code = 0
         previous_signal = signal.signal(signal.SIGTERM, interrupted)
         try:
-            if health.circuit(state_dir, args.scope).get('open'):
-                report.update(status='circuit_open', failure_kind='circuit_open')
-                return 75
+            is_open = health.circuit(state_dir, args.scope).get('open')
+            if is_open or getattr(args, 'repair_attempt', False):
+                if (not REPAIR_DIR or not recovery.allowed(root, state_dir, args.scope, command) or
+                        not recovery.reserve(state_dir, args.scope)):
+                    report.update(status='circuit_open', failure_kind='circuit_open')
+                    return 75
+                ACTIONS.append({'operation': 'circuit', 'kind': 'one_bounded_recovery_probe'})
             pilot.atomic_json(state_dir/'active.json', {'scope': args.scope, 'pid': os.getpid(),
                               'started_at': report['started_at'],
                               'deadline': (health.now()+timedelta(minutes=65)).isoformat()})
@@ -202,6 +229,18 @@ def run(args, root=ROOT):
                 engine['user_site'] = command([args.asr_python, '-c', 'import site; print(site.getusersitepackages())'])
             if args.audio_proxy:
                 engine['proxy'] = args.audio_proxy
+            generation_env = {**os.environ, 'AI_SIGNAL_HTTP_STATE': str(state_dir/'http-deferred.json')}
+            if REPAIR_DIR and args.audio_proxy:
+                # Use the existing verified loopback transport for RSS and
+                # people searches too; --audio-proxy previously reached ASR only.
+                from urllib.parse import urlsplit
+                proxy = urlsplit(args.audio_proxy)
+                if (proxy.scheme != 'http' or proxy.hostname != '127.0.0.1' or
+                        proxy.username or proxy.password or proxy.path not in ('', '/')):
+                    raise OperationError('invalid_local_proxy')
+                generation_env.update(HTTP_PROXY=args.audio_proxy, HTTPS_PROXY=args.audio_proxy,
+                                      http_proxy=args.audio_proxy, https_proxy=args.audio_proxy,
+                                      SOCKS_PROXY=args.audio_proxy)
             qargs = argparse.Namespace(status=False, enqueue_only=True, only_channel=[],
                                        checkpoint_git=False, timeout_seconds=1800, max_rss_mib=6144,
                                        output_dir=str(run_dir/'queue'))
@@ -212,11 +251,28 @@ def run(args, root=ROOT):
                     report['commits'].append(checkpoint(root))
             with (run_dir/'generation.log').open('w') as log:
                 os.chmod(log.name, 0o600)
-                result = process([sys.executable, str(root/'scripts/generate_feed.py'),
-                                  '--arxiv-only' if args.scope == 'arxiv' else '--skip-twitter'],
-                                 cwd=root, output=log, timeout=min(900, DEADLINE-time.monotonic()),
-                                 env={**os.environ, 'AI_SIGNAL_HTTP_STATE': str(state_dir/'http-deferred.json')})
-                if result.returncode:
+                scopes = ['--arxiv-only'] if args.scope == 'arxiv' else (
+                    ['--arxiv-only', '--blogs-only', '--podcasts-only'] if REPAIR_DIR else ['--skip-twitter'])
+                generation_deadline = min(DEADLINE, time.monotonic() + 900)
+                failed = []
+                for scope in scopes:
+                    try:
+                        budget = generation_deadline - time.monotonic()
+                        if budget <= 0:
+                            raise subprocess.TimeoutExpired('generation', 900)
+                        result = process([sys.executable, str(root/'scripts/generate_feed.py'), scope],
+                                         cwd=root, output=log, timeout=budget,
+                                         env=generation_env)
+                        if result.returncode:
+                            failed.append(scope)
+                    except subprocess.TimeoutExpired:
+                        if not REPAIR_DIR:
+                            raise
+                        failed.append(scope)
+                if failed:
+                    report['generation_failures'] = failed
+                    if args.publish and REPAIR_DIR:
+                        report['commits'].append(checkpoint(root, args.scope))
                     raise OperationError('generation_failed')
             if args.scope == 'all':
                 queue.run(qargs, root)
@@ -241,12 +297,17 @@ def run(args, root=ROOT):
             active_ids = {queue.identity(item) for item in queue.load_json(root/'feeds/feed-podcasts.json').get('podcasts', [])}
             current = [v for k, v in after['entries'].items() if v.get('status') in ('failed', 'retry')
                        and k in active_ids] if args.scope == 'all' else []
+            pending = False
+            if args.scope == 'all':
+                report['coverage'] = transcript_coverage(root, after)
+                pending = bool(report['coverage']['pending_transcripts'])
             report.update(status='completed', pipeline_health='ok',
                           queue=queue.summary(after, queue.utcnow()),
-                          current_failure_kinds=sorted({v.get('failure_kind', 'unknown') for v in current}),
+                          current_failure_kinds=sorted({v.get('failure_kind') or 'unknown' for v in current} |
+                                                       ({'transcript_backlog'} if pending else set())),
                           historical_failure_count=sum(v.get('status') == 'failed' and k not in active_ids
                                                        for k, v in after['entries'].items()))
-            report['source_health'] = ('degraded' if current or any(
+            report['source_health'] = ('degraded' if current or pending or any(
                 feed['upstream_failure_count'] for feed in report['feeds'].values()) else 'ok')
             report['health'] = report['source_health']
         except (Exception, KeyboardInterrupt) as exc:
@@ -274,8 +335,71 @@ def run(args, root=ROOT):
                 health.notify(state_dir, report, getattr(args, 'notifier_module', None))
             finally:
                 (state_dir/'active.json').unlink(missing_ok=True)
-                DEADLINE, EVIDENCE, JOURNAL = None, None, None
+                DEADLINE, EVIDENCE, JOURNAL, REPAIR_DIR = None, None, None, None
                 signal.signal(signal.SIGTERM, previous_signal)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return code
+
+
+def repair_transcripts(args, root=ROOT):
+    """Manual bounded queue catch-up; never changes capture freshness/health."""
+    global DEADLINE, ACTIONS, EVIDENCE, JOURNAL, REPAIR_DIR
+    root, state_dir = Path(root).resolve(), Path(args.state_dir).resolve()
+    if root == state_dir or root in state_dir.parents:
+        raise OperationError('invalid_state_directory')
+    state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with (state_dir/'run.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return 75
+        started = time.monotonic()
+        DEADLINE, ACTIONS = started+65*60, []
+        directory = state_dir/health.now().strftime('%Y%m%dT%H%M%S%fZ')
+        directory.mkdir(mode=0o700)
+        EVIDENCE, JOURNAL, REPAIR_DIR = directory/'diagnostic.log', state_dir/'publication.json', directory/'repairs'
+        report = {'scope': 'transcripts', 'publish': True, 'started_at': health.now().isoformat(), 'commits': []}
+        previous_signal = signal.signal(signal.SIGTERM, interrupted)
+        code = 0
+        try:
+            pilot.atomic_json(state_dir/'active.json', {'scope': 'all', 'mode': 'transcript_repair',
+                              'deadline': (health.now()+timedelta(minutes=65)).isoformat()})
+            preflight_publish(root)
+            original = {name: queue.load_json(root/f'feeds/feed-{name}.json')['generated_at']
+                        for name in ('podcasts', 'arxiv', 'blogs')}
+            engine = {'python': args.asr_python, 'transcriber': args.transcriber, 'model_cache': args.model_cache,
+                      'user_site': command([args.asr_python, '-c', 'import site; print(site.getusersitepackages())'])}
+            if args.audio_proxy:
+                engine['proxy'] = args.audio_proxy
+            options = argparse.Namespace(status=False, enqueue_only=True, only_channel=[], checkpoint_git=False,
+                          timeout_seconds=1800, max_rss_mib=6144, output_dir=str(directory/'enqueue'))
+            queue.run(options, root)
+            report['commits'].append(checkpoint(root))
+            options.enqueue_only = False
+            for attempt in range(2):
+                remaining = DEADLINE-time.monotonic()-180
+                if remaining < 300 or not queue.due_entries(queue.load_state(root), queue.utcnow()):
+                    break
+                options.timeout_seconds, options.output_dir = min(1800, remaining), str(directory/f'whisper-{attempt+1}')
+                if queue.run(options, root, episode_runner=partial(queue.run_episode, local_engine=engine)):
+                    code = 1
+                report['commits'].append(checkpoint(root))
+            current = {name: queue.load_json(root/f'feeds/feed-{name}.json')['generated_at'] for name in original}
+            if current != original:
+                raise OperationError('unexpected_capture_timestamp_change')
+            report.update(status='completed' if not code else 'failed',
+                          capture_timestamps_unchanged=True, queue=queue.summary(queue.load_state(root), queue.utcnow()))
+        except Exception as exc:
+            code = 1
+            report.update(status='failed', failure_kind=getattr(exc, 'kind', 'repair_failed'), error_type=type(exc).__name__)
+        finally:
+            report.update(finished_at=health.now().isoformat(), recovery_actions=ACTIONS,
+                          elapsed_seconds=round(time.monotonic()-started, 1))
+            pilot.atomic_json(directory/'report.json', report)
+            pilot.atomic_json(state_dir/'latest-transcript-repair.json', report)
+            (state_dir/'active.json').unlink(missing_ok=True)
+            DEADLINE, EVIDENCE, JOURNAL, REPAIR_DIR = None, None, None, None
+            signal.signal(signal.SIGTERM, previous_signal)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return code
 
@@ -290,12 +414,25 @@ def main():
     parser.add_argument('--model-cache')
     parser.add_argument('--audio-proxy', help='Existing credential-free loopback HTTP transport only')
     parser.add_argument('--notifier-module', help='Existing local telegram_direct.py; keeps its private default recipient')
-    parser.add_argument('--health-only', action='store_true', help='Observe schedules; never restart the producer')
+    parser.add_argument('--health-only', action='store_true', help='Observe schedules; repair only with explicit --auto-repair')
+    parser.add_argument('--auto-repair', action='store_true', help='Enable allowlisted repairs and one extra attempt per scope per 24h')
+    parser.add_argument('--repair-transcripts', action='store_true', help='Manual two-episode catch-up without refreshing feeds')
     parser.add_argument('--reset-circuit', action='store_true', help='Explicit operator reset after inspecting the cause')
     args = parser.parse_args()
     state_dir = Path(args.state_dir).resolve()
+    if args.repair_transcripts:
+        if not args.publish or not args.transcriber or not args.model_cache:
+            parser.error('repair requires --publish and the existing local engine')
+        return repair_transcripts(args)
     if args.health_only:
-        print(json.dumps(health.monitor(state_dir, ROOT, args.notifier_module), indent=2))
+        outcomes = health.monitor(state_dir, ROOT, args.notifier_module)
+        print(json.dumps(outcomes, indent=2))
+        if args.auto_repair:
+            for scope, outcome in outcomes.items():
+                if (outcome in ('missed_or_failed_schedule', 'invalid_or_stale_artifacts') and
+                        recovery.available(state_dir, scope) and recovery.allowed(ROOT, state_dir, scope, command)):
+                    args.scope, args.publish, args.repair_attempt = scope, True, True
+                    return run(args)
         return 0
     if args.reset_circuit:
         with (state_dir/'run.lock').open('a') as lock:

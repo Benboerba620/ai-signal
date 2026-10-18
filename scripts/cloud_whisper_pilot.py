@@ -29,6 +29,7 @@ from transcribe_missing_podcasts import asr_eligibility, candidate_items, channe
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_AUDIO_BYTES = 128 * 1024 * 1024
+LOCAL_MAX_AUDIO_BYTES = 160 * 1024 * 1024
 MAX_WORK_BYTES = 2 * 1024 * 1024 * 1024
 MAX_EPISODE_SECONDS = 7200
 MODELS = ("small.en", "small")
@@ -153,7 +154,8 @@ def download_audio(url, destination, client, max_bytes=MAX_AUDIO_BYTES):
             if response.status_code != 200:
                 raise PilotError(f"Audio HTTP status {response.status_code}; no bypass or retry")
             mime = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
-            if not (mime.startswith("audio/") or mime == "application/octet-stream"):
+            generic = mime in {"application/octet-stream", "binary/octet-stream", "application/binary"}
+            if not (mime.startswith("audio/") or generic):
                 raise PilotError(f"Rejected non-audio Content-Type: {mime or 'missing'}")
             if response.headers.get("content-encoding", "identity").lower() != "identity":
                 raise PilotError("Unexpected compressed HTTP body")
@@ -176,6 +178,14 @@ def download_audio(url, destination, client, max_bytes=MAX_AUDIO_BYTES):
                 prefix = source.read(512).lstrip().lower()
             if prefix.startswith((b"<", b"{", b"[", b"#extm3u")):
                 raise PilotError("Audio body looks like HTML, JSON, or a playlist")
+            if generic:
+                with Path(destination).open('rb') as stream:
+                    magic = stream.read(16)
+                recognized = (magic.startswith((b'ID3', b'fLaC', b'OggS')) or
+                              (len(magic) >= 2 and magic[0] == 255 and magic[1] & 224 == 224) or
+                              (magic.startswith(b'RIFF') and magic[8:12] == b'WAVE') or magic[4:8] == b'ftyp')
+                if not recognized:
+                    raise PilotError('Generic binary body is not recognized audio')
             return {"final_url": artifact_url(url), "content_type": mime,
                     "download_bytes": received, "audio_sha256": digest(destination),
                     "download_seconds": round(time.monotonic() - started, 3)}
@@ -260,7 +270,8 @@ def worker(task_path):
     with httpx.Client(timeout=httpx.Timeout(30, connect=15), follow_redirects=False,
                       trust_env=False, proxy=task.get("local_engine", {}).get("proxy"),
                       headers={"User-Agent": "ai-signal-whisper-pilot/1.0"}) as client:
-        result.update(download_audio(task["audio_url"], audio, client))
+        limit = LOCAL_MAX_AUDIO_BYTES if task.get('local_engine') else MAX_AUDIO_BYTES
+        result.update(download_audio(task["audio_url"], audio, client, max_bytes=limit))
     episode_seconds = probe_audio(audio, task["expected_seconds"])
     eligible, reason = asr_eligibility({"audio_url": task["audio_url"], "duration": str(math.floor(episode_seconds)),
                                         "audio_bytes": result["download_bytes"]}, task["policy"])

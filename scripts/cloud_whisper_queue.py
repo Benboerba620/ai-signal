@@ -29,6 +29,9 @@ from transcribe_missing_podcasts import (candidate_items, canonical_episode_titl
                                         duration_seconds, is_youtube_url)
 
 ROOT = Path(__file__).resolve().parent.parent
+SOURCE_POLICY = None
+RUNTIME_ENTRY = None
+LOCAL_VALIDATION_REPAIR = False
 QUEUE_PATH = "feeds/whisper-queue.json"
 FEED_PATH = "feeds/feed-podcasts.json"
 INDEX_PATH = "feeds/feed-transcripts-index.json"
@@ -80,8 +83,16 @@ def load_state(root):
 
 
 def save_state(root, state, now):
+    path = root / QUEUE_PATH
+    if path.exists():
+        previous = load_state(root)
+        if ({k: v for k, v in previous.items() if k != 'updated_at'} ==
+                {k: v for k, v in state.items() if k != 'updated_at'}):
+            if 'updated_at' in previous:
+                state['updated_at'] = previous['updated_at']
+            return
     state["updated_at"] = now.isoformat()
-    pilot.atomic_json(root / QUEUE_PATH, state)
+    pilot.atomic_json(path, state)
 
 
 def sync_transcription_status(root, state):
@@ -266,6 +277,24 @@ def refresh(root, state, sources, now):
     # Record all real successes as durable source+GUID tombstones, even if their
     # channel is not eligible for Whisper or the index later ages out.
     current = {identity(item): item for item in feed.get("podcasts", []) if identity(item)}
+    if LOCAL_VALIDATION_REPAIR:
+        for key, entry in state['entries'].items():
+            if (key not in current or entry.get('status') != 'failed' or
+                    entry.get('attempts', 0) >= MAX_ATTEMPTS or
+                    'audio-validation-v2' in entry.get('repair_revisions', [])):
+                continue
+            message = entry.get('last_error', '')
+            mime_fix = (entry.get('failure_kind') == 'invalid_audio' and
+                        message == 'Rejected non-audio Content-Type: binary/octet-stream')
+            size_fix = (entry.get('failure_kind') in ('resource_budget', 'invalid_audio') and
+                        ('Content-Length' in message and ('budget' in message)) and
+                        0 < int(entry.get('episode', {}).get('audio_bytes') or 0) <= pilot.LOCAL_MAX_AUDIO_BYTES)
+            if not (mime_fix or size_fix) or not eligible(current[key], sources)[0]:
+                continue
+            entry.setdefault('repair_revisions', []).append('audio-validation-v2')
+            entry.setdefault('history', []).append({'at': now.isoformat(), 'attempt': entry.get('attempts', 0),
+                'status': 'repair_ready', 'kind': 'validated_local_audio_repair'})
+            entry.update(status='retry', next_retry_at=now.isoformat(), updated_at=now.isoformat())
     indexed = {identity(item) for item in index.get("transcripts", []) if identity(item)}
     for key, item in cache.items():
         entry = state["entries"].setdefault(key, {"episode": {field: item[field] for field in SNAPSHOT_FIELDS if field in item},
@@ -489,7 +518,7 @@ def run_episode(entry, sources, output, timeout, max_rss_mib, local_engine=None)
         pilot.atomic_json(work / "task.json", task)
         pilot.atomic_json(output / "result.json", {"request": request, "status": "running", "stage": "starting"})
         try:
-            elapsed = pilot.supervise([sys.executable, str(Path(__file__).resolve()), "--_worker", str(work / "task.json")],
+            elapsed = pilot.supervise([sys.executable, str(RUNTIME_ENTRY or Path(__file__).resolve()), "--_worker", str(work / "task.json")],
                                       work, timeout, env=pilot.worker_environment(work),
                                       max_rss_bytes=max_rss_mib * 1024 * 1024)
         except Exception as exc:
@@ -557,7 +586,7 @@ def run(args, root=ROOT, now=None, episode_runner=None):
     if output == root or (root in output.parents and not (root / "artifacts") in output.parents):
         raise QueueError("Queue artifacts must be outside the repository or under artifacts/")
     output.mkdir(parents=True, exist_ok=True)
-    sources = load_json(root / "config/sources.json")
+    sources = load_json(SOURCE_POLICY or root / "config/sources.json")
     report = {"started_at": now.isoformat(), "mode": "enqueue" if args.enqueue_only else "process-one"}
     report.update(refresh(root, state, sources, now))
     code = 0
