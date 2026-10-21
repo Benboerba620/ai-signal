@@ -19,6 +19,7 @@ import traceback
 import cloud_whisper_queue as queue
 import cloud_whisper_pilot as pilot
 import macmini_health as health
+from transcript_health import assess as assess_transcripts
 import macmini_recovery as recovery
 from feed_resilience import OperationError, command_failure, process, redact
 
@@ -304,10 +305,10 @@ def run(args, root=ROOT):
             report.update(status='completed', pipeline_health='ok',
                           queue=queue.summary(after, queue.utcnow()),
                           current_failure_kinds=sorted({v.get('failure_kind') or 'unknown' for v in current} |
-                                                       ({'transcript_backlog'} if pending else set())),
+                                                       (set(assess_transcripts(root, health.now())[0]) if args.scope == 'all' else set())),
                           historical_failure_count=sum(v.get('status') == 'failed' and k not in active_ids
                                                        for k, v in after['entries'].items()))
-            report['source_health'] = ('degraded' if current or pending or any(
+            report['source_health'] = ('degraded' if report['current_failure_kinds'] or any(
                 feed['upstream_failure_count'] for feed in report['feeds'].values()) else 'ok')
             report['health'] = report['source_health']
         except (Exception, KeyboardInterrupt) as exc:

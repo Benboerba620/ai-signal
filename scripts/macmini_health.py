@@ -9,6 +9,7 @@ from pathlib import Path
 import cloud_whisper_pilot as pilot
 from feed_resilience import OperationError
 from signal_alerts import deliver
+from transcript_health import assess as assess_transcripts
 
 
 def now():
@@ -118,12 +119,12 @@ def _notify_locked(state_dir, report, module_path):
     key = hashlib.sha256(signature.encode()).hexdigest() if problem else 'recovered'
     state = report.get('circuit', {})
     labels = {'all':'播客、博客和论文', 'arxiv':'论文', 'x':'X', 'cache':'公开下载'}
-    text = (f"AI Signal / {labels.get(scope, scope)}：" + ('抓取或数据异常' if problem else '已验收恢复') + '\n'
+    text = (f"AI Signal / {labels.get(scope, scope)}：" + (('转录需要处理' if report.get('status') == 'completed' and report.get('current_failure_kinds') and all(k.startswith('transcript_') for k in report['current_failure_kinds']) else '抓取或数据异常') if problem else '已验收恢复') + '\n'
             f"最近成功：{state.get('last_success', '请查看下方数据时间')}\n"
             f"问题分类：{report.get('failure_kind') or ', '.join(report.get('current_failure_kinds', [])) or report.get('source_health', '无')}\n")
     for name, feed in report.get('feeds', {}).items():
         text += f"{name} 数据时间：{feed.get('generated_at', '未知')}\n"
-    text += ('旧数据不能当作今日更新。系统会有限补试；持续失败请检查抓取和网络。' if problem else '当前检查通过，无需操作。')
+    text += ('请按上述问题分类检查。正常排队不提醒，超过 24 小时才提醒。' if problem else '当前检查通过，无需操作。')
     def send(text):
         spec = importlib.util.spec_from_file_location('existing_telegram_direct', module_path)
         module = importlib.util.module_from_spec(spec)
@@ -172,6 +173,13 @@ def monitor(state_dir, root, module_path=None, at=None):
                 outcomes[scope] = 'invalid_or_stale_artifacts'
         if healthy:
             current = dict(report, scope=scope, publish=True, status='completed')
+            if scope == 'all':
+                try:
+                    issues, coverage = assess_transcripts(root, at)
+                except Exception:
+                    issues, coverage = ['transcript_queue_invalid'], {}
+                current.update(current_failure_kinds=issues, coverage=coverage, failure_kind=None,
+                    source_health='degraded' if issues or any(v.get('upstream_failure_count') for v in current.get('feeds', {}).values()) else 'ok')
             if scope == 'arxiv' and success != state.get('last_success'):
                 current.update(source_health='ok', failure_kind=None)
             if (state_dir/f'alert-{scope}.json').exists() or current.get('source_health') == 'degraded':

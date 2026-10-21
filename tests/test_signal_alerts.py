@@ -57,8 +57,42 @@ class AlertTests(unittest.TestCase):
             path.write_text(json.dumps({'podcasts':[{'transcript_available':False}], 'generated_at':(at-timedelta(days=3)).isoformat()}))
             problems,_=inspect(root,at)
             self.assertIn('podcasts:stale',problems)
-            self.assertIn('podcasts:missing_fulltext',problems)
+            self.assertNotIn('podcasts:missing_fulltext',problems)
+            self.assertEqual(inspect(root,at)[1]['coverage']['coverage_only'],1)
             (root/'feeds/feed-x.json').unlink()
             self.assertIn('x:unreadable',inspect(root,at)[0])
+
+
+    def test_queue_progress_timeout_failure_and_unconfigured_coverage(self):
+        from transcript_health import assess
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d); (root/'feeds').mkdir()
+            at=datetime(2026,10,21,tzinfo=timezone.utc)
+            item={'channel':'A','guid':'one','transcript_available':False}
+            (root/'feeds/feed-podcasts.json').write_text(json.dumps({'podcasts':[item]}))
+            path=root/'feeds/whisper-queue.json'
+            entry={'episode':item,'status':'pending','first_seen_at':(at-timedelta(hours=23)).isoformat()}
+            path.write_text(json.dumps({'entries':{'id':entry}}))
+            self.assertEqual(assess(root,at)[0],[])
+            self.assertEqual(assess(root,at)[1]['pending_transcripts'],1)
+            self.assertIn('transcript_overdue',assess(root,at+timedelta(hours=1))[0])
+            # Updating the daily feed/queue timestamp must not postpone the deadline.
+            entry['updated_at']=(at+timedelta(hours=2)).isoformat()
+            path.write_text(json.dumps({'entries':{'id':entry}}))
+            self.assertIn('transcript_overdue',assess(root,at+timedelta(hours=2))[0])
+            entry['status']='failed'
+            path.write_text(json.dumps({'entries':{'id':entry}}))
+            self.assertIn('transcript_failed',assess(root,at)[0])
+            path.write_text(json.dumps({'entries':{}}))
+            self.assertEqual(assess(root,at)[0],[])
+            self.assertEqual(assess(root,at)[1]['coverage_only'],1)
+
+    def test_claimed_fulltext_corruption_still_alerts(self):
+        from transcript_health import assess
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d); (root/'feeds/transcripts').mkdir(parents=True)
+            (root/'feeds/feed-podcasts.json').write_text(json.dumps({'podcasts':[
+                {'channel':'A','guid':'one','transcript_available':True,'transcript_path':'feeds/transcripts/missing.txt'}]}))
+            self.assertIn('transcript_corrupt',assess(root,datetime.now(timezone.utc))[0])
 
 if __name__=='__main__': unittest.main()

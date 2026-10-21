@@ -137,3 +137,10 @@ When origin is unavailable, the consumer resolves the latest public main commit 
 维护者配置仓库 Secrets `AI_SIGNAL_ALERT_BOT_TOKEN` 和 `AI_SIGNAL_ALERT_CHAT_ID`，指向原私人目的地。可通过手动运行的 `test_alert` 验证发送。状态通过 Actions cache 保留；缓存丢失可能导致额外提醒。每次检查的脱敏回执保留为 30 天 artifact，通知失败会让 workflow 失败。GitHub 定时调度可能延迟，不提供严格分钟级送达保证。主机和 GitHub 同时不可用、Telegram 本身故障仍可能影响提醒。
 
 停用云端检查可禁用此 workflow；停用本机提醒不应停掉生产任务。
+
+
+### Alert classification (2026-10-21)
+
+正常排队只记录进度，首次入队满 24 小时才提醒。未进入转录范围的节目只显示覆盖缺口，不作故障处理。转录失败/重试、已完成全文丢失或损坏、抓取失败、来源错误及数据过期仍提醒。两端共用 transcript_health.py，小时检查读取当前状态，历史报告不改写。
+
+正式 feeds 上传会立即触发独立检查；每小时 cron 仍保留。GitHub 定时事件实测存在数小时间隔，不能保证 06:07 或 10:07 按时执行。需要严格时效的部署应使用独立服务器定时器，不能将增加 cron 频率视为已解决平台延迟。

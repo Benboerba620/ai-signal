@@ -8,6 +8,7 @@ from pathlib import Path
 import urllib.request
 from zoneinfo import ZoneInfo
 from signal_alerts import deliver
+from transcript_health import assess
 
 SHANGHAI = ZoneInfo('Asia/Shanghai')
 
@@ -42,20 +43,9 @@ def inspect(root, at):
             if data.get('errors'):
                 problems.append(f'{name}:upstream_errors')
             if name == 'podcasts':
-                missing = 0
-                for item in data[field]:
-                    relative = item.get('transcript_path')
-                    if not item.get('transcript_available') or not relative:
-                        missing += 1
-                        continue
-                    path = (root/relative).resolve()
-                    if (root/'feeds/transcripts').resolve() not in path.parents or not path.is_file():
-                        missing += 1
-                    elif item.get('transcript_sha256') and hashlib.sha256(path.read_bytes()).hexdigest() != item['transcript_sha256']:
-                        missing += 1
-                if missing:
-                    problems.append('podcasts:missing_fulltext')
-                    summary['missing_fulltext'] = missing
+                issues, coverage = assess(root, at)
+                problems.extend('podcasts:'+issue for issue in issues)
+                summary['coverage'] = coverage
         except Exception:
             problems.append(f'{name}:unreadable')
     return sorted(set(problems)), summary
@@ -89,14 +79,18 @@ def main():
     at = datetime.now(timezone.utc)
     problems, summary = inspect(args.root, at)
     test = args.test_alert
-    labels = {'podcasts':'播客','blogs':'博客','arxiv':'论文','x':'X'}
-    lines = [f'{labels.get(k,k)}：{v}' for k,v in summary.items()]
+    labels = {'podcasts':'播客','blogs':'博客','arxiv':'论文','x':'X', 'coverage':'全文进度'}
+    lines = [f'{labels.get(k,k)}：{v}' for k,v in summary.items() if k != 'coverage']
+    coverage = summary.get('coverage', {})
+    if coverage:
+        lines.append(f"全文 {coverage['full_transcripts']} 集；排队 {coverage['pending_transcripts']} 集；仅节目资料 {coverage['coverage_only']} 集")
     text = ('【AI Signal 云端告警测试】这是主动测试，不代表发生新故障。' if test else
-            '【AI Signal 数据异常】' if problems else '【AI Signal 数据已恢复】')
+            '【AI Signal 抓取或数据故障】' if any(not p.startswith('podcasts:transcript_') for p in problems) else '【AI Signal 转录需要处理】' if problems else '【AI Signal 无需故障提醒】')
     text += '\n检查时间：'+at.astimezone(SHANGHAI).strftime('%m-%d %H:%M')+'\n'+'\n'.join(lines)
     if problems:
-        text += '\n问题：'+', '.join(problems)+'\n旧数据不能当作今日更新。请检查 Mac mini 抓取和网络。'
-    text += '\n本检查运行在 GitHub，Mac mini 关机也能检查。'
+        text += '\n问题：'+', '.join(problems)
+        text += ('\n抓取或数据存在故障，请检查。' if any(not p.startswith('podcasts:transcript_') for p in problems) else '\n抓取日期见上方。仅提醒转录失败或排队超过 24 小时，正常排队不提醒。')
+    text += '\n本检查独立读取已发布数据。'
     key = hashlib.sha256(json.dumps(problems).encode()).hexdigest() if problems else 'recovered'
     receipt = deliver(args.state_dir, 'cloud-test' if test else 'public',
                       at.isoformat() if test else key, bool(problems) or test, text, telegram, at)
