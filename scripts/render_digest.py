@@ -434,8 +434,7 @@ def main():
         "",
         (
             f"今日内容：播客 {display_podcasts} 条，"
-            f"X / Twitter 动态 {display_tweets} 条，"
-            f"论文 {display_papers} 篇。"
+            f"X / Twitter 动态 {display_tweets} 条。"
         ),
         "",
     ]
@@ -447,7 +446,6 @@ def main():
 
     render_podcasts(data, lines)
     render_tweets(data, lines)
-    render_papers(data, lines)
 
     if len(lines) <= 7:
         lines.append("今天暂时没有可展示的新内容。")

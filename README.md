@@ -2,13 +2,15 @@
 
 追踪 AI 一线的声音——做事的人、写代码的人、下注的人，不是二手转述。
 
-这是一份给 AI Agent 用户的精心筛选信息源。中央每天自动抓取播客、推文和论文；你的 Agent 读取 JSON，按你的口味生成日报。
+这是一份给 AI Agent 用户的精心筛选信息源。中央每天自动抓取播客、推文和博客；你的 Agent 读取 JSON，按你的口味生成日报。
 
 **这份清单本身就是产品。**
 
 如果这个项目对你有帮助，欢迎在 GitHub 点一下 Star，让更多需要 AI 一线信号的人看到它。
 
 ## 最近更新
+
+- `2026-10-22`：移除论文内容，停止论文抓取、日报展示和过期告警；保留播客、博客及 X。
 
 - `2026-10-21`：正常排队不再报错，超过 24 小时或真正失败才提醒；数据上传后触发独立检查。
 
@@ -52,8 +54,7 @@
 - 一线播客的最新内容（日报先给简介；你说“展开 P2”后再按需读取该期全文字幕）
 - 精选推特账号的当日观点
 - Anthropic / OpenAI / Google DeepMind 官方博客的最新发布（新模型、产品、研究、安全框架）
-- arXiv 最新 AI/ML/NLP 论文标题、链接和摘要原文
-- 每条播客、推文和论文都显示来源发布时间，并按你的时区转换；无法验证的时间会明确标记
+- 每条播客、推文和博客都显示来源发布时间，并按你的时区转换；无法验证的时间会明确标记
 - 按你的偏好定制：中文 / 英文 / 双语，精华 / 标准 / 完整
 - 不需要内容 API key——所有内容由中央服务统一抓取
 
@@ -142,16 +143,6 @@
 
 > 模型发布、产品上线、研究成果、安全框架，第一时间从官方渠道进日报，不等二手转述。Stratechery 是唯一的非官方源，日报里按"Ben Thompson 认为……"归属，不当作既定事实。每家每天最多 5 条，48 小时窗口。
 
-### arXiv 论文（每日最多 30 篇）
-
-| 分类 | 覆盖范围 |
-|------|----------|
-| cs.AI | 人工智能 |
-| cs.CL | 计算语言学（LLM / NLP 论文主阵地） |
-| cs.LG | 机器学习 |
-
-> 使用 5 天滚动窗口跨过周末和休刊时段，客户端按论文 ID 去重，不会重复推送。中央全量抓取计划于每天北京时间 04:13 触发（实际完成时间受 GitHub 调度影响），工作日约 09:30 再做一次 arXiv 专用刷新，以避开新论文批次尚未发布的空窗；09:30 前的早报可能仍使用上一批论文。
-
 ## 快速开始
 
 打开你的 AI Agent（OpenClaw / Claude Code / Cursor / WorkBuddy / Codex 等），说一句话：
@@ -216,7 +207,6 @@ git clone https://ghfast.top/https://github.com/Benboerba620/ai-signal.git
 
 - `summarize-podcast.md` — 播客怎么总结
 - `summarize-tweets.md` — 推文怎么提炼
-- `summarize-papers.md` — 论文怎么摘要
 - `digest-intro.md` — 整体语气和格式
 
 纯文本指令，不是代码。改完下次推送生效。
@@ -225,8 +215,8 @@ git clone https://ghfast.top/https://github.com/Benboerba620/ai-signal.git
 
 ```mermaid
 flowchart LR
-  A["一线信息源<br/>X / 播客 / arXiv"] --> B["Mac mini 定时任务<br/>每天自动抓取"]
-  B --> C["公开 JSON feeds<br/>feed-x / feed-podcasts / feed-arxiv"]
+  A["一线信息源<br/>X / 播客 / 博客"] --> B["Mac mini 定时任务<br/>每天自动抓取"]
+  B --> C["公开 JSON feeds<br/>feed-x / feed-podcasts / feed-blogs"]
   C --> D["你的 AI Agent<br/>读取 JSON + 你的偏好"]
   D --> E["生成个性化日报<br/>中文/英文、长/短、可继续追问"]
   E --> F["聊天窗口 / Telegram / 飞书 / 邮件"]

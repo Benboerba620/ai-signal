@@ -689,7 +689,8 @@ def main():
     # 2. Fetch feeds
     feed_x, x_source = fetch_feed("feed-x.json", "x")
     feed_podcasts, podcast_source = fetch_feed("feed-podcasts.json", "podcasts")
-    feed_arxiv, arxiv_source = fetch_feed("feed-arxiv.json", "papers")
+    feed_arxiv = {"papers": [], "enabled": False, "status": "retired"}
+    arxiv_source = feed_meta("feed-arxiv.json", "", "disabled", None)
     feed_blogs, blogs_source = fetch_feed("feed-blogs.json", "articles")
     include_central_summaries = wants_central_summaries(config)
     if include_central_summaries:
@@ -737,6 +738,8 @@ def main():
     local_prompts_dir = ROOT_DIR / "prompts"
 
     for filename in PROMPT_FILES:
+        if filename == "summarize-papers.md":
+            continue
         key = filename.replace(".md", "").replace("-", "_")
         user_path = user_prompts_dir / filename
         local_path = local_prompts_dir / filename

@@ -3,6 +3,7 @@
 X remains with its existing 04:20 writer. No LLM/API-key integration.
 Use a dedicated checkout and keep --state-dir outside the repository.
 """
+from feed_policy import arxiv_enabled
 import argparse
 from datetime import datetime, timezone, timedelta
 import fcntl
@@ -253,7 +254,7 @@ def run(args, root=ROOT):
             with (run_dir/'generation.log').open('w') as log:
                 os.chmod(log.name, 0o600)
                 scopes = ['--arxiv-only'] if args.scope == 'arxiv' else (
-                    ['--arxiv-only', '--blogs-only', '--podcasts-only'] if REPAIR_DIR else ['--skip-twitter'])
+                    ([ '--arxiv-only'] if arxiv_enabled(root) else []) + ['--blogs-only', '--podcasts-only'] if REPAIR_DIR else ['--skip-twitter'])
                 generation_deadline = min(DEADLINE, time.monotonic() + 900)
                 failed = []
                 for scope in scopes:
@@ -421,6 +422,9 @@ def main():
     parser.add_argument('--reset-circuit', action='store_true', help='Explicit operator reset after inspecting the cause')
     args = parser.parse_args()
     state_dir = Path(args.state_dir).resolve()
+    if args.scope == 'arxiv' and not arxiv_enabled(ROOT):
+        print(json.dumps({'status': 'disabled', 'scope': 'arxiv'}))
+        return 0
     if args.repair_transcripts:
         if not args.publish or not args.transcriber or not args.model_cache:
             parser.error('repair requires --publish and the existing local engine')

@@ -1,5 +1,6 @@
 """Allowlisted local repairs. Never infer commands from logs or reset a queue."""
 from datetime import datetime, timedelta, timezone
+from feed_policy import arxiv_enabled
 import hashlib
 import fcntl
 import json
@@ -287,6 +288,8 @@ def sync_public_cache(root, state_dir, *, proxy=None, x_generated_at=None, x_con
                 raise OSError('Public cache transport failed')
             return json.loads(response.stdout)
         for name in ('podcasts', 'arxiv', 'blogs', 'transcripts-index', 'x'):
+            if name == 'arxiv' and not arxiv_enabled(root):
+                continue
             source = root/f'feeds/feed-{name}.json'
             if name == 'x' and not x_generated_at:
                 continue

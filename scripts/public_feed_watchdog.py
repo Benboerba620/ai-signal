@@ -1,4 +1,5 @@
 """Independent published-feed observer; no capture, transcription or repo writes."""
+from feed_policy import arxiv_enabled
 import argparse
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -27,6 +28,8 @@ def expected_at(at, hour, minute, grace, weekdays=False):
 def inspect(root, at):
     problems, summary = [], {}
     for name, field in [('podcasts','podcasts'), ('blogs','articles'), ('arxiv','papers'), ('x','x')]:
+        if name == 'arxiv' and not arxiv_enabled(root):
+            continue
         due = expected_at(at, 4, 20 if name == 'x' else 13, 60 if name == 'x' else 80)
         if name == 'arxiv':
             due = max(due, expected_at(at, 9, 30, 25, weekdays=True))

@@ -1,6 +1,6 @@
 ---
 name: ai-signal
-description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, official AI-lab blogs (Anthropic / OpenAI / DeepMind), and arXiv papers, then remixes central JSON feeds into a personalized digest. Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
+description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, official AI-lab blogs (Anthropic / OpenAI / DeepMind), then remixes central JSON feeds into a personalized digest. Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
 ---
 # AI Signal — 追踪 AI 一线的声音
 
@@ -17,8 +17,7 @@ the JSON, follows the prompts, writes the digest, and optionally sends it throug
 Telegram, Feishu, email, or the current chat.
 
 **No content API keys are required from users.** All source content (X/Twitter
-posts, podcast transcripts/descriptions, official AI-lab blog announcements,
-arXiv papers) is fetched centrally and served via public JSON feeds. Users only need delivery API keys if they choose
+posts, podcast transcripts/descriptions, official AI-lab blog announcements) is fetched centrally and served via public JSON feeds. Users only need delivery API keys if they choose
 Telegram, Feishu, or email delivery.
 
 Default mode is **JSON-first**. Do not depend on central Chinese summaries.
@@ -63,3 +62,5 @@ Read only the references needed for the current task:
 ### 数据完整性提示
 
 生成日报必须保留 payload 的 `warnings`、`errors` 和各 `feed_sources` 的健康状态；部分信源失败时说明受影响来源，不能把 feed 的生成时间当成每源最近成功时间。无新内容与未抓取成功必须分开表述。
+
+Paper coverage was retired on 2026-10-22. Do not fetch, summarize, display, or warn about missing arXiv papers. Focus on podcasts, blogs, and X.

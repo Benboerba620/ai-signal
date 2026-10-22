@@ -144,3 +144,8 @@ When origin is unavailable, the consumer resolves the latest public main commit 
 正常排队只记录进度，首次入队满 24 小时才提醒。未进入转录范围的节目只显示覆盖缺口，不作故障处理。转录失败/重试、已完成全文丢失或损坏、抓取失败、来源错误及数据过期仍提醒。两端共用 transcript_health.py，小时检查读取当前状态，历史报告不改写。
 
 正式 feeds 上传会立即触发独立检查；每小时 cron 仍保留。GitHub 定时事件实测存在数小时间隔，不能保证 06:07 或 10:07 按时执行。需要严格时效的部署应使用独立服务器定时器，不能将增加 cron 频率视为已解决平台延迟。
+
+
+### Paper retirement (2026-10-22)
+
+论文已停用。卸载 `com.yibo.ai-signal-arxiv` 的定时任务。主任务跳过论文，健康检查和镜像检查不再监控论文。旧 `feed-arxiv.json` 保留空列表及 `enabled=false/status=retired` 兼容标记，不再更新时间。日报仅显示播客、博客及 X。

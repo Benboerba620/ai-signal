@@ -1,5 +1,6 @@
 """Local health acceptance, latched circuit breaker and existing-channel alerts."""
 from datetime import datetime, timedelta, timezone
+from feed_policy import arxiv_enabled
 import hashlib
 import fcntl
 import importlib.util
@@ -32,6 +33,8 @@ def accept(root, scope, started_at):
     feeds = {}
     stale = False
     for name, key in (('podcasts', 'podcasts'), ('arxiv', 'papers'), ('blogs', 'articles')):
+        if name == 'arxiv' and not arxiv_enabled(root):
+            continue
         if scope == 'arxiv' and name != 'arxiv':
             continue
         feed = read(root/f'feeds/feed-{name}.json')
@@ -118,7 +121,7 @@ def _notify_locked(state_dir, report, module_path):
                             bool(report.get('circuit', {}).get('open'))], sort_keys=True)
     key = hashlib.sha256(signature.encode()).hexdigest() if problem else 'recovered'
     state = report.get('circuit', {})
-    labels = {'all':'播客、博客和论文', 'arxiv':'论文', 'x':'X', 'cache':'公开下载'}
+    labels = {'all':'播客和博客', 'arxiv':'论文', 'x':'X', 'cache':'公开下载'}
     text = (f"AI Signal / {labels.get(scope, scope)}：" + (('转录需要处理' if report.get('status') == 'completed' and report.get('current_failure_kinds') and all(k.startswith('transcript_') for k in report['current_failure_kinds']) else '抓取或数据异常') if problem else '已验收恢复') + '\n'
             f"最近成功：{state.get('last_success', '请查看下方数据时间')}\n"
             f"问题分类：{report.get('failure_kind') or ', '.join(report.get('current_failure_kinds', [])) or report.get('source_health', '无')}\n")
@@ -141,6 +144,8 @@ def monitor(state_dir, root, module_path=None, at=None):
     active = read(state_dir/'active.json', {})
     outcomes = {}
     for scope, hour, minute in (('all', 4, 13), ('arxiv', 9, 30)):
+        if scope == 'arxiv' and not arxiv_enabled(root):
+            continue
         expected = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
         # Permit 80 min for daily processing, 25 min for arXiv, including publication.
         grace = timedelta(minutes=80 if scope == 'all' else 25)

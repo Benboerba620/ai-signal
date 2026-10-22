@@ -1667,6 +1667,8 @@ def fetch_podcasts(sources, people_only=False):
 
 def fetch_arxiv(sources):
     arxiv_cfg = sources.get("arxiv", {})
+    if arxiv_cfg.get("enabled") is False:
+        return {"papers": [], "errors": [], "enabled": False, "status": "retired"}
     categories = arxiv_cfg.get("categories", [])
     max_papers = arxiv_cfg.get("max_papers", 30)
     lookback = arxiv_cfg.get("lookback_hours", 48)
@@ -2046,7 +2048,7 @@ async def main():
         log(f"✅ feed-podcasts.json ({len(podcast_feed['podcasts'])} episodes, "
             f"{with_transcript} with transcript, {person_hits} person hits)")
 
-    if run_all or args.arxiv_only:
+    if (run_all or args.arxiv_only) and sources.get("arxiv", {}).get("enabled", True):
         arxiv_feed = fetch_arxiv(sources)
         arxiv_feed["generated_at"] = now.isoformat()
         if not arxiv_feed["papers"]:

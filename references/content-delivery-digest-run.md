@@ -65,7 +65,7 @@ If all counts are 0 (no tweets, no episodes, no articles, no papers), tell the u
 ### Step 4: Filter by domains
 
 Only include content matching the user's `config.domains`:
-- `"ai"` domain: AI-related podcasts, AI builders' tweets, all arXiv papers
+- `"ai"` domain: AI-related podcasts, AI builders' tweets, official AI blogs
 - `"invest"` domain: investing podcasts, investing-related tweets
 
 ### Step 5: Remix content
@@ -168,7 +168,7 @@ automatically as `expanded`; expansion means interest, not necessarily approval,
 so do not treat it as a positive preference by itself.
 
 At the end of every digest, before delivery attribution, add one short line
-telling the user they can pick any podcast, tweet, or paper to expand. For
+telling the user they can pick any podcast, tweet, or blog to expand. For
 Chinese output, use wording like: "想深读的话，可以直接说：展开第 2 个播客。"
 
 **Official blogs (process third):**
@@ -176,14 +176,7 @@ For each article in `articles`, follow `prompts.summarize_articles`. These are
 first-party announcements from Anthropic / OpenAI / Google DeepMind — present
 them as the company's own claims. Every article MUST include its `url`.
 
-**Papers (process fourth):**
-For each arXiv paper, summarize according to granularity:
-- highlights: one sentence on key contribution
-- summary: 2-3 sentences on problem, approach, result
-- full: Problem / Approach / Results / Significance, with benchmark numbers
-Include `abs_url` for each paper. Group by theme when papers overlap.
-Display `published` as the paper's first-submission time in the user's
-configured timezone.
+Paper coverage is retired. Do not create a paper section or warn about missing papers.
 
 **ABSOLUTE RULES:**
 - NEVER invent or fabricate content. Only use what's in the JSON.
