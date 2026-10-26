@@ -16,7 +16,7 @@ import importlib.util
 import importlib
 from datetime import datetime, timezone
 
-MODULES = ('feed_resilience', 'cloud_whisper_pilot', 'cloud_whisper_queue', 'macmini_health', 'macmini_recovery', 'macmini_feed')
+MODULES = ('signal_alerts', 'feed_resilience', 'cloud_whisper_pilot', 'cloud_whisper_queue', 'macmini_health', 'macmini_recovery', 'macmini_feed')
 
 
 def load(directory):
@@ -99,19 +99,26 @@ def main():
     if '--health-only' in sys.argv and '--auto-repair' in sys.argv:
         try:
             state = Path(sys.argv[sys.argv.index('--state-dir')+1])
-            x_result = recovery.recover_x(state)
+            proxy = sys.argv[sys.argv.index('--audio-proxy')+1] if '--audio-proxy' in sys.argv else None
+            x_result = recovery.recover_x(state, publication_proxy=proxy)
             print(json.dumps({'x_recovery': x_result}))
         except Exception as exc:
             x_result = {'status': 'publication_check_unavailable'}
             print(json.dumps({'x_recovery': 'unavailable', 'error_type': type(exc).__name__}))
         if '--notifier-module' in sys.argv:
             status = x_result.get('status', 'publication_check_unavailable')
-            if status not in {'not_due', 'already_running', 'attempt_started', 'job_running'}:
+            if status not in {'not_due', 'already_running', 'attempt_started', 'attempt_pending', 'job_running'}:
                 module = sys.argv[sys.argv.index('--notifier-module')+1]
                 good = status == 'ok'
-                runner.health.notify(state, {'scope': 'x', 'publish': True,
+                report = {'scope': 'x', 'publish': True,
                                     'status': 'completed' if good else 'failed',
-                                    'failure_kind': None if good else 'x_'+status}, module)
+                                    'failure_kind': None if good else 'x_'+status,
+                                    'finished_at': datetime.now(timezone.utc).isoformat(),
+                                    'feeds': {'x': {'generated_at': x_result['generated_at'],
+                                                     'upstream_failure_count': 0}}
+                                             if x_result.get('generated_at') else {}}
+                runner.pilot.atomic_json(state/'latest-x.json', report)
+                runner.health.notify(state, report, module)
     code = runner.main()
     if '--auto-repair' in sys.argv:
         state = Path(sys.argv[sys.argv.index('--state-dir')+1])

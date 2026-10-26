@@ -115,19 +115,18 @@ def notify(state_dir, report, module_path=None):
 def _notify_locked(state_dir, report, module_path):
     scope = report['scope']
     problem = report['status'] != 'completed' or report.get('source_health') == 'degraded'
-    signature = json.dumps([report.get('failure_kind'), report.get('source_health'),
-                            report.get('current_failure_kinds', []),
-                            {k: v['upstream_failure_count'] for k, v in report.get('feeds', {}).items()},
-                            bool(report.get('circuit', {}).get('open'))], sort_keys=True)
-    key = hashlib.sha256(signature.encode()).hexdigest() if problem else 'recovered'
+    # One incident per source scope; observations may change while it is open.
+    key = f'{scope}_publication_outage' if problem else 'recovered'
     state = report.get('circuit', {})
     labels = {'all':'播客和博客', 'arxiv':'论文', 'x':'X', 'cache':'公开下载'}
     text = (f"AI Signal / {labels.get(scope, scope)}：" + (('转录需要处理' if report.get('status') == 'completed' and report.get('current_failure_kinds') and all(k.startswith('transcript_') for k in report['current_failure_kinds']) else '抓取或数据异常') if problem else '已验收恢复') + '\n'
-            f"最近成功：{state.get('last_success', '请查看下方数据时间')}\n"
+            f"最近成功：{state.get('last_success') or report.get('feeds', {}).get('x', {}).get('generated_at') or '本次未能核实'}\n"
             f"问题分类：{report.get('failure_kind') or ', '.join(report.get('current_failure_kinds', [])) or report.get('source_health', '无')}\n")
     for name, feed in report.get('feeds', {}).items():
         text += f"{name} 数据时间：{feed.get('generated_at', '未知')}\n"
-    text += ('请按上述问题分类检查。正常排队不提醒，超过 24 小时才提醒。' if problem else '当前检查通过，无需操作。')
+    text += (('X 抓取未更新。连接失败不代表登录失效。' if scope == 'x' else
+              '请检查上述异常。转录正常排队保持安静，排队超过 24 小时才提醒。')
+             if problem else '当前检查通过，无需操作。')
     def send(text):
         spec = importlib.util.spec_from_file_location('existing_telegram_direct', module_path)
         module = importlib.util.module_from_spec(spec)

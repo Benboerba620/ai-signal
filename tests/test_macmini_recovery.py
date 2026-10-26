@@ -185,6 +185,8 @@ class AutomaticRepairTests(unittest.TestCase):
             stale = json.dumps({'generated_at': '2026-10-14T00:00:00+00:00'})
             result = subprocess.CompletedProcess([], 0, stdout=stale)
             at = datetime(2026, 10, 18, 12, tzinfo=timezone.utc)
+            log = home/'Library/Logs/yibo-automation/x-feed.log'; log.parent.mkdir(parents=True)
+            log.write_text('ConnectError; username=feed_bot')
             with patch.object(repair.subprocess, 'run', return_value=result) as call:
                 self.assertEqual(repair.recover_x(state, home, at)['status'], 'proxy_not_ready')
                 self.assertEqual(call.call_count, 1)
@@ -208,6 +210,58 @@ class AutomaticRepairTests(unittest.TestCase):
                 self.assertEqual(len(kicks), 1); self.assertNotIn('-k', kicks[0])
                 log.write_text('Cookie authentication failed HTTP 403\n')
                 self.assertEqual(repair.recover_x(state, home, at)['status'], 'unknown_x_failure')
+
+    def test_hourly_proxy_proof_uses_live_x_probe_and_transport_retry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home=Path(directory); state=home/'state'; state.mkdir()
+            guard=home/'.local/share/yibo-wawa-reconnect'; guard.mkdir(parents=True)
+            at=datetime(2026,10,26,1,tzinfo=timezone.utc)
+            pilot.atomic_json(guard/'state.json', {'checked_at': (at-timedelta(minutes=55)).timestamp(),
+                'ready': {'proxy': True}, 'checks': {'google': True, 'telegram': True}})
+            log=home/'Library/Logs/yibo-automation/x-feed.log'; log.parent.mkdir(parents=True)
+            log.write_text('━━━ 抓 X socks5h://127.0.0.1:12345\nConnectError; cooling account for 60s')
+            calls=[]
+            def run(args, **kwargs):
+                calls.append(args)
+                body=json.dumps({'generated_at':'2026-10-24T20:20:06+00:00'}) if args[0]=='gh' else 'state = waiting'
+                return subprocess.CompletedProcess(args, 0, stdout=body)
+            with patch.object(repair.subprocess, 'run', side_effect=run):
+                self.assertEqual(repair.recover_x(state,home,at)['status'],'attempt_started')
+            self.assertEqual(len([a for a in calls if a[0]=='curl']),1)
+            self.assertEqual(len([a for a in calls if 'kickstart' in a]),1)
+            log.write_text('旧的 ConnectError;\n━━━ 抓 X\nCookie authentication failed HTTP 403')
+            calls.clear()
+            with patch.object(repair.subprocess, 'run', side_effect=run):
+                result=repair.recover_x(state,home,at)
+                self.assertEqual(result['status'],'unknown_x_failure')
+                self.assertEqual(result['generated_at'],'2026-10-24T20:20:06+00:00')
+            self.assertFalse(any(a[0]=='curl' or 'kickstart' in a for a in calls))
+
+    def test_x_recovery_requires_a_publication_after_the_attempt(self):
+        with tempfile.TemporaryDirectory() as d:
+            state=Path(d); at=datetime(2026,10,26,2,tzinfo=timezone.utc)
+            pilot.atomic_json(state/'x-recovery-result.json', {'status':'attempt_started',
+                'at':at.isoformat(), 'previous_generated_at':'2026-10-24T20:20:06+00:00'})
+            old_success=json.dumps({'generated_at':'2026-10-26T01:09:08+00:00'})
+            with patch.object(repair.subprocess,'run',return_value=subprocess.CompletedProcess([],0,stdout=old_success)):
+                self.assertEqual(repair.recover_x(state,at=at)['status'],'attempt_pending')
+                self.assertEqual(repair.recover_x(state,at=at+timedelta(minutes=21))['status'],'recovery_not_published')
+            new_success=json.dumps({'generated_at':(at+timedelta(seconds=10)).isoformat()})
+            with patch.object(repair.subprocess,'run',return_value=subprocess.CompletedProcess([],0,stdout=new_success)):
+                self.assertEqual(repair.recover_x(state,at=at+timedelta(minutes=22))['status'],'ok')
+            self.assertEqual(json.loads((state/'x-recovery-result.json').read_text())['status'],'recovered')
+
+    def test_x_classification_changes_do_not_repeat_notification(self):
+        with tempfile.TemporaryDirectory() as d:
+            state=Path(d)
+            with patch.object(health, 'deliver', wraps=health.deliver) as delivery, patch.object(health.importlib.util, 'spec_from_file_location'):
+                # Seed the existing incident: no sender import/network is allowed.
+                pilot.atomic_json(state/'alert-x.json', {'key':'x_publication_outage', 'problem':True,
+                    'delivery':'sent', 'at':'2026-10-26T00:00:00+00:00'})
+                for kind in ('x_proxy_not_ready','x_unknown_x_failure','x_publication_check_unavailable'):
+                    self.assertIsNone(health._notify_locked(state, {'scope':'x','publish':True,
+                        'status':'failed','failure_kind':kind}, 'unused'))
+                self.assertEqual(delivery.call_count,3)
 
     def test_accepted_daily_arxiv_refresh_prevents_false_weekend_outage(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -152,7 +152,8 @@ class RecoveryTests(unittest.TestCase):
             self.assertEqual(h.read(state/'alert-all.json')['delivery'], 'delivery_unknown')
             report.update(status='completed', source_health='ok')
             h.notify(state, report, str(module))
-            self.assertIn('已验收恢复', sent.read_text())
+            self.assertEqual(sent.read_text(), before)
+            self.assertEqual(h.read(state/'alert-all.json')['delivery'], 'silent_recovery')
 
     def test_monitor_weekend_and_active_deadline(self):
         with tempfile.TemporaryDirectory() as d:

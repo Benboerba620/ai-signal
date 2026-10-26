@@ -11,35 +11,31 @@ from public_feed_watchdog import inspect, expected_at
 
 
 class AlertTests(unittest.TestCase):
-    def test_uncertain_followup_reminder_recovery_and_history(self):
+    def test_unchanged_unknown_and_recovery_stay_quiet(self):
+        for status in ('sent', 'delivery_unknown', 'reserved'):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as d:
+                root=Path(d); at=datetime(2026,10,18,tzinfo=timezone.utc)
+                sender=Mock(return_value={'status':status})
+                deliver(root,'x','outage',True,'failed',sender,at)
+                deliver(root,'x','outage',True,'failed',sender,at+timedelta(days=2))
+                self.assertEqual(sender.call_count,1)
+                deliver(root,'x','recovered',False,'good',sender,at+timedelta(days=3))
+                self.assertEqual(sender.call_count,1)
+                self.assertFalse(json.loads((root/'alert-x.json').read_text())['problem'])
+                deliver(root,'x','outage',True,'new failure',sender,at+timedelta(days=4))
+                self.assertEqual(sender.call_count,2)
+                events=[json.loads(l) for l in (root/'notification-history.jsonl').read_text().splitlines()]
+                self.assertEqual(len(events),4)
+
+    def test_failed_local_send_can_retry_but_reserved_cannot(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d); at=datetime(2026,10,18,tzinfo=timezone.utc)
-            sender=Mock(return_value={'status':'delivery_unknown'})
+            sender=Mock(return_value={'status':'local_error'})
             deliver(root,'all','fail',True,'failed',sender,at)
             deliver(root,'all','fail',True,'failed',sender,at+timedelta(minutes=59))
             self.assertEqual(sender.call_count,1)
-            sender.return_value={'status':'sent','message_id':12,'text_verified':True}
             deliver(root,'all','fail',True,'failed',sender,at+timedelta(hours=1))
             self.assertEqual(sender.call_count,2)
-            self.assertIn('上次提醒未确认',sender.call_args.args[0])
-            deliver(root,'all','fail',True,'failed',sender,at+timedelta(hours=6))
-            self.assertEqual(sender.call_count,2)
-            deliver(root,'all','fail',True,'failed',sender,at+timedelta(hours=7))
-            self.assertEqual(sender.call_count,3)
-            deliver(root,'all','recovered',False,'good',sender,at+timedelta(hours=8))
-            deliver(root,'all','recovered',False,'good',sender,at+timedelta(hours=20))
-            self.assertEqual(sender.call_count,4)
-            events=[json.loads(l) for l in (root/'notification-history.jsonl').read_text().splitlines()]
-            self.assertEqual(len(events),8)
-            self.assertEqual(events[-1]['message_id'],12)
-
-    def test_crashed_reservation_gets_bounded_followup(self):
-        with tempfile.TemporaryDirectory() as d:
-            root=Path(d);at=datetime(2026,10,18,tzinfo=timezone.utc)
-            (root/'alert-all.json').write_text(json.dumps({'key':'fail','at':at.isoformat(),'delivery':'reserved'}))
-            sender=Mock(return_value={'status':'sent'})
-            deliver(root,'all','fail',True,'failed',sender,at+timedelta(hours=1))
-            self.assertEqual(sender.call_count,1)
 
     def test_deadline_and_weekend(self):
         at=datetime(2026,10,19,1,54,tzinfo=timezone.utc)
@@ -96,3 +92,19 @@ class AlertTests(unittest.TestCase):
             self.assertIn('transcript_corrupt',assess(root,datetime.now(timezone.utc))[0])
 
 if __name__=='__main__': unittest.main()
+
+class CloudIncidentTests(unittest.TestCase):
+    def test_x_error_class_changes_are_one_cloud_incident(self):
+        from public_feed_watchdog import problem_key
+        self.assertEqual(problem_key(['x:stale']),problem_key(['x:unreadable']))
+        self.assertNotEqual(problem_key(['x:stale']),problem_key([]))
+        self.assertNotEqual(problem_key(['x:stale']),problem_key(['x:stale','blogs:stale']))
+        with tempfile.TemporaryDirectory() as d:
+            sender=Mock(return_value={'status':'sent','message_id':1})
+            at=datetime(2026,10,26,tzinfo=timezone.utc)
+            for delta,kind in enumerate(['x:stale','x:unreadable','x:upstream_errors']):
+                deliver(Path(d),'public',problem_key([kind]),True,kind,sender,at+timedelta(hours=delta))
+            self.assertEqual(sender.call_count,1)
+            deliver(Path(d),'public',problem_key([]),False,'ok',sender,at+timedelta(hours=4))
+            deliver(Path(d),'public',problem_key(['x:stale']),True,'new incident',sender,at+timedelta(hours=5))
+            self.assertEqual(sender.call_count,2)

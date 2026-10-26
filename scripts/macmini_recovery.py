@@ -189,7 +189,7 @@ def reserve(state_dir, scope, at=None):
     return True
 
 
-def recover_x(state_dir, home=None, at=None):
+def recover_x(state_dir, home=None, at=None, publication_proxy=None):
     """Reuse the existing X job only after a proven proxy failure has cleared.
 
     Never restart the VPN, read cookies, run a second X writer, or retry a
@@ -208,7 +208,10 @@ def recover_x(state_dir, home=None, at=None):
             return {'status': 'not_due'}
         result = subprocess.run(['gh', 'api', 'repos/Benboerba620/ai-signal/contents/feeds/feed-x.json',
                                  '-H', 'Accept:application/vnd.github.raw+json'],
-                                capture_output=True, text=True, timeout=20)
+                                capture_output=True, text=True, timeout=20,
+                                env=({**os.environ, 'HTTP_PROXY': publication_proxy,
+                                      'HTTPS_PROXY': publication_proxy}
+                                     if publication_proxy else None))
         if result.returncode:
             return {'status': 'publication_check_unavailable'}
         published = json.loads(result.stdout)
@@ -216,35 +219,57 @@ def recover_x(state_dir, home=None, at=None):
         if expected <= generated_at <= at+timedelta(minutes=5):
             receipt = Path(state_dir)/'x-recovery-result.json'
             if receipt.exists() and json.loads(receipt.read_text()).get('status') == 'attempt_started':
+                attempt = json.loads(receipt.read_text())
+                if (generated_at <= stamp(attempt['previous_generated_at']) or
+                        generated_at < stamp(attempt['at']) - timedelta(seconds=2)):
+                    pending = at - stamp(attempt['at']) < timedelta(minutes=20)
+                    return {'status': 'attempt_pending' if pending else 'recovery_not_published',
+                            'generated_at': generated_at.isoformat()}
                 pilot.atomic_json(receipt, {'status': 'recovered', 'verified_at': at.isoformat(),
                                              'generated_at': generated_at.isoformat()})
             return {'status': 'ok', 'generated_at': generated_at.isoformat(),
                     'content_sha256': content_digest(published)}
         if generated_at > at+timedelta(minutes=5):
             return {'status': 'invalid_feed_timestamp'}
+        def outcome(status, **extra):
+            return {'status': status, 'generated_at': generated_at.isoformat(), **extra}
+        log = home/'Library/Logs/yibo-automation/x-feed.log'
+        if not log.is_file():
+            return outcome('unknown_x_failure')
+        # Inspect the latest attempt, not an older proxy failure in the file.
+        tail = log.read_text(errors='replace').rsplit('━━━ 抓 X', 1)[-1][-24000:]
+        transport_failure = any(message in tail for message in (
+            '端口开着但出不去，先修代理', '本机没有可用的 SOCKS5 出口',
+            'ConnectError;', 'ConnectTimeout;', 'ReadTimeout;'))
+        if not transport_failure:
+            return outcome('unknown_x_failure')
         guard = home/'.local/share/yibo-wawa-reconnect'
         if (guard/'PAUSED').exists() or not (guard/'state.json').is_file():
-            return {'status': 'proxy_not_ready'}
+            return outcome('proxy_not_ready')
         state = json.loads((guard/'state.json').read_text())
         checked = datetime.fromtimestamp(state.get('checked_at', 0), timezone.utc)
         if not (timedelta(0) <= at-checked < timedelta(minutes=3) and
                 state.get('ready', {}).get('proxy') and
                 state.get('checks', {}).get('google') and state.get('checks', {}).get('telegram')):
-            return {'status': 'proxy_not_ready'}
-        log = home/'Library/Logs/yibo-automation/x-feed.log'
-        if not log.is_file():
-            return {'status': 'unknown_x_failure'}
-        tail = '\n'.join(log.read_text(errors='replace').splitlines()[-12:])
-        if not any(message in tail for message in ('端口开着但出不去，先修代理', '本机没有可用的 SOCKS5 出口')):
-            return {'status': 'unknown_x_failure'}
+            # Healthy watchdog checks are hourly. Obtain fresh evidence through
+            # the actual X SOCKS route instead of treating an old check as down.
+            import re
+            ports = re.findall(r'socks5h?://127\.0\.0\.1:(1234[567])', tail)
+            port = ports[-1] if ports else '12345'
+            probe = subprocess.run(['curl', '--silent', '--show-error', '--fail',
+                                    '--max-time', '10', '--socks5-hostname', '127.0.0.1:'+port,
+                                    '--output', '/dev/null', 'https://x.com'],
+                                   capture_output=True, text=True, timeout=12)
+            if probe.returncode:
+                return outcome('proxy_not_ready')
         label = f'gui/{os.getuid()}/com.yibo.x-feed'
         current = subprocess.run(['launchctl', 'print', label], capture_output=True, text=True, timeout=10)
         if current.returncode:
-            return {'status': 'job_unavailable'}
+            return outcome('job_unavailable')
         if 'state = running' in current.stdout:
-            return {'status': 'job_running'}
+            return outcome('job_running')
         if not reserve(state_dir, 'x', at):
-            return {'status': 'cooldown'}
+            return outcome('cooldown')
         result = subprocess.run(['launchctl', 'kickstart', label], capture_output=True, text=True, timeout=10)
         outcome = {'status': 'attempt_started' if result.returncode == 0 else 'start_failed',
                    'at': at.isoformat(), 'previous_generated_at': generated_at.isoformat()}

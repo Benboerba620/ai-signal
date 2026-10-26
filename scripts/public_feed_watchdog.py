@@ -54,6 +54,12 @@ def inspect(root, at):
     return sorted(set(problems)), summary
 
 
+def problem_key(problems):
+    # Error labels can change without the failed source recovering.
+    sources = sorted({problem.split(':', 1)[0] for problem in problems})
+    return 'public_outage:' + ','.join(sources) if sources else 'recovered'
+
+
 def telegram(text):
     token, chat = os.environ.get('AI_SIGNAL_ALERT_BOT_TOKEN'), os.environ.get('AI_SIGNAL_ALERT_CHAT_ID')
     if not token or not chat:
@@ -93,8 +99,9 @@ def main():
     if problems:
         text += '\n问题：'+', '.join(problems)
         text += ('\n抓取或数据存在故障，请检查。' if any(not p.startswith('podcasts:transcript_') for p in problems) else '\n抓取日期见上方。仅提醒转录失败或排队超过 24 小时，正常排队不提醒。')
-    text += '\n本检查独立读取已发布数据。'
-    key = hashlib.sha256(json.dumps(problems).encode()).hexdigest() if problems else 'recovered'
+    text += '\n来源：https://github.com/Benboerba620/ai-signal/tree/main/feeds'
+    text += '\n数据时间见上方；检查时间不代表抓取时间。'
+    key = problem_key(problems)
     receipt = deliver(args.state_dir, 'cloud-test' if test else 'public',
                       at.isoformat() if test else key, bool(problems) or test, text, telegram, at)
     report = {'at':at.isoformat(), 'problems':problems, 'feeds':summary, 'receipt':receipt}
@@ -102,7 +109,8 @@ def main():
     (args.state_dir/'latest-check.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
     print(json.dumps(report, ensure_ascii=False))
     # A notification failure must be visible as a failed workflow, never a green check.
-    return 1 if receipt and receipt['delivery'] != 'sent' else 0
+    state = json.loads((args.state_dir/('alert-cloud-test.json' if test else 'alert-public.json')).read_text()) if (args.state_dir/('alert-cloud-test.json' if test else 'alert-public.json')).exists() else {}
+    return 1 if (receipt and receipt['delivery'] != 'sent') or (problems and state.get('delivery') != 'sent') else 0
 
 
 if __name__ == '__main__':

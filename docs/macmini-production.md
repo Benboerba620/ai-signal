@@ -149,3 +149,14 @@ When origin is unavailable, the consumer resolves the latest public main commit 
 ### Paper retirement (2026-10-22)
 
 论文已停用。卸载 `com.yibo.ai-signal-arxiv` 的定时任务。主任务跳过论文，健康检查和镜像检查不再监控论文。旧 `feed-arxiv.json` 保留空列表及 `enabled=false/status=retired` 兼容标记，不再更新时间。日报仅显示播客、博客及 X。
+
+
+### Unified X recovery and incident notifications (2026-10-26)
+
+X 修复已并入正式源码。部署完成后 `run.sh` 应指向专用 repo 的 `scripts/macmini_runtime.py`，撤去旧临时补丁入口。通知仍使用原私人适配器，不更换 Bot 或目的地。
+
+恢复程序先核对最近一次 X 日志。仅对连接失败，在出口通过现场检查后补跑原 `com.yibo.x-feed`。代理检查按小时更新时，不把超过三分钟的记录直接当作断网。每日最多补跑一次，运行中的任务不重复启动。补跑后必须读到补跑开始后的正式 feed 才记恢复；20 分钟无新发布则报告未恢复。
+
+同次中断的检查分类变化不再触发新提醒。已发送、发送结果未知或中断时结果不明的提醒保持安静；明确本地发送失败可在一小时后重试。恢复只更新状态，不发送恢复提醒。重新发生故障可以再次首报。发送未知仍未被确认，不等于已送达；云端保留失败状态。两端仍独立观察，本机任务首报与云端停更兜底各自保留一次通知职责。
+
+正常排队、论文停用和抓取时间保持原规则。GitHub 定时触发延迟仍是平台限制。

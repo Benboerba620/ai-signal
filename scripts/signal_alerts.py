@@ -18,23 +18,24 @@ def save(path, value):
 
 
 def deliver(directory, scope, key, problem, text, sender, at=None):
-    """Caller serializes sends. Hourly follow-up after uncertainty, 6h reminder."""
+    """Caller serializes sends. Keep unchanged and recovered states quiet."""
     at = at or datetime.now(timezone.utc)
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f'alert-{scope}.json'
     previous = json.loads(path.read_text()) if path.exists() else {}
     same = previous.get('key') == key
-    if not problem and not previous:
+    if not problem:
+        if previous.get('problem'):
+            save(path, {'key': key, 'at': at.isoformat(), 'delivery': 'silent_recovery',
+                        'scope': scope, 'problem': False})
         return None
     if same:
-        if not problem and previous.get('delivery') == 'sent':
+        if previous.get('delivery') in {'sent', 'delivery_unknown', 'reserved'}:
             return None
-        interval = timedelta(hours=6 if previous.get('delivery') == 'sent' else 1)
+        interval = timedelta(hours=1)
         if at - datetime.fromisoformat(previous['at']) < interval:
             return None
-        text = ('【持续故障提醒】\n' if previous.get('delivery') == 'sent' else
-                '【状态复核：上次提醒未确认送达，本条以当前检查为准】\n') + text
     receipt = {'key': key, 'at': at.isoformat(), 'delivery': 'reserved',
                'scope': scope, 'problem': problem,
                'attempt': previous.get('attempt', 0) + 1 if same else 1}
