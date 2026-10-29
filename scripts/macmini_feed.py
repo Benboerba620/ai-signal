@@ -143,7 +143,7 @@ def checkpoint(root, scope='all'):
     if any(path not in PATHS[:-1] and not (path.startswith('feeds/transcripts/') and Path(path).suffix == '.txt') for path in staged):
         raise RuntimeError('Unexpected staged path; publication refused')
     if staged:
-        command(['git', '-c', 'user.name=yibo-mini', '-c', 'user.email=gpttyb@gmail.com',
+        command(['git', '-c', 'user.name=ai-signal-box', '-c', 'user.email=Benboerba620@users.noreply.github.com',
                  'commit', '-m', 'Feed update (Mac mini) '+datetime.now(timezone.utc).isoformat()], root)
     if JOURNAL:
         pending['commit'] = command(['git', 'rev-parse', 'HEAD'], root)
