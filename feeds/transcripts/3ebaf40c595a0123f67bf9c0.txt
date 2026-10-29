@@ -1,0 +1,223 @@
+Why Agents Love Supabase — Latent Space Skip to content
+The AI Engineer publication
+Search ⌘ K
+Search Latent Space
+Filter by type
+Result type
+All None
+Articles Only ⓘ Essays and analysis from Latent Space.
+AI News Only ⓘ News briefings about AI models, tools, and research.
+Podcasts Only ⓘ Recorded conversations with AI builders and researchers.
+Community Only ⓘ Community pages and resources.
+People Only ⓘ Sourced wiki profiles of people working in AI.
+Organizations Only ⓘ Sourced wiki profiles of companies and organizations.
+Topics Only ⓘ Sourced wiki entries explaining AI topics and concepts.
+Writeups Only ⓘ Grounded explanations linked to original sources.
+Search mode ?
+Search tips
+Keyword matches words; semantic matches meaning and exact titles or names; hybrid combines both. In keyword mode, use quotation marks for exact phrases. Author matches published credits. Year applies to posts; wiki entries have no author or publication year. You can also use author:"Ada" or type:podcast in non-regex searches.
+Keyword Semantic Hybrid Regex
+Published Any year 2026 2025 2024 2023 2022 Author Reset filters
+Explore articles, conversations, and the wiki.
+Try a search: context engineering agents retrieval augmented generation
+Open full search
+Welcome back ⌄
+Signed in with Google Email preferences Membership & billing Sign out
+← The conversations Latent Space Podcast
+Why Agents Love Supabase
+Paul Copplestone and Ant Wilson on building the backend for AI agents
+swyx .ai
+Oct 28 · 77 min
+Listen to this conversation 77 min
+Read transcript
+On this page ⌄ Give the agent a backend it can read Compute deserves more than a bullet point From prototype to petabyte Show notes Chapters
+I first met Paul Copplestone and Ant Wilson in Singapore, shortly after they finished YC as the hottest startup of YC S20 . Six years later, we finally got them on the podcast! This is their first podcast together, after taking an open-source, fully remote company from zero to a $10 billion valuation.
+Play video
+Open video on YouTube ↗
+The title is a question I wanted to understand for myself: why do agents love Supabase? There are plenty of managed databases. Postgres hosting is competitive. Being familiar to a model is useful distribution, but it doesn't explain all the work needed to turn a generated application into something that runs. But when I ran my frontier AEO tracker , it was an almost complete sweep of first choice for app backends (and in contention for managed db ) for every frontier model from Astra to Fable to Muse.
+At Select, Supabase grouped its announcements into Build, Operate and Scale.
+Play video
+Open video on YouTube ↗
+The things that stood out to me were surprisingly practical: start a local backend without Docker, keep the desired database schema in Git, and run compute beside the database. Each removes a piece of work that developers have been doing for years. Agents make that friction harder to ignore.
+Watch the full conversation, including my opening commentary →
+Give the agent a backend it can read
+My favorite developer-tool announcements make me think: of course I want this today. The new alpha runtime for running Supabase locally without Docker is one of those. I use Colima rather than Docker Desktop, and even then, removing another dependency from the path to a working database is welcome. Local setup is a small part of a human developer's week; an agent that repeatedly creates and tests environments encounters it over and over.
+Declarative schemas are the bigger idea. The familiar SQL workflow accumulates a history: create the schema, then migrate, migrate, migrate. A declarative representation gives the agent a description of the state you want, in files it can inspect and edit alongside the application.
+In the commentary, I compare this to a Terraform moment for the database. Put the desired state in Git and the agent can read it, change it, fork it and work against it as part of the repository. Humans get the same advantage: the backend becomes easier to understand without reconstructing its entire history.
+That is the part I like most about the agent-friendly direction. These are improvements I wanted as a developer already. Making them useful to agents gives the team another reason to finish the job.
+Compute deserves more than a bullet point
+I think Supabase Compute , now in private alpha, may be undersold. An application needs somewhere to do its work as well as somewhere to store the result. Once you have a database, you still need a place to run the processes that chunk documents, generate embeddings or do other longer-running work.
+Sponsored Your sponsor ad here Reach the AI engineers building what comes next.
+Latent Space is read by the people shipping agents, models and infrastructure. Enquire about sponsoring this slot.
+business@latent.space →
+Paul and Ant discuss running containers close to the database. That closes a gap between getting an application started and operating it: fewer separate services to configure, connect and explain to the agent. Edge functions remain useful, but they don't cover every workload.
+The operating side matters too. Logs, checks, connections and context help an agent understand what it is changing. A model that can issue SQL still needs to know what the database contains, how the application uses it, and what happened when something failed. Supabase's Operate announcements are worth reading alongside the new ways to build.
+From prototype to petabyte
+The founders say Supabase is launching about five million databases a month. They are thinking about what happens if agents push that toward billions of applications. At the same time, existing customers are growing into much larger workloads. Serving more small databases and supporting a customer's increasingly large database are different engineering problems.
+That helps explain the breadth of the Scale announcements : OrioleDB, Multigres and the Turso acquisition . The conversation gets into the work behind the new “prototype to petabyte” positioning, including Postgres reliability and the choices involved in scaling up and scaling out.
+One observation from Paul and Ant is particularly interesting for anyone building developer tools: as AI-driven usage grew, they say activation and conversion improved. Their explanation is that an agent can carry a user from signup to a working setup in one flow. The person doesn't have to figure out every configuration step before seeing the application work.
+We also talk about the memes and community that helped Supabase grow, open-source adoption and enterprise sales, and whether agents will converge on the same application patterns. But I wanted this episode to capture the founders' chemistry as well. It is a chance to hear Paul and Ant think through the product together—and to see how much work sits behind a backend that an agent can make look easy.
+Show notes
+Supabase Compute — run workloads alongside the database.
+Multigres — the team’s approach to highly available Postgres, currently in private alpha.
+Supabase acquires Turso — the database architecture behind its scale-out ambitions.
+Supabase Select — the event discussed in this conversation.
+Chapters
+0:00 Welcome and why agents love Supabase
+5:23 Paul Copplestone and Ant Wilson
+6:39 Compute beside the database
+8:05 OrioleDB and Multigres
+12:50 Scaling up, scaling out, and Turso
+17:53 Developer marketing and memes
+23:15 The launch and the migration
+31:03 Vectors, growth, and AI recommendations
+41:43 Product-led sales and enterprise growth
+49:38 Live migrations and analytics
+58:43 Agent-ready local development
+1:06:43 Community and company workflows
+Thanks for reading
+Stay a little ahead of the curve.
+Fresh ideas, original reporting, and deep conversations in your inbox.
+to Latent Space
+Next up · San Francisco AIE Code Summit 2026 November 10–12 · Hilton Union Square
+By Application only: the last Flagship AIE of 2026, AIE CODE is back with 1000 of the top Agentic Engineers in the world to
+their experience fighting slop in software factories, using System One models, and rewriting critical apps.
+Apply to attend
+Most popular
+Past 30 days All time
+1 Claude Mods: Flipping the Harness Inside Out
+2 AI Is Getting Good at Math. Here’s Why.
+3 Kimi 3.1 Pro 104BA-2.8T: Fable-5.1-Class Open Weights narrows Closed-AI lead to 1 month... and Pro Highspeed API with 2-3× speed
+4 How Anthropic ships Claude with Claude: Separating the Brain from the Hands
+5 Anthropic files for $2T IPO in 2 weeks: 1400% growth rate, 48% of revenue through cloud partners, 85% margin, $1B op profit in Q2, $134B cash in bank and $10B lifetime burn
+1 The 2025 AI Engineer Reading List
+2 Taste is your moat — with Dylan Field, Figma
+3 The Rise of the AI Engineer
+4 o1 isn’t a chat model (and that’s the point)
+5 GPT-5 Hands-On: Welcome to the Stone Age
+Sponsored Your sponsor ad here Reach the AI engineers building what comes next.
+Latent Space is read by the people shipping agents, models and infrastructure. Enquire about sponsoring this slot.
+business@latent.space →
+Keep exploring
+The archive
+Find more essays and conversations in the archive →
+By and for AI engineers. Original analysis, the podcast and the daily AI News briefing.
+Explore
+Articles AI News Podcasts YouTube The archive The wiki
+Community
+The Latent Space community AI Engineer conferences
+to the newsletter About us
+Listen & follow
+Apple Podcasts Spotify YouTube X / Twitter RSS feeds Podcast RSS
+© 2026 Latent Space Meet us at
+Status Privacy Terms
+A little closer to the frontier.
+Original analysis, the podcast and daily AI News.
+By and for AI engineers.
+× Your place in Latent Space
+Join Latent Space.
+Sign in with Google, or get the newsletter by email.
+Loading Google sign-in…
+or
+by email
+Email address Choose your newsletters All newsletters
+Latent Space 2–3 times a week AI engineering insights and conversations.
+Greg Brockman OpenAI Thariq Shihipar Anthropic Marc Andreessen a16z
+× From the conversation
+OpenAI’s road to AGI
+A conversation with Greg Brockman about OpenAI’s path to AGI, alongside our analysis of GPT-5, Codex, and the shift to agentic coding.
+Read the story ↗ Watch episode ↗
+× From the conversation
+Claude Code’s next era
+Thariq Shihipar on Claude Code’s next era: prompts, harnesses, plugins, and agents—and what it takes to keep pace with the frontier.
+Read the story ↗ Watch episode ↗
+× From the conversation
+Why this time is different
+Marc Andreessen on the future of the browser, Pi and OpenClaw, and why this wave of AI feels different.
+Read the story ↗ Watch episode ↗
+AI for Science 2–3 times a month How AI is changing scientific discovery.
+Mark Zuckerberg & Priscilla Chan Biohub · CZI Anima Anandkumar Caltech John Platt Google
+× From the conversation
+Can AI help cure all disease?
+Priscilla Chan and Mark Zuckerberg on Biohub’s plans for frontier AI and virtual biology, and the ambition to cure or prevent disease.
+Read the story ↗ Watch episode ↗
+× From the conversation
+Foundation models for physics
+Anima Anandkumar on modeling the physical world, from weather to fusion reactors, and why physics needs more than language models.
+Read the story ↗ Watch episode ↗
+× From the conversation
+The AI scientist
+John Platt on automating science, tackling climate change, and how the next generation can contribute in the age of AI.
+Read the story ↗ Watch episode ↗
+AINews Every weekday The day’s essential AI news.
+Read sample ↗ MCP Apps Read sample ↗ AI Combinator Read sample ↗ Kimi K2.5
+× From the briefing
+Apps arrive inside Claude
+Anthropic brings interactive apps into Claude with an open MCP standard for richer AI interfaces.
+Read the issue ↗
+× From the briefing
+Sam Altman’s AI Combinator
+What Sam Altman’s town hall reveals about building startups in the age of AI.
+Read the issue ↗
+× From the briefing
+Kimi K2.5 raises the open-model bar
+Moonshot’s multimodal model brings competitive coding, native image and video understanding, and parallel agents.
+Read the issue ↗
+free
+Free. Change your preferences or un
+any time.
+Choose your newsletters All newsletters
+Latent Space 2–3 times a week AI engineering insights and conversations.
+Greg Brockman OpenAI Thariq Shihipar Anthropic Marc Andreessen a16z
+× From the conversation
+OpenAI’s road to AGI
+A conversation with Greg Brockman about OpenAI’s path to AGI, alongside our analysis of GPT-5, Codex, and the shift to agentic coding.
+Read the story ↗ Watch episode ↗
+× From the conversation
+Claude Code’s next era
+Thariq Shihipar on Claude Code’s next era: prompts, harnesses, plugins, and agents—and what it takes to keep pace with the frontier.
+Read the story ↗ Watch episode ↗
+× From the conversation
+Why this time is different
+Marc Andreessen on the future of the browser, Pi and OpenClaw, and why this wave of AI feels different.
+Read the story ↗ Watch episode ↗
+AI for Science 2–3 times a month How AI is changing scientific discovery.
+Mark Zuckerberg & Priscilla Chan Biohub · CZI Anima Anandkumar Caltech John Platt Google
+× From the conversation
+Can AI help cure all disease?
+Priscilla Chan and Mark Zuckerberg on Biohub’s plans for frontier AI and virtual biology, and the ambition to cure or prevent disease.
+Read the story ↗ Watch episode ↗
+× From the conversation
+Foundation models for physics
+Anima Anandkumar on modeling the physical world, from weather to fusion reactors, and why physics needs more than language models.
+Read the story ↗ Watch episode ↗
+× From the conversation
+The AI scientist
+John Platt on automating science, tackling climate change, and how the next generation can contribute in the age of AI.
+Read the story ↗ Watch episode ↗
+AINews Every weekday The day’s essential AI news.
+Read sample ↗ MCP Apps Read sample ↗ AI Combinator Read sample ↗ Kimi K2.5
+× From the briefing
+Apps arrive inside Claude
+Anthropic brings interactive apps into Claude with an open MCP standard for richer AI interfaces.
+Read the issue ↗
+× From the briefing
+Sam Altman’s AI Combinator
+What Sam Altman’s town hall reveals about building startups in the age of AI.
+Read the issue ↗
+× From the briefing
+Kimi K2.5 raises the open-model bar
+Moonshot’s multimodal model brings competitive coding, native image and video understanding, and parallel agents.
+Read the issue ↗
+Uncheck all to create an account without newsletter emails.
+Finish
+Email preferences
+to the newsletter Sign out
+Sign in to manage preferences Use a different email
+Help us reach your inbox.
+We recently moved email providers. Look for Latent Space in your inbox, Spam or Promotions. If we're in Spam, mark the message as “Not spam,” then move it to your inbox. This helps future emails reach you.
+Keep exploring
+Discover technical newsletters we recommend, then explore Latent Space membership. Both are optional.
+Discover newsletters View paid plans
+Continue reading
+Your newsletter choice is optional. How we use your account data .
