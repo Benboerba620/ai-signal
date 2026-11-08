@@ -125,8 +125,10 @@ def load_feed(filename):
 
 def write_json(path, data):
     from cloud_whisper_pilot import atomic_json
-    if isinstance(data, dict) and data.get('errors'):
-        data = {**data, 'errors': [redact(error) for error in data['errors']]}
+    if isinstance(data, dict):
+        for key in ('errors', 'known_blocked'):
+            if data.get(key):
+                data = {**data, key: [redact(error) for error in data[key]]}
     atomic_json(path, clean_data(data))
 
 
@@ -359,6 +361,18 @@ def rss_url_candidates(channel):
         if url:
             urls.append(url)
     return list(dict.fromkeys(urls))
+
+
+def is_known_cloud_block(channel, err):
+    """A marked channel's HTTP 403 is expected on the cloud egress, not an outage.
+
+    `cloud_403_expected` is set only for channels the Mac mini supplies through
+    feeds/podcast-inbox. Any other failure (404, timeout, parse error) still
+    counts as an upstream error.
+    """
+    if not channel.get("cloud_403_expected") or not err:
+        return False
+    return all(part.strip().endswith("HTTP 403") for part in err.split(" | "))
 
 
 def fetch_rss_with_fallback(channel, attempts=3):
@@ -1639,6 +1653,7 @@ def fetch_podcasts(sources, people_only=False):
 
     all_episodes = []
     errors = []
+    known_blocked = []
 
     if people_only:
         all_episodes = [e for e in existing.get("podcasts", []) if not e.get("person")]
@@ -1649,7 +1664,9 @@ def fetch_podcasts(sources, people_only=False):
                 try:
                     eps, err = fut.result()
                     all_episodes.extend(eps)
-                    if err:
+                    if err and is_known_cloud_block(futures[fut], err):
+                        known_blocked.append(f"{futures[fut]['name']}: {err}")
+                    elif err:
                         errors.append(f"{futures[fut]['name']}: {err}")
                 except Exception as e:
                     errors.append(f"{futures[fut]['name']}: {e}")
@@ -1660,7 +1677,10 @@ def fetch_podcasts(sources, people_only=False):
     errors.extend(people_errors)
 
     all_episodes.sort(key=lambda x: x.get("pub_date", ""), reverse=True)
-    return merge_local({"podcasts": all_episodes, "errors": errors if errors else None}, local_episodes)
+    feed = {"podcasts": all_episodes, "errors": errors if errors else None}
+    if known_blocked:
+        feed["known_blocked"] = known_blocked
+    return merge_local(feed, local_episodes)
 
 
 # ── arXiv fetching ───────────────────────────────────────────────────────────
