@@ -12,6 +12,10 @@ from signal_alerts import deliver
 from transcript_health import assess
 
 SHANGHAI = ZoneInfo('Asia/Shanghai')
+# The publisher may start a few minutes before the nominal slot (the cloud
+# routine runs around 04:05-04:15). A stamp from the same run window is fresh;
+# only data from an earlier run (about a day older) counts as stale.
+EARLY_RUN_TOLERANCE = timedelta(hours=2)
 
 
 def expected_at(at, hour, minute, grace, weekdays=False):
@@ -39,7 +43,7 @@ def inspect(root, at):
             if stamp.tzinfo is None or not isinstance(data[field], list):
                 raise ValueError('schema')
             summary[name] = stamp.astimezone(SHANGHAI).strftime('%m-%d %H:%M')
-            if stamp < due:
+            if stamp < due - EARLY_RUN_TOLERANCE:
                 problems.append(f'{name}:stale')
             if stamp > at + timedelta(minutes=5):
                 problems.append(f'{name}:future_timestamp')

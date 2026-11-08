@@ -59,6 +59,25 @@ class AlertTests(unittest.TestCase):
             self.assertIn('x:unreadable',inspect(root,at)[0])
 
 
+
+    def test_run_slightly_before_nominal_slot_is_fresh(self):
+        # 2026-11-08: cloud run stamped 04:12:32 / X 04:13:29 Shanghai; checked 06:35.
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d); (root/'feeds').mkdir()
+            run=datetime(2026,11,7,20,12,32,tzinfo=timezone.utc)
+            for name,field,stamp in [('podcasts','podcasts',run),('blogs','articles',run),
+                                     ('x','x',run+timedelta(seconds=57))]:
+                (root/f'feeds/feed-{name}.json').write_text(json.dumps({field:[], 'generated_at':stamp.isoformat()}))
+            at=datetime(2026,11,7,22,35,tzinfo=timezone.utc)
+            problems=inspect(root,at)[0]
+            self.assertFalse([p for p in problems if p.endswith(':stale')], problems)
+            # The previous day's run is still stale once today's deadline has passed.
+            for name,field in [('podcasts','podcasts'),('blogs','articles'),('x','x')]:
+                (root/f'feeds/feed-{name}.json').write_text(json.dumps({field:[], 'generated_at':(run-timedelta(days=1)).isoformat()}))
+            problems=inspect(root,at)[0]
+            for name in ('podcasts','blogs','x'):
+                self.assertIn(f'{name}:stale',problems)
+
     def test_queue_progress_timeout_failure_and_unconfigured_coverage(self):
         from transcript_health import assess
         with tempfile.TemporaryDirectory() as d:
