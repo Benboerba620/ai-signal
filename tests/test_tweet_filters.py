@@ -20,8 +20,20 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR / "scripts"))
 
 import generate_feed
-import generate_summaries
 import render_digest
+
+
+class TweetSearchArgsTests(unittest.TestCase):
+    def test_default_query_and_window_are_unchanged(self):
+        self.assertEqual(generate_feed.tweet_search_args({"handle": "sama"}, False, 5), ("from:sama", 15))
+
+    def test_opt_in_drops_replies_in_query_and_widens_window(self):
+        account = {"handle": "elonmusk", "exclude_replies_in_search": True, "search_limit": 60}
+        self.assertEqual(generate_feed.tweet_search_args(account, False, 5), ("from:elonmusk -filter:replies", 60))
+
+    def test_reply_accounts_keep_replies_in_query_and_limit_is_capped(self):
+        account = {"handle": "x", "exclude_replies_in_search": True, "search_limit": 999}
+        self.assertEqual(generate_feed.tweet_search_args(account, True, 5), ("from:x", 100))
 
 
 class RelevanceGateRoutingTests(unittest.TestCase):
@@ -250,32 +262,6 @@ class DigestGateTests(unittest.TestCase):
         self.assertIn("引用（@Suhail）：", body)
         self.assertIn("B200", body)
 
-
-class SummaryGateTests(unittest.TestCase):
-    def test_quoted_text_reaches_the_prompt_inside_the_untrusted_block(self):
-        item = {
-            "text": "Yep",
-            "quoted": {"handle": "Suhail", "text": "Zero B200 availability."},
-        }
-        prompt = generate_summaries.build_x_prompt(item, {"language": "zh"})
-        self.assertIn("quoted post by @Suhail", prompt)
-        body = prompt.split("<untrusted_source_data")[1].split("</untrusted_source_data>")[0]
-        self.assertIn("B200", body, "quoted content must stay inside the untrusted block")
-
-    def test_prompt_omits_the_block_when_there_is_no_quote(self):
-        prompt = generate_summaries.build_x_prompt({"text": "New model is live"}, {"language": "zh"})
-        self.assertNotIn("quoted post by", prompt)
-
-    def test_judgment_account_reaches_the_summarizer(self):
-        self.assertTrue(generate_summaries.is_judgment_account({"tier": "exec"}))
-        self.assertFalse(generate_summaries.is_judgment_account({"tier": "builder"}))
-
-    def test_gate_text_merges_the_quoted_post(self):
-        merged = generate_summaries.tweet_gate_text(
-            {"text": "Indeed", "quoted": {"text": "Capex guidance was raised again"}}
-        )
-        self.assertIn("Indeed", merged)
-        self.assertIn("Capex", merged)
 
 
 if __name__ == "__main__":

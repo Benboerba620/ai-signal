@@ -57,6 +57,21 @@ class LocalRunnerTests(unittest.TestCase):
         with self.assertRaises(pilot.PilotError), pilot.public_network('http://external.example:8080'):
             pass
 
+    def test_local_proxy_mode_ignores_fake_ip_answers_but_not_local_names(self):
+        fake = [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('198.18.0.42', 443))]
+        with patch.object(pilot.socket, 'getaddrinfo', return_value=fake):
+            with pilot.public_network('http://127.0.0.1:12343'):
+                self.assertEqual(pilot.public_url('https://dts.podtrac.com/a.mp3'), 'https://dts.podtrac.com/a.mp3')
+                self.assertEqual(socket.getaddrinfo('traffic.megaphone.fm', 443), fake)
+                for url in ('https://localhost/a.mp3', 'https://router.local/a.mp3', 'https://nas/a.mp3',
+                            'https://10.0.0.5/a.mp3', 'https://[::1]/a.mp3', 'https://mini.tail1234.ts.net/a.mp3',
+                            'https://127.1/a.mp3', 'https://10.1/a.mp3', 'https://0x7f.0.0.1/a.mp3', 'https://0x7f000001/a.mp3'):
+                    with self.subTest(url=url), self.assertRaises(pilot.PilotError):
+                        pilot.public_url(url)
+            with self.assertRaisesRegex(pilot.PilotError, '198.18.0.42'), pilot.public_network():
+                pilot.public_url('https://dts.podtrac.com/a.mp3')
+        self.assertFalse(pilot._LOCAL_PROXY_ACTIVE)
+
     def test_mac_memory_watchdog_sums_only_worker_process_group(self):
         result = subprocess.CompletedProcess([], 0, stdout='  12 100\n  12 250\n 99 999\n')
         with patch.object(pilot.sys, 'platform', 'darwin'), patch.object(pilot.subprocess, 'run', return_value=result):

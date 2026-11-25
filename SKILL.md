@@ -20,9 +20,9 @@ Telegram, Feishu, email, or the current chat.
 posts, podcast transcripts/descriptions, official AI-lab blog announcements) is fetched centrally and served via public JSON feeds. Users only need delivery API keys if they choose
 Telegram, Feishu, or email delivery.
 
-Default mode is **JSON-first**. Do not depend on central Chinese summaries.
-Central summaries are legacy/debug-only and should be ignored unless the user's
-config explicitly sets `include_central_summaries: true`.
+Default mode is **JSON-first**. Central summaries were retired on 2026-11-25:
+`feed-summaries.json` is a frozen stub and `include_central_summaries` is ignored.
+Summarize from the raw feeds with the prompts in `prompts/`.
 
 ## Runtime Bootstrap
 

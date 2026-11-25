@@ -75,6 +75,45 @@ def digest(path):
         return hashlib.file_digest(source, "sha256").hexdigest()
 
 
+# Set only inside public_network(local_proxy=...). Behind the loopback proxy the
+# socket connects to 127.0.0.1 and the proxy resolves the target upstream, so the
+# local DNS answer for the target is not the destination. Proxy clients in
+# fake-IP/TUN mode (observed on the Mac mini from 2026-10-29: megaphone, podtrac,
+# libsyn, mgln.ai audio) answer with reserved addresses, which made every such
+# episode a terminal "private destination" skip. In proxy mode the guard is
+# therefore name-based: IP literals must be global and local-only names are
+# refused; direct mode keeps the resolver check unchanged.
+_LOCAL_PROXY_ACTIVE = False
+LOCAL_ONLY_SUFFIXES = (".localhost", ".local", ".internal", ".lan", ".home.arpa", ".ts.net")
+
+
+def _ip_literal(host):
+    try:
+        return ipaddress.ip_address(host.strip("[]"))
+    except ValueError:
+        return None
+
+
+def _proxied_name_allowed(host):
+    host = host.rstrip(".").lower()
+    literal = _ip_literal(host)
+    if literal is not None:
+        return literal.is_global
+    if "." not in host or host == "localhost" or host.endswith(LOCAL_ONLY_SUFFIXES):
+        return False
+    # Shorthand/hex IPv4 such as 127.1, 10.1 or 0x7f.0.0.1 is not parsed by
+    # ipaddress but is still resolved to an address by the proxy. Real public
+    # host names never end in a numeric label.
+    last = host.rsplit(".", 1)[-1]
+    if last.isdigit() or last.startswith("0x"):
+        return False
+    return True
+
+
+def _non_global(addresses):
+    return [row[4][0] for row in addresses if not ipaddress.ip_address(row[4][0]).is_global]
+
+
 def public_url(url):
     """Validate every redirect too; never send cookies or credentials."""
     parts = urlsplit(url)
@@ -82,9 +121,14 @@ def public_url(url):
         raise PilotError("Only credential-free public HTTPS audio URLs are accepted")
     if parts.port not in (None, 443):
         raise PilotError("Only the standard HTTPS port is accepted")
+    if _LOCAL_PROXY_ACTIVE:
+        if not _proxied_name_allowed(parts.hostname):
+            raise PilotError("Private or non-global audio destinations are rejected")
+        return url
     addresses = socket.getaddrinfo(parts.hostname, 443, type=socket.SOCK_STREAM)
-    if not addresses or any(not ipaddress.ip_address(row[4][0]).is_global for row in addresses):
-        raise PilotError("Private or non-global audio destinations are rejected")
+    if not addresses or _non_global(addresses):
+        raise PilotError("Private or non-global audio destinations are rejected "
+                         f"({parts.hostname} -> {', '.join(sorted(set(_non_global(addresses)))) or 'no address'})")
     return url
 
 
@@ -108,15 +152,23 @@ def public_network(local_proxy=None):
         addresses = original(*args, **kwargs)
         if transport and len(args) >= 2 and (args[0], int(args[1])) == transport:
             return addresses
-        if not addresses or any(not ipaddress.ip_address(row[4][0]).is_global for row in addresses):
-            raise PilotError("Connection resolved to a private or non-global destination")
+        if transport and args and isinstance(args[0], str) and _proxied_name_allowed(args[0]):
+            # Proxy mode: a fake-IP answer is not the destination (see public_url).
+            return addresses
+        if not addresses or _non_global(addresses):
+            raise PilotError("Connection resolved to a private or non-global destination "
+                             f"({args[0] if args else '?'} -> {', '.join(sorted(set(_non_global(addresses)))) or 'no address'})")
         return addresses
 
+    global _LOCAL_PROXY_ACTIVE
+    previous_mode = _LOCAL_PROXY_ACTIVE
+    _LOCAL_PROXY_ACTIVE = bool(transport)
     socket.getaddrinfo = checked
     try:
         yield
     finally:
         socket.getaddrinfo = original
+        _LOCAL_PROXY_ACTIVE = previous_mode
 
 
 def worker_environment(work):

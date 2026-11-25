@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE_POLICY = None
 RUNTIME_ENTRY = None
 LOCAL_VALIDATION_REPAIR = False
+PROXY_DNS_REPAIR = "proxy-fake-ip-dns-v1"
 QUEUE_PATH = "feeds/whisper-queue.json"
 FEED_PATH = "feeds/feed-podcasts.json"
 INDEX_PATH = "feeds/feed-transcripts-index.json"
@@ -295,7 +296,28 @@ def refresh(root, state, sources, now):
             entry.setdefault('history', []).append({'at': now.isoformat(), 'attempt': entry.get('attempts', 0),
                 'status': 'repair_ready', 'kind': 'validated_local_audio_repair'})
             entry.update(status='retry', next_retry_at=now.isoformat(), updated_at=now.isoformat())
-    indexed = {identity(item) for item in index.get("transcripts", []) if identity(item)}
+        # One-time release of episodes the loopback-proxy DNS guard wrongly
+        # skipped as "private" (fake-IP answers; see pilot.public_url). Only
+        # episodes still in the current feed, once each; attempts are kept.
+        # They were never really queued, so the 24h overdue clock restarts now
+        # (the original first_seen_at is kept) instead of alerting at once.
+        for key, entry in state['entries'].items():
+            message = str(entry.get('last_error') or entry.get('skip_reason') or '')
+            if (key not in current or entry.get('status') != 'skipped' or not entry.get('terminal_skip') or
+                    'private or non-global destination' not in message.lower() or
+                    PROXY_DNS_REPAIR in entry.get('repair_revisions', [])):
+                continue
+            if not eligible(current[key], sources)[0]:
+                continue
+            entry.setdefault('repair_revisions', []).append(PROXY_DNS_REPAIR)
+            entry.setdefault('history', []).append({'at': now.isoformat(), 'attempt': entry.get('attempts', 0),
+                'status': 'repair_ready', 'kind': 'proxy_fake_ip_dns_repair'})
+            entry.pop('terminal_skip', None)
+            entry.pop('skip_reason', None)
+            entry.setdefault('original_first_seen_at', entry.get('first_seen_at'))
+            entry.update(status='pending', failure_kind=None, next_retry_at=None, first_seen_at=now.isoformat(),
+                         updated_at=now.isoformat())
+    indexed ={identity(item) for item in index.get("transcripts", []) if identity(item)}
     for key, item in cache.items():
         entry = state["entries"].setdefault(key, {"episode": {field: item[field] for field in SNAPSHOT_FIELDS if field in item},
                                                  "attempts": 0, "first_seen_at": now.isoformat()})

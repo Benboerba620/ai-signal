@@ -13,26 +13,6 @@ on:
         required: false
         default: false
         type: boolean
-      x_llm:
-        description: 'LLM for X/Twitter summaries'
-        required: false
-        default: 'config'
-        type: choice
-        options:
-          - 'config'
-          - 'doubao-pro'
-          - 'doubao-turbo'
-          - 'deepseek-pro'
-          - 'deepseek-flash'
-          - 'minimax-m3'
-      generate_summaries:
-        description: 'Generate legacy central LLM summaries for manual debugging.'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'false'
-          - 'true'
       transcribe_missing:
         description: 'Use cloud CPU Whisper for eligible queued podcasts without public transcripts.'
         required: false
@@ -187,44 +167,6 @@ jobs:
           fi
           python scripts/validate_feeds.py --scope "$scope"
 
-      - name: Generate central summaries
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.generate_summaries == 'true' }}
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
-          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
-          X_LLM_PRESET: ${{ inputs.x_llm || 'config' }}
-        run: |
-          pids=""
-          if [ "$X_LLM_PRESET" = "deepseek-pro" ] || [ "$X_LLM_PRESET" = "deepseek-flash" ]; then
-            x_key="$DEEPSEEK_API_KEY"
-          elif [ "$X_LLM_PRESET" = "minimax-m3" ]; then
-            x_key="$MINIMAX_API_KEY"
-          else
-            x_key="$ARK_API_KEY"
-          fi
-          if [ -n "$x_key" ]; then
-            python scripts/generate_summaries.py --profile zh_standard --type x --x-llm "$X_LLM_PRESET" --max-workers 3 &
-            pids="$pids $!"
-          else
-            echo "Required API key is not set; skipping X summaries for $X_LLM_PRESET."
-          fi
-          if [ -n "$ARK_API_KEY" ]; then
-            python scripts/generate_summaries.py --profile zh_standard --type papers --limit 12 --max-workers 4 &
-            pids="$pids $!"
-          else
-            echo "ARK_API_KEY is not set; skipping paper summaries."
-          fi
-          if [ -n "$DEEPSEEK_API_KEY" ]; then
-            python scripts/generate_summaries.py --profile zh_short --profile zh_standard --profile zh_deep --type podcasts --limit 5 &
-            pids="$pids $!"
-          else
-            echo "DEEPSEEK_API_KEY is not set; skipping podcast summaries."
-          fi
-          for pid in $pids; do
-            wait "$pid"
-          done
-
       - name: Commit feeds
         run: |
           git config user.name "github-actions[bot]"
@@ -237,10 +179,6 @@ jobs:
             git add -f -- ':(glob)feeds/transcripts/*.txt'
           fi
           [ ! -f feeds/whisper-queue.json ] || git add feeds/whisper-queue.json -f
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.generate_summaries }}" = "true" ]; then
-            [ -f feeds/feed-summaries.json ] && git add feeds/feed-summaries.json -f
-            [ -d content/summaries ] && git add content/summaries -f
-          fi
           git diff --staged --quiet || git commit -m "Feed update $(date -u +%Y-%m-%d)"
           # mini 可能在 checkout 之后、push 之前提交了 feed-x.json，那样裸 push 会被拒。
           # rebase 而不是 merge，保持线性历史；两边改的文件不重叠所以不会有冲突。

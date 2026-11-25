@@ -10,6 +10,10 @@
 
 ## 最近更新
 
+- `2026-11-25`：修复 Mac mini 代理下播客全文被误拦；新增 X [@elonmusk](https://x.com/elonmusk) 与播客 Training Data、硅谷101；停用中央摘要。
+
+- `2026-11-08`：云端预期内的 403 单独记录，不再算作信源故障；YC 与 Sharp Tech 接入本地已有全文。
+
 - `2026-10-26`：统一 X 自动恢复与告警代码；旧代理记录改现场验证，同次故障不随分类变化重复提醒，补跑后核对公开数据。
 
 - `2026-10-22`：移除论文内容，停止论文抓取、日报展示和过期告警；保留播客、博客及 X。
@@ -82,7 +86,7 @@
 
 ## 信息源
 
-### 播客（19 个频道）
+### 播客（21 个频道）
 
 | 频道 | 为什么选 |
 |------|----------|
@@ -93,6 +97,7 @@
 | [a16z](https://a16z.com/podcasts/) | 仅收录标题明确涉及 AI 的节目 |
 | [Naval](https://nav.al/) | Naval Ravikant 对 AI、技术、创业和资本形成的长线判断 |
 | [No Priors](https://www.youtube.com/@NoPriorsPodcast) | Sarah Guo + Elad Gil，AI infra 创始人密度最高 |
+| [Training Data](https://www.sequoiacap.com/series/training-data/) | 红杉合伙人对话 AI 公司创始人和研究者 |
 | [SemiAnalysis](https://www.youtube.com/@SemiAnalysis) | Dylan Patel，半导体与 AI 基础设施最深度的独立分析 |
 | [Sharp Tech with Ben Thompson](https://sharptech.fm) | Stratechery 的 Ben Thompson，用聚合理论看大厂与 AI 的商业模式。公开 feed 只有正片前 20-35 分钟（`(Preview)` 前缀），正片在付费墙后 |
 | [Google DeepMind](https://deepmind.com/podcast) | DeepMind 官方，前沿研究视角 |
@@ -102,7 +107,7 @@
 | [Capital Allocators](https://capitalallocators.com/podcast/) | 机构投资者视角 |
 | [The Acquirers Podcast](https://acquirersmultiple.com/podcast/) | 价值投资方法论 |
 
-台湾节目还包括：財報狗、定錨產業筆記、科技領航家、DIGITIMES《It's 秀 TIME》。完整有效名单和过滤条件以 `config/sources.json` 为准。
+中文节目：[硅谷101](https://www.sv101.net/)（硅谷科技与 AI 产业深度对话）；台湾节目还包括：財報狗、定錨產業筆記、科技領航家、DIGITIMES《It's 秀 TIME》。完整有效名单和过滤条件以 `config/sources.json` 为准。
 
 这两档 Substack 节目（Latent Space、Lenny’s Podcast）优先读取原专用播客 RSS，失败时切换到节目自有域名下的同一播客 feed；不会改用混有文章和其他节目的普通 newsletter feed。如果所有入口都失败，日报会明确提示受影响来源。
 
@@ -118,11 +123,11 @@
 
 > 过滤规则：只收本周上传（YouTube 服务端过滤）、标题必须含人名（去同名假阳性）、时长 ≥ 15 分钟（去切片/shorts）、频道订阅数 ≥ 5 万（去小搬运号）、海外人物剔除非拉丁文字频道名/标题（去大号外语搬运/二创，如中文配音、印地语二创、韩语搬运）、海外人物要求视频有英文字幕轨（挡住英文标题的外语综艺，如韩综 You Quiz 上的 Jensen Huang 只有韩语字幕；只要英文原版）、剔除例行盘面播报和影视剧合集噪音；与频道订阅命中的同一期节目自动去重；每天最多新收 5 条，日报不会被人物命中刷屏。名单在 `config/sources.json` 的 `podcasts.people`。
 
-### Twitter/X（19 个账号）
+### Twitter/X（20 个账号）
 
 **分析师/研究者**：[@karpathy](https://x.com/karpathy)、[@swyx](https://x.com/swyx)、[@dylan522p](https://x.com/dylan522p)（SemiAnalysis）、[@insane_analyst](https://x.com/insane_analyst)（Irrational Analysis，半导体投资）、[@benthompson](https://x.com/benthompson)（Ben Thompson，Stratechery）、[@naval](https://x.com/naval)（Naval Ravikant）、[@jimkxa](https://x.com/jimkxa)（Jim Keller）、[@GavinSBaker](https://x.com/GavinSBaker)（Gavin Baker，Atreides Management）
 
-**决策者**：[@sama](https://x.com/sama)、[@DarioAmodei](https://x.com/DarioAmodei)、[@demishassabis](https://x.com/demishassabis)（Google DeepMind）、[@jietang](https://x.com/jietang)（Z.ai / Tsinghua）、[@JensenHuang](https://x.com/JensenHuang)（黄仁勋，NVIDIA CEO）
+**决策者**：[@sama](https://x.com/sama)、[@DarioAmodei](https://x.com/DarioAmodei)、[@demishassabis](https://x.com/demishassabis)（Google DeepMind）、[@jietang](https://x.com/jietang)（Z.ai / Tsinghua）、[@JensenHuang](https://x.com/JensenHuang)（黄仁勋，NVIDIA CEO）、[@elonmusk](https://x.com/elonmusk)（xAI / Tesla / SpaceX；推文量大，只收命中 AI/技术关键词且互动 ≥2000 的）
 
 **建造者**：[@AmandaAskell](https://x.com/AmandaAskell)、[@bcherny](https://x.com/bcherny)（Claude Code）、[@_catwu](https://x.com/_catwu)、[@alexalbert__](https://x.com/alexalbert__)、[@rauchg](https://x.com/rauchg)（Vercel）、[@joshwoodward](https://x.com/joshwoodward)（Google Labs）
 
@@ -228,7 +233,7 @@ flowchart LR
 
 **你不需要任何内容 API key。** 内容抓取在中央完成，摘要由你自己的 AI Agent 读取 JSON 后生成。
 
-默认是 **JSON-first**：中央只提供原始 feed，不生成中文版日报。这能减少中文、emoji、长播客字幕在命令行、定时任务和推送链路里的编码问题。中央 LLM 摘要能力仍保留为手动调试选项，但不是默认用户路径。
+默认是 **JSON-first**：中央只提供原始 feed，不生成中文版日报。这能减少中文、emoji、长播客字幕在命令行、定时任务和推送链路里的编码问题。中央 LLM 摘要已于 2026-11-25 停用，`feed-summaries.json` 只保留停用标记。
 
 ## 要求
 
@@ -241,7 +246,7 @@ flowchart LR
 
 - 不采集任何用户数据
 - 你的配置和偏好只存在你自己的机器上（`~/.ai-signal/`）
-- 只聚合公开内容（公开推文、公开播客、公开论文）
+- 只聚合公开内容（公开推文、公开播客、公开博客）
 
 ## 关于
 

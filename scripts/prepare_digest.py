@@ -487,11 +487,11 @@ def choose_summary_profile(config):
 
 
 def wants_central_summaries(config):
-    value = config.get("include_central_summaries", False)
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in ("1", "true", "yes", "on")
+    """Central summaries were retired on 2026-11-25; the user's agent summarizes.
+
+    Old configs may still set include_central_summaries=true. The flag is ignored
+    so they never read the frozen feed-summaries.json snapshot.
+    """
     return False
 
 
@@ -697,7 +697,7 @@ def main():
         feed_summaries, summaries_source = fetch_feed("feed-summaries.json", "profiles")
     else:
         feed_summaries = None
-        summaries_source = feed_meta("feed-summaries.json", f"{RAW_BASE}/feeds/feed-summaries.json", "disabled", None)
+        summaries_source = feed_meta("feed-summaries.json", "", "disabled", None)
     feed_sources, source_warnings = annotate_feed_sources(
         {
             "x": x_source,

@@ -475,6 +475,29 @@ class QueueTests(unittest.TestCase):
                         queue.refresh(self.root, state, self.sources, NOW)
                         self.assertEqual(entry['status'], 'failed')
 
+    def test_proxy_dns_repair_releases_only_false_private_skips_once(self):
+        self.run_queue(enqueue_only=True)
+        original = self.state(); key = queue.identity(self.item)
+        cases = [('Connection resolved to a private or non-global destination', 'pending'),
+                 ('direct public audio required; YouTube audio extraction is disabled', 'skipped')]
+        for message, expected in cases:
+            with self.subTest(message=message):
+                state = copy.deepcopy(original); entry = state['entries'][key]
+                entry.update(status='skipped', attempts=1, failure_kind='source_policy', terminal_skip=True,
+                             skip_reason=message, last_error=message)
+                with patch.object(queue, 'LOCAL_VALIDATION_REPAIR', True):
+                    queue.refresh(self.root, state, self.sources, NOW)
+                self.assertEqual(entry['status'], expected)
+                self.assertEqual(entry['attempts'], 1)
+                if expected == 'pending':
+                    self.assertNotIn('terminal_skip', entry)
+                    self.assertEqual(entry['first_seen_at'], NOW.isoformat())
+                    self.assertIn('original_first_seen_at', entry)
+                    entry.update(status='skipped', terminal_skip=True, last_error=message)
+                    with patch.object(queue, 'LOCAL_VALIDATION_REPAIR', True):
+                        queue.refresh(self.root, state, self.sources, NOW)
+                    self.assertEqual(entry['status'], 'skipped', 'repair must run at most once per entry')
+
     def test_corrupt_worker_artifacts_are_never_published(self):
         output = self.output/'worker'
         with patch.object(pilot, 'supervise', return_value=1):

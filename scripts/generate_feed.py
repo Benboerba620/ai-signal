@@ -340,6 +340,22 @@ def tweet_engagement_score(tweet):
     )
 
 
+def tweet_search_args(account, include_replies, max_per_user):
+    """Query and raw-result limit for one account.
+
+    The raw window is the newest ``max_per_user * 3`` posts. For accounts that
+    mostly reply (e.g. @elonmusk), replies fill that window and are then
+    dropped, leaving nothing. ``exclude_replies_in_search`` drops them in the
+    X query instead, and ``search_limit`` widens the window. Both are opt-in
+    per account; replies are still filtered afterwards either way.
+    """
+    query = f"from:{account['handle']}"
+    if account.get("exclude_replies_in_search") and not include_replies:
+        query += " -filter:replies"
+    limit = int(account.get("search_limit") or max_per_user * 3)
+    return query, max(1, min(limit, 100))
+
+
 def is_reply_tweet(tweet):
     if getattr(tweet, "inReplyToTweetId", None):
         return True
@@ -624,7 +640,8 @@ async def fetch_twitter(sources):
         apply_relevance = uses_relevance_filter(account, twitter_cfg)
         log(f"📥 @{handle}..." + ("" if apply_relevance else " (judgment tier, no keyword gate)"))
         try:
-            raw = await gather(api.search(f"from:{handle}", limit=max_per_user * 3, kv={"product": "Latest"}))
+            query, search_limit = tweet_search_args(account, include_replies, max_per_user)
+            raw = await gather(api.search(query, limit=search_limit, kv={"product": "Latest"}))
         except Exception as e:
             log(f"  ⚠️ {e}")
             errors.append(f"@{handle}: {e}")
