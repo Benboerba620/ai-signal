@@ -28,6 +28,7 @@ from pathlib import Path
 import httpx
 
 from feedback import summarize_feedback
+from usage_ping import maybe_ping
 
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
@@ -686,6 +687,9 @@ def main():
         except Exception as e:
             errors.append(f"Config read error: {e}")
 
+    # Anonymous once-a-day usage count; opt out with "anonymous_ping": false.
+    ping_status = maybe_ping(config)
+
     # 2. Fetch feeds
     feed_x, x_source = fetch_feed("feed-x.json", "x")
     feed_podcasts, podcast_source = fetch_feed("feed-podcasts.json", "podcasts")
@@ -836,6 +840,7 @@ def main():
         "available_summary_profiles": available_summary_profiles,
         "domains": domains,
         "delivery": config.get("delivery", {"method": "stdout"}),
+        "anonymous_ping": ping_status,
     }
     output_contract = build_output_contract({**config, "language": language})
     feedback_summary = summarize_feedback()

@@ -26,6 +26,12 @@ If a user asks to add or remove sources: "信息源由中央统一维护，自�
 - "只看 AI" → update `domains` to `["ai"]`
 - "加上投资" → update `domains` to `["ai", "invest"]`
 
+### Anonymous Usage Count
+- "关掉匿名统计" / "turn off the usage ping" → set `"anonymous_ping": false`
+- If asked what it sends: at most one request per day for the static file
+  `feeds/ping.txt` on jsDelivr, with no ID, config, or query string. jsDelivr
+  sees the IP address, as it does for feed downloads.
+
 ### Delivery Changes
 - "推到 Telegram / 飞书" → update `delivery.method`, guide setup if needed
 - "换个邮箱" → update `delivery.email`

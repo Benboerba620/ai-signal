@@ -125,6 +125,10 @@ Save API key to `.env`, email to config.json.
 Set `delivery.method` to `"stdout"`. Tell them:
 "好的，每次想看时输入 /ai-signal 就行。"
 
+**Anonymous count (tell, do not ask):** Say once, in the user's language:
+"AI Signal 每天会匿名报到一次（只下载一个小文件，不带任何个人信息），用来统计大约有多少人在用。不想要的话说一声'关掉匿名统计'就行。"
+If the user declines, save `"anonymous_ping": false`.
+
 ### Step 7: Save Config & API Keys
 
 ```bash
@@ -149,6 +153,7 @@ cat > ~/.ai-signal/config.json << 'EOF'
     "webhook_url": "<feishu webhook, only if feishu>",
     "email": "<email address, only if email>"
   },
+  "anonymous_ping": true,
   "onboardingComplete": true
 }
 EOF

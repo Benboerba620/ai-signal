@@ -4,30 +4,29 @@ You are assembling an AI Signal digest from the JSON prepared by `prepare_digest
 
 ## Overall Shape
 
-Start with:
+Use this order. Only include sections that have relevant content.
 
-`AI Signal - [Date]`
+1. Title line: `AI Signal · [Date]`
+2. Today's thread: one blockquote line (see Opening)
+3. Top picks overview (3-5 items)
+4. Source count line
+5. 🐦 X / Twitter
+6. 🎙 Podcasts
+7. 📝 Official Blogs (Anthropic / OpenAI / Google DeepMind announcements, Stratechery)
+8. Follow-up note and attribution
 
-Then use this order:
-
-1. X / Twitter
-2. Podcasts
-3. Official Blogs (Anthropic / OpenAI / Google DeepMind announcements)
-4. Papers
-
-Only include sections that have relevant content.
+Paper coverage is retired: never add a papers section.
 
 ## Item IDs and Follow-up Expansion
 
-Give every included item a stable, visible ID in the heading or first line:
+Give every included item a stable, visible ID at the start of its heading line:
 
 - X / Twitter items: `X1`, `X2`, `X3`
 - Podcast items: `P1`, `P2`, `P3`
 - Official blog items: `B1`, `B2`, `B3`
-- Paper items: `Paper1`, `Paper2`, `Paper3`
 
 End the digest with a short note telling the user they can ask follow-up
-questions such as "expand P2", "详细讲讲 Paper1", or "这条 X1 为什么重要？".
+questions such as "expand P2" or "这条 X1 为什么重要？".
 
 If the user later asks to expand one item, use the matching item in
 `payload.json`; for podcasts, run `fetch_transcript.py` with the item's `guid`
@@ -35,7 +34,73 @@ and read that single transcript before answering. Do not browse the open web.
 
 ## Opening
 
-Write a short 2-3 sentence opening that explains the strongest signal across today's sources. Do not list everything. Frame the day around one question, tension, or product/research shift worth watching.
+Write one blockquote line of 1-2 sentences that names the strongest signal across today's sources. Do not list everything. Frame the day around one question, tension, or product/research shift worth watching.
+
+## Visual Layout
+
+The digest should be scannable in ten seconds. Keep these elements, in this order.
+
+**Top picks overview.** Pick the 3-5 most important items across all sections.
+Each row has: ID, source (person, channel, or lab), one line of at most about
+20 Chinese characters or 12 English words, a topic tag, and a heat marker.
+
+**Topic tags.** Use exactly one tag per item, chosen only from this list (Chinese
+output uses the Chinese tag): `模型 Model`, `产品 Product`, `算力芯片 Compute`,
+`投资 Investing`, `研究 Research`, `观点 Opinion`. Do not invent other tags.
+
+**Heat marker.** For X items, use `engagement_score`: 🔥🔥🔥 at 10,000 or more,
+🔥🔥 at 2,000 or more, otherwise 🔥. For podcasts, use 📄 when
+`transcript_available` is true and nothing otherwise. For blogs, use 🏛 for a
+lab announcement and 💬 for independent analysis. Never estimate heat that is
+not in the JSON.
+
+**Source count line.** One line such as `📊 今日：X 12 条 · 播客 5 期 · 博客 2 篇`,
+counting only the items you included.
+
+**Item heading line.** Bold the ID and source, then the metadata separated by ` · `:
+
+- X: `**X1 · Sam Altman** · 11-25 09:30 · ❤️ 3.2万 · 产品`
+- Podcast: `**P1 · a16z** · 《The One-Person Biotech》 · 66 分钟 · 📄 可展开全文 · 研究`
+- Blog: `**B1 · Anthropic** · 《Title》 · 11-25 · 模型`
+
+Format likes from `like_count` (Chinese: 1.2万 / 8,600; English: 12K / 8.6K).
+Format podcast length from `duration`. Omit a field rather than guess it.
+
+Under the heading: the explanation or translation, then the original tweet text
+as a blockquote for X items, then the link on its own line starting with 🔗.
+Separate the three content sections with a horizontal rule (`---`).
+
+**Channel-specific overview.** If `config.delivery.method` is `stdout` or
+missing (the digest is shown in the current chat), write the overview as a
+Markdown table with columns `# | 来源 | 一句话 | 标签 | 热度` (English: `# | Source |
+Takeaway | Tag | Heat`). If the method is `telegram`, `feishu`, or `email`, those
+channels do not render tables: write the same overview as one line per item,
+for example `X1 🔥🔥🔥 Sam Altman — OpenAI 测试 Private Inference（产品）`.
+
+### Example (Chinese, chat)
+
+```
+AI Signal · 11月26日
+
+> 今日主线：……
+
+| # | 来源 | 一句话 | 标签 | 热度 |
+|---|---|---|---|---|
+| X1 | Sam Altman | OpenAI 开始测试 Private Inference | 产品 | 🔥🔥🔥 |
+| P1 | a16z | 一个人就能推进多个生物科技项目 | 研究 | 📄 |
+
+📊 今日：X 6 条 · 播客 3 期 · 博客 1 篇
+
+---
+## 🐦 X / Twitter
+
+**X1 · Sam Altman** · 11-25 09:30 · ❤️ 3.2万 · 产品
+（中文翻译或解释）
+> 原文……
+🔗 https://x.com/...
+```
+
+The example shows the layout only. Never copy its content.
 
 ## Source Rules
 
@@ -53,9 +118,8 @@ Write a short 2-3 sentence opening that explains the strongest signal across tod
   may raise priority and negative scores may reduce repetitive items, but never
   suppress a major official release solely because of past feedback.
 - Every included item must have its original link.
-- Every included X post, podcast, and paper must show its source time in the
-  user's configured timezone. Use `created_at` for X, `pub_date` for podcasts,
-  and `published` for a paper's first-submission time. If the field is empty,
+- Every included X post and podcast must show its source time in the user's
+  configured timezone. Use `created_at` for X and `pub_date` for podcasts. If the field is empty,
   label the time as unverified; never use feed generation or discovery time.
 - Do not visit websites, search the web, or call APIs.
 - Do not invent quotes, metrics, product details, or claims.
@@ -63,8 +127,8 @@ Write a short 2-3 sentence opening that explains the strongest signal across tod
 
 ## Formatting
 
-- Keep the digest readable on a phone.
-- Prefer short paragraphs and clean section headings.
+- Keep the digest readable on a phone: short paragraphs, at most about 4 lines per item.
+- Use the emoji markers above only in the places shown; do not decorate every sentence.
 - Do not wrap the final digest in a Markdown code fence.
 - If the user's language is Chinese, write natural Chinese, not translationese.
 - End with the follow-up note, then: `Generated through AI Signal: https://github.com/Benboerba620/ai-signal`

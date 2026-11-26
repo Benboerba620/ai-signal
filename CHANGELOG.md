@@ -4,6 +4,8 @@
 
 ## 2026-11-26
 
+- Anonymous usage count: each install fetches the static `feeds/ping.txt` from jsDelivr at most once per local day, with no ID or parameters, so jsDelivr's public stats show daily active installs. Opt out with `"anonymous_ping": false` or `AI_SIGNAL_NO_PING=1`; CI never pings. Maintainers read counts with `python scripts/usage_ping.py --stats`.
+- Digest layout: a one-line thread, a top-picks overview (table in chat, one line per item in Telegram/Feishu/email), a source count line, fixed topic tags, heat markers from real engagement, and one-line item headers. Papers removed from the layout.
 - Local transcript publication allowlist widened from 5 to 17 channels (every public channel the maintainer's local pipeline also subscribes to). The daily cloud producer cannot reach most podcast CDNs, so these channels previously got no transcripts. Preview matched 14 episodes in the 7-day window, versus 4 before.
 
 ## 2026-11-25
