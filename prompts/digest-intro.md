@@ -82,6 +82,7 @@ section divider is `---`.
 `deep_read_url`. Copy it exactly as given; never build, shorten, or edit it.
 If the field is missing, leave out the 🔍 part. Opening the link starts a new
 chat in the reader's own Claude or ChatGPT with a deep-read prompt filled in.
+The link is short on purpose; do not replace it with a longer prompt URL.
 
 **Telegram.** Telegram does not render `#` headings or `**`. Use
 `*X1 · Sam Altman*` as the item heading, keep the same blank lines, use the
@@ -89,9 +90,8 @@ same `[text](url)` links, and use a line of `━━━━━━━━━━` fol
 `*🐦 X / Twitter*` as the section divider and heading.
 
 **Feishu and email.** These channels show plain text and raw URLs. Use the
-Telegram layout without `*`, show the original link as `🔗 url`, and leave out
-the deep-read link because it is several hundred characters long; the
-follow-up note already tells readers how to expand an item.
+Telegram layout without `*`, and put the links on one line as
+`🔗 url · 🔍 精读 deep_read_url`.
 
 Format likes from `like_count` (Chinese: 1.2万 / 8,600; English: 12K / 8.6K).
 Format podcast length from `duration`. Omit a field rather than guess it.

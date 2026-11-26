@@ -1,7 +1,7 @@
 import sys
 import unittest
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import parse_qs
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
@@ -10,7 +10,7 @@ import deep_read
 
 class DeepReadTests(unittest.TestCase):
     def build(self, config=None, language="zh"):
-        x = [{"name": "Sam Altman", "tweets": [{"text": "We are testing Private Inference" + "x" * 900,
+        x = [{"name": "Sam Altman", "tweets": [{"id": "1", "text": "We are testing Private Inference",
                                                 "url": "https://x.com/sama/status/1"}]}]
         eps = [{"channel": "a16z", "title": "Biotech", "link": "https://a16z.example/ep",
                 "transcript_available": True, "transcript_path": "feeds/transcripts/abc.txt"},
@@ -19,30 +19,36 @@ class DeepReadTests(unittest.TestCase):
         deep_read.attach_deep_read_urls(config or {}, language, x, eps, arts)
         return x, eps, arts
 
-    def test_default_is_claude_prefill_with_transcript(self):
+    def test_default_link_is_short_and_points_at_transcript(self):
         _, eps, _ = self.build()
         url = eps[0]["deep_read_url"]
-        self.assertTrue(url.startswith("https://claude.ai/new?q="))
-        prompt = unquote(url.split("q=", 1)[1])
-        self.assertIn("全文转录：https://cdn.jsdelivr.net/gh/Benboerba620/ai-signal@main/feeds/transcripts/abc.txt", prompt)
-        self.assertIn("原文：https://a16z.example/ep", prompt)
-        self.assertNotIn(" ", url.split("q=", 1)[1])
+        self.assertTrue(url.startswith(deep_read.PAGE + "#"))
+        params = parse_qs(url.split("#", 1)[1])
+        self.assertEqual(params["k"], ["p"])
+        self.assertEqual(params["tr"], ["abc"])
+        self.assertEqual(params["u"], ["https://a16z.example/ep"])
+        self.assertNotIn("lang", params)
+        self.assertLess(len(url), 200)
 
-    def test_episode_without_transcript_only_links_page(self):
+    def test_episode_without_transcript_has_no_tr(self):
         _, eps, _ = self.build()
-        self.assertNotIn("全文转录", unquote(eps[1]["deep_read_url"]))
+        self.assertNotIn("tr=", eps[1]["deep_read_url"])
 
-    def test_tweet_text_is_carried_and_capped(self):
+    def test_tweet_link_carries_only_the_id_and_url(self):
         x, _, _ = self.build()
-        prompt = unquote(x[0]["tweets"][0]["deep_read_url"].split("q=", 1)[1])
-        self.assertIn("We are testing Private Inference", prompt)
-        self.assertLess(len(prompt), deep_read.MAX_TWEET_CHARS + 400)
+        url = x[0]["tweets"][0]["deep_read_url"]
+        params = parse_qs(url.split("#", 1)[1])
+        self.assertEqual(params["id"], ["1"])
+        self.assertLess(len(url), 200)
 
     def test_chatgpt_and_english(self):
         _, _, arts = self.build({"deep_read": "chatgpt"}, language="en")
-        url = arts[0]["deep_read_url"]
-        self.assertTrue(url.startswith("https://chatgpt.com/?q="))
-        self.assertIn("Deep-read", unquote(url))
+        params = parse_qs(arts[0]["deep_read_url"].split("#", 1)[1])
+        self.assertEqual((params["via"], params["lang"], params["k"]), (["chatgpt"], ["en"], ["b"]))
+
+    def test_page_is_published(self):
+        page = Path(__file__).resolve().parent.parent / "docs" / "r.html"
+        self.assertIn("claude.ai/new?q=", page.read_text("utf-8"))
 
     def test_off_adds_nothing(self):
         x, eps, arts = self.build({"deep_read": "off"})
