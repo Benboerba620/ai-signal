@@ -54,16 +54,16 @@
   var T = lang === "zh" ? {
     head: "请精读下面这期内容，用中文回答：1. 核心观点；2. 关键事实和数字；3. 为什么重要；4. 有哪些疑点或反方观点。只依据原文，原文没有的不要编。",
     source: "来源：", title: "标题：", link: "原文：", transcript: "全文转录：", full: "以下是全文：\n",
-    copy: "复制精读内容，打开 ", prefill: "用 {n} 精读", copied: "已复制，在 {n} 里粘贴后发送。", stale: "这条内容已经不在最新 feed 里，下面只有原文链接。"
+    copy: "复制精读内容，打开 ", prefill: "用 {n} 精读", copied: "已复制，在 {n} 里粘贴后发送。", stale: "这条内容已经不在最新 feed 里，下面只有原文链接。", offline: "没连上 feed，下面只有原文链接，可以刷新再试。", ready: "已准备好全文（{n} 字）。"
   } : {
     head: "Deep-read the item below: 1. core argument; 2. key facts and numbers; 3. why it matters; 4. open questions or counterpoints. Use only the source; do not invent anything it does not say.",
     source: "Source: ", title: "Title: ", link: "Original: ", transcript: "Full transcript: ", full: "Full text:\n",
-    copy: "Copy and open ", prefill: "Deep read in {n}", copied: "Copied. Paste it into {n} and send.", stale: "This item is no longer in the latest feed; only the original link is below."
+    copy: "Copy and open ", prefill: "Deep read in {n}", copied: "Copied. Paste it into {n} and send.", stale: "This item is no longer in the latest feed; only the original link is below.", offline: "Could not reach the feed; only the original link is below. Reload to retry.", ready: "Full text ready ({n} characters)."
   };
   var $ = function (id) { return document.getElementById(id); };
 
   function getJSON(name) {
-    return fetch(FEEDS + name).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
+    return fetch(FEEDS + name).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
   }
   function getText(url) {
     return fetch(url).then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; });
@@ -73,6 +73,7 @@
     var name = kind === "p" ? "feed-podcasts.json" : kind === "b" ? "feed-blogs.json" : null;
     if (!name) return Promise.resolve({});
     return getJSON(name).then(function (d) {
+      if (!d) return { offline: true };
       var rows = kind === "p" ? (d.podcasts || []) : (d.articles || []);
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
@@ -121,7 +122,8 @@
       $("others").appendChild(b);
     });
     $("prompt").value = TARGETS[via].paste ? pastePrompt : linkPrompt;
-    $("status").textContent = item.found ? (fullText ? "已准备好全文（" + fullText.length + " 字）。" : "") : T.stale;
+    $("status").textContent = fullText ? T.ready.replace("{n}", fullText.length)
+      : item.found ? "" : item.offline ? T.offline : T.stale;
     $("actions").hidden = false;
   });
 })();
