@@ -154,6 +154,7 @@ cat > ~/.ai-signal/config.json << 'EOF'
     "email": "<email address, only if email>"
   },
   "anonymous_ping": true,
+  "deep_read": "claude",
   "onboardingComplete": true
 }
 EOF

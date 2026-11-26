@@ -25,8 +25,8 @@ Give every included item a stable, visible ID at the start of its heading line:
 - Podcast items: `P1`, `P2`, `P3`
 - Official blog items: `B1`, `B2`, `B3`
 
-End the digest with a short note telling the user they can ask follow-up
-questions such as "expand P2" or "这条 X1 为什么重要？".
+End the digest with a short note telling the user they can tap 🔍 一键精读 on
+any item, or ask follow-up questions such as "expand P2" or "这条 X1 为什么重要？".
 
 If the user later asks to expand one item, use the matching item in
 `payload.json`; for podcasts, run `fetch_transcript.py` with the item's `guid`
@@ -57,18 +57,44 @@ not in the JSON.
 **Source count line.** One line such as `📊 今日：X 12 条 · 播客 5 期 · 博客 2 篇`,
 counting only the items you included.
 
-**Item heading line.** Bold the ID and source, then the metadata separated by ` · `:
+**Spacing.** Every item and every section must stand apart on a phone.
+Leave exactly one blank line between the elements inside an item, and start
+each item with its own heading so the renderer adds space above it. Between
+sections put a blank line, the section divider, and a blank line. Never run two
+items together without a blank line.
 
-- X: `**X1 · Sam Altman** · 11-25 09:30 · ❤️ 3.2万 · 产品`
-- Podcast: `**P1 · a16z** · 《The One-Person Biotech》 · 66 分钟 · 📄 可展开全文 · 研究`
-- Blog: `**B1 · Anthropic** · 《Title》 · 11-25 · 模型`
+**Item layout (chat window, `stdout`).** Each item is a block in this order:
+
+1. Heading: `### X1 · Sam Altman` (ID and source only).
+2. Metadata line, fields separated by ` · `:
+   - X: `11-25 09:30 · ❤️ 3.2万 · 产品`
+   - Podcast: `《The One-Person Biotech》 · 66 分钟 · 📄 有全文 · 研究`
+   - Blog: `《Title》 · 11-25 · 🏛 · 模型`
+3. Blank line, then the explanation or translation (at most about 3 lines).
+4. X items only: blank line, then the original tweet text as a blockquote.
+5. Blank line, then one link line: `🔗 [原文](url) · 🔍 [一键精读](deep_read_url)`.
+   English: `🔗 [Source](url) · 🔍 [Deep read](deep_read_url)`.
+
+Section headings use `## 🐦 X / Twitter`, `## 🎙 播客`, `## 📝 官方博客`, and the
+section divider is `---`.
+
+**Deep-read link.** Every tweet, episode, and article in the JSON may carry a
+`deep_read_url`. Copy it exactly as given; never build, shorten, or edit it.
+If the field is missing, leave out the 🔍 part. Opening the link starts a new
+chat in the reader's own Claude or ChatGPT with a deep-read prompt filled in.
+
+**Telegram.** Telegram does not render `#` headings or `**`. Use
+`*X1 · Sam Altman*` as the item heading, keep the same blank lines, use the
+same `[text](url)` links, and use a line of `━━━━━━━━━━` followed by
+`*🐦 X / Twitter*` as the section divider and heading.
+
+**Feishu and email.** These channels show plain text and raw URLs. Use the
+Telegram layout without `*`, show the original link as `🔗 url`, and leave out
+the deep-read link because it is several hundred characters long; the
+follow-up note already tells readers how to expand an item.
 
 Format likes from `like_count` (Chinese: 1.2万 / 8,600; English: 12K / 8.6K).
 Format podcast length from `duration`. Omit a field rather than guess it.
-
-Under the heading: the explanation or translation, then the original tweet text
-as a blockquote for X items, then the link on its own line starting with 🔗.
-Separate the three content sections with a horizontal rule (`---`).
 
 **Channel-specific overview.** If `config.delivery.method` is `stdout` or
 missing (the digest is shown in the current chat), write the overview as a
@@ -92,12 +118,37 @@ AI Signal · 11月26日
 📊 今日：X 6 条 · 播客 3 期 · 博客 1 篇
 
 ---
+
 ## 🐦 X / Twitter
 
-**X1 · Sam Altman** · 11-25 09:30 · ❤️ 3.2万 · 产品
+### X1 · Sam Altman
+11-25 09:30 · ❤️ 3.2万 · 产品
+
 （中文翻译或解释）
+
 > 原文……
-🔗 https://x.com/...
+
+🔗 [原文](https://x.com/...) · 🔍 [一键精读](deep_read_url 原样复制)
+
+### X2 · Dario Amodei
+11-26 02:22 · ❤️ 6,448 · 观点
+
+（中文翻译或解释）
+
+> 原文……
+
+🔗 [原文](https://x.com/...) · 🔍 [一键精读](...)
+
+---
+
+## 🎙 播客
+
+### P1 · a16z
+《The One-Person Biotech》 · 66 分钟 · 📄 有全文 · 研究
+
+（一两句说明）
+
+🔗 [原文](https://...) · 🔍 [一键精读](...)
 ```
 
 The example shows the layout only. Never copy its content.
@@ -127,7 +178,7 @@ The example shows the layout only. Never copy its content.
 
 ## Formatting
 
-- Keep the digest readable on a phone: short paragraphs, at most about 4 lines per item.
+- Keep the digest readable on a phone: short paragraphs, at most about 3 lines of explanation per item.
 - Use the emoji markers above only in the places shown; do not decorate every sentence.
 - Do not wrap the final digest in a Markdown code fence.
 - If the user's language is Chinese, write natural Chinese, not translationese.
