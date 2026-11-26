@@ -25,12 +25,17 @@ Give every included item a stable, visible ID at the start of its heading line:
 - Podcast items: `P1`, `P2`, `P3`
 - Official blog items: `B1`, `B2`, `B3`
 
-End the digest with a short note telling the user they can tap 🔍 一键精读 on
-any podcast or blog item, or ask follow-up questions such as "expand P2" or "这条 X1 为什么重要？".
+End the digest with one short line telling the user they can reply with an ID
+to get a deep read of a podcast or blog item, for example
+"想精读哪条，直接回复：精读 P2" (English: "Reply \"deep read P2\" for a full read"),
+or ask follow-ups such as "这条 X1 为什么重要？". X posts are short and get no deep read.
 
-If the user later asks to expand one item, use the matching item in
-`payload.json`; for podcasts, run `fetch_transcript.py` with the item's `guid`
-and read that single transcript before answering. Do not browse the open web.
+When the user asks for a deep read ("精读 P2", "展开 B1", "deep read P2"), answer
+in the same conversation. Use the matching item in `payload.json`. For podcasts,
+run `fetch_transcript.py` with the item's `guid` and read that single
+transcript. For blogs, open that article's own `url` once and read it; if the
+page is paywalled or fails to load, say so and use only the `summary` in the
+JSON. Do not browse anything else.
 
 ## Opening
 
@@ -72,19 +77,10 @@ items together without a blank line.
    - Blog: `《Title》 · 11-25 · 🏛 · 模型`
 3. Blank line, then the explanation or translation (at most about 3 lines).
 4. X items only: blank line, then the original tweet text as a blockquote.
-5. Blank line, then one link line. Podcasts and blogs:
-   `🔗 [原文](url) · 🔍 [一键精读](deep_read_url)` (English:
-   `🔗 [Source](url) · 🔍 [Deep read](deep_read_url)`). X items: `🔗 [原文](url)` only.
+5. Blank line, then one link line: `🔗 [原文](url)` (English: `🔗 [Source](url)`).
 
 Section headings use `## 🐦 X / Twitter`, `## 🎙 播客`, `## 📝 官方博客`, and the
 section divider is `---`.
-
-**Deep-read link.** Podcast episodes and blog articles in the JSON may carry a
-`deep_read_url`; X posts never do. Copy it exactly as given; never build, shorten, or edit it.
-If the field is missing, leave out the 🔍 part. Opening the link starts a new
-page that hands a deep-read prompt (with the full transcript when there is one)
-to the reader's chosen model: Kimi by default, or DeepSeek, Claude, ChatGPT.
-The link is short on purpose; do not replace it with a longer prompt URL.
 
 **Telegram.** Telegram does not render `#` headings or `**`. Use
 `*X1 · Sam Altman*` as the item heading, keep the same blank lines, use the
@@ -92,8 +88,7 @@ same `[text](url)` links, and use a line of `━━━━━━━━━━` fol
 `*🐦 X / Twitter*` as the section divider and heading.
 
 **Feishu and email.** These channels show plain text and raw URLs. Use the
-Telegram layout without `*`, and put the links on one line as
-`🔗 url · 🔍 精读 deep_read_url`.
+Telegram layout without `*`, and put the link on its own line as `🔗 url`.
 
 Format likes from `like_count` (Chinese: 1.2万 / 8,600; English: 12K / 8.6K).
 Format podcast length from `duration`. Omit a field rather than guess it.
@@ -150,7 +145,7 @@ AI Signal · 11月26日
 
 （一两句说明）
 
-🔗 [原文](https://...) · 🔍 [一键精读](deep_read_url 原样复制)
+🔗 [原文](https://...)
 ```
 
 The example shows the layout only. Never copy its content.

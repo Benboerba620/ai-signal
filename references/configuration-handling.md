@@ -28,7 +28,6 @@ If a user asks to add or remove sources: "信息源由中央统一维护，自�
 
 ### Anonymous Usage Count
 - "关掉匿名统计" / "turn off the usage ping" → set `"anonymous_ping": false`
-- "精读用 DeepSeek/Kimi/Claude/ChatGPT" / "deep read in DeepSeek" → set `"deep_read"` to `"kimi"`, `"claude"`, `"chatgpt"` or `"deepseek"`; default is `"kimi"`; "关掉精读链接" / "turn off deep-read links" → `"deep_read": "off"`
 - If asked what it sends: at most one request per day for the static file
   `feeds/ping.txt` on jsDelivr, with no ID, config, or query string. jsDelivr
   sees the IP address, as it does for feed downloads.

@@ -122,7 +122,7 @@ Use `channel`, `title`, `link` from the JSON — NOT from transcript text.
 
 **Podcast follow-up expansion:**
 The digest is only the first filter. When the user asks to expand a podcast
-("展开第 2 个播客" / "把 Vercel agents 这期做 breakdown" / "深读这期播客"),
+("精读 P2" / "展开第 2 个播客" / "把 Vercel agents 这期做 breakdown" / "深读这期播客"),
 get the transcript sidecar from the central repository on demand. The daily
 podcast feed contains only metadata and a `transcript_path`, so this downloads
 one transcript rather than the entire feed's full text. A retention index keeps
@@ -146,6 +146,15 @@ written file and produce a deeper breakdown in the user's language with:
 - practical implications for AI products, infrastructure, research, or investing
 - questions worth verifying
 
+Reply in the same conversation; do not send the breakdown to another channel.
+
+**Blog follow-up expansion:** For "精读 B1" or similar, open that article's own
+`url` once and read it, then give the same breakdown. If the page is paywalled
+(for example a Stratechery Daily Update) or fails to load, say so and work only
+from the `summary` in `payload.json`. Do not search for other copies.
+
+X posts get no deep read; answer questions about them from the tweet text.
+
 ### Local Feedback
 
 When the user gives feedback such as "P2 有用", "X1 是噪音", "多看芯片",
@@ -168,8 +177,8 @@ automatically as `expanded`; expansion means interest, not necessarily approval,
 so do not treat it as a positive preference by itself.
 
 At the end of every digest, before delivery attribution, add one short line
-telling the user they can pick any podcast, tweet, or blog to expand. For
-Chinese output, use wording like: "想深读的话，可以直接说：展开第 2 个播客。"
+telling the user they can reply with an ID to get a deep read of a podcast or
+blog item. For Chinese output, use wording like: "想精读哪条，直接回复：精读 P2。"
 
 **Official blogs (process third):**
 For each article in `articles`, follow `prompts.summarize_articles`. These are

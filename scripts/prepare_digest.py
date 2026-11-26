@@ -29,7 +29,6 @@ import httpx
 
 from feedback import summarize_feedback
 from usage_ping import maybe_ping
-from deep_read import attach_deep_read_urls
 
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
@@ -781,7 +780,6 @@ def main():
 
     # 5. Build output
     language = normalize_language(config.get("language", "en"))
-    attach_deep_read_urls(config, language, x_accounts, episodes, articles)
     domains = config.get("domains", ["ai", "invest"])
     summary_profile = choose_summary_profile(config)
     available_summary_profiles = sorted(((feed_summaries or {}).get("profiles") or {}).keys())
@@ -843,7 +841,6 @@ def main():
         "domains": domains,
         "delivery": config.get("delivery", {"method": "stdout"}),
         "anonymous_ping": ping_status,
-        "deep_read": config.get("deep_read", "claude"),
     }
     output_contract = build_output_contract({**config, "language": language})
     feedback_summary = summarize_feedback()
