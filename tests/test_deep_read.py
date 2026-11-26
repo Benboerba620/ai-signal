@@ -19,7 +19,7 @@ class DeepReadTests(unittest.TestCase):
         deep_read.attach_deep_read_urls(config or {}, language, x, eps, arts)
         return x, eps, arts
 
-    def test_default_link_is_short_and_points_at_transcript(self):
+    def test_link_is_short_and_points_at_transcript(self):
         _, eps, _ = self.build()
         url = eps[0]["deep_read_url"]
         self.assertTrue(url.startswith(deep_read.PAGE + "#"))
@@ -34,12 +34,15 @@ class DeepReadTests(unittest.TestCase):
         _, eps, _ = self.build()
         self.assertNotIn("tr=", eps[1]["deep_read_url"])
 
-    def test_tweet_link_carries_only_the_id_and_url(self):
+    def test_tweets_get_no_link(self):
         x, _, _ = self.build()
-        url = x[0]["tweets"][0]["deep_read_url"]
-        params = parse_qs(url.split("#", 1)[1])
-        self.assertEqual(params["id"], ["1"])
-        self.assertLess(len(url), 200)
+        self.assertNotIn("deep_read_url", x[0]["tweets"][0])
+
+    def test_default_is_deepseek_without_via(self):
+        _, eps, _ = self.build()
+        self.assertNotIn("via=", eps[0]["deep_read_url"])
+        self.assertEqual(deep_read.target({}), "deepseek")
+        self.assertEqual(deep_read.target({"deep_read": "kimi"}), "kimi")
 
     def test_chatgpt_and_english(self):
         _, _, arts = self.build({"deep_read": "chatgpt"}, language="en")
@@ -48,7 +51,9 @@ class DeepReadTests(unittest.TestCase):
 
     def test_page_is_published(self):
         page = Path(__file__).resolve().parent.parent / "docs" / "r.html"
-        self.assertIn("claude.ai/new?q=", page.read_text("utf-8"))
+        text = page.read_text("utf-8")
+        for site in ("chat.deepseek.com", "kimi.moonshot.cn/_prefill_chat", "claude.ai/new?q=", "chatgpt.com/?q="):
+            self.assertIn(site, text)
 
     def test_off_adds_nothing(self):
         x, eps, arts = self.build({"deep_read": "off"})

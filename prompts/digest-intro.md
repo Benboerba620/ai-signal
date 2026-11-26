@@ -26,7 +26,7 @@ Give every included item a stable, visible ID at the start of its heading line:
 - Official blog items: `B1`, `B2`, `B3`
 
 End the digest with a short note telling the user they can tap 🔍 一键精读 on
-any item, or ask follow-up questions such as "expand P2" or "这条 X1 为什么重要？".
+any podcast or blog item, or ask follow-up questions such as "expand P2" or "这条 X1 为什么重要？".
 
 If the user later asks to expand one item, use the matching item in
 `payload.json`; for podcasts, run `fetch_transcript.py` with the item's `guid`
@@ -72,16 +72,18 @@ items together without a blank line.
    - Blog: `《Title》 · 11-25 · 🏛 · 模型`
 3. Blank line, then the explanation or translation (at most about 3 lines).
 4. X items only: blank line, then the original tweet text as a blockquote.
-5. Blank line, then one link line: `🔗 [原文](url) · 🔍 [一键精读](deep_read_url)`.
-   English: `🔗 [Source](url) · 🔍 [Deep read](deep_read_url)`.
+5. Blank line, then one link line. Podcasts and blogs:
+   `🔗 [原文](url) · 🔍 [一键精读](deep_read_url)` (English:
+   `🔗 [Source](url) · 🔍 [Deep read](deep_read_url)`). X items: `🔗 [原文](url)` only.
 
 Section headings use `## 🐦 X / Twitter`, `## 🎙 播客`, `## 📝 官方博客`, and the
 section divider is `---`.
 
-**Deep-read link.** Every tweet, episode, and article in the JSON may carry a
-`deep_read_url`. Copy it exactly as given; never build, shorten, or edit it.
+**Deep-read link.** Podcast episodes and blog articles in the JSON may carry a
+`deep_read_url`; X posts never do. Copy it exactly as given; never build, shorten, or edit it.
 If the field is missing, leave out the 🔍 part. Opening the link starts a new
-chat in the reader's own Claude or ChatGPT with a deep-read prompt filled in.
+page that hands a deep-read prompt (with the full transcript when there is one)
+to the reader's chosen model: DeepSeek by default, or Kimi, Claude, ChatGPT.
 The link is short on purpose; do not replace it with a longer prompt URL.
 
 **Telegram.** Telegram does not render `#` headings or `**`. Use
@@ -128,7 +130,7 @@ AI Signal · 11月26日
 
 > 原文……
 
-🔗 [原文](https://x.com/...) · 🔍 [一键精读](deep_read_url 原样复制)
+🔗 [原文](https://x.com/...)
 
 ### X2 · Dario Amodei
 11-26 02:22 · ❤️ 6,448 · 观点
@@ -137,7 +139,7 @@ AI Signal · 11月26日
 
 > 原文……
 
-🔗 [原文](https://x.com/...) · 🔍 [一键精读](...)
+🔗 [原文](https://x.com/...)
 
 ---
 
@@ -148,7 +150,7 @@ AI Signal · 11月26日
 
 （一两句说明）
 
-🔗 [原文](https://...) · 🔍 [一键精读](...)
+🔗 [原文](https://...) · 🔍 [一键精读](deep_read_url 原样复制)
 ```
 
 The example shows the layout only. Never copy its content.

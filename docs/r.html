@@ -8,102 +8,121 @@
 <style>
   body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; margin: 0; padding: 32px 20px; background: #fafafa; color: #222; }
   main { max-width: 560px; margin: 0 auto; }
-  a.btn { display: inline-block; margin: 12px 12px 0 0; padding: 10px 18px; border-radius: 8px; background: #222; color: #fff; text-decoration: none; }
-  a.alt { background: #e6e6e6; color: #222; }
-  pre { white-space: pre-wrap; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 13px; }
-  @media (prefers-color-scheme: dark) { body { background: #111; color: #eee; } a.btn { background: #eee; color: #111; } a.alt { background: #333; color: #eee; } pre { background: #1b1b1b; border-color: #333; } }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .muted { color: #777; font-size: 14px; }
+  button, a.btn { display: block; width: 100%; box-sizing: border-box; margin: 12px 0 0; padding: 12px 16px; border: 0; border-radius: 10px; background: #222; color: #fff; font-size: 16px; text-align: center; text-decoration: none; cursor: pointer; }
+  .others { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .others button { width: auto; flex: 1 1 30%; margin: 0; background: #e6e6e6; color: #222; font-size: 14px; padding: 10px; }
+  textarea { width: 100%; box-sizing: border-box; height: 140px; margin-top: 16px; font-size: 13px; border: 1px solid #ddd; border-radius: 8px; padding: 8px; background: #fff; color: inherit; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #111; color: #eee; } button, a.btn { background: #eee; color: #111; }
+    .others button { background: #333; color: #eee; } textarea { background: #1b1b1b; border-color: #333; }
+  }
 </style>
 </head>
 <body>
 <main>
-  <p id="status">正在准备精读提示词…</p>
+  <h1 id="title">AI Signal · 一键精读</h1>
+  <p class="muted" id="status">正在准备精读内容…</p>
   <div id="actions" hidden>
-    <a class="btn" id="claude" href="#">用 Claude 精读</a>
-    <a class="btn alt" id="chatgpt" href="#">用 ChatGPT 精读</a>
-    <pre id="prompt"></pre>
+    <button id="main"></button>
+    <div class="muted" style="margin-top:16px">换一个模型：</div>
+    <div class="others" id="others"></div>
+    <textarea id="prompt" readonly></textarea>
   </div>
 </main>
 <script>
-// Builds the deep-read prompt from short hash parameters and opens the reader's
-// own Claude or ChatGPT with it filled in. Nothing is sent until the reader
-// presses send there. Parameters: k = x | p | b, id = tweet id, u = source URL,
-// tr = transcript file id, lang = zh | en, via = claude | chatgpt.
+// Builds a deep-read prompt for one podcast episode or article and hands it to
+// the reader's own chat model. Nothing is sent until the reader presses send.
+// Hash parameters: k = p | b, u = source URL, tr = transcript file id,
+// lang = zh | en, via = deepseek | kimi | claude | chatgpt.
 (function () {
   var FEEDS = "https://cdn.jsdelivr.net/gh/Benboerba620/ai-signal@main/feeds/";
-  var TARGETS = { claude: "https://claude.ai/new?q=", chatgpt: "https://chatgpt.com/?q=" };
+  // prefill: the prompt goes into the URL (no full transcript, it is too long;
+  // the prompt links to it). paste: the site has no prefill, so the prompt with
+  // the full transcript is copied to the clipboard and the site is opened.
+  var TARGETS = {
+    deepseek: { name: "DeepSeek", url: "https://chat.deepseek.com/", paste: true },
+    kimi: { name: "Kimi", url: "https://kimi.moonshot.cn/_prefill_chat?send_immediately=false&prefill_prompt=" },
+    claude: { name: "Claude", url: "https://claude.ai/new?q=" },
+    chatgpt: { name: "ChatGPT", url: "https://chatgpt.com/?q=" }
+  };
   var P = new URLSearchParams(location.hash.slice(1));
-  var kind = P.get("k"), id = P.get("id") || "", src = P.get("u") || "", tr = P.get("tr") || "";
+  var kind = P.get("k"), src = P.get("u") || "", tr = P.get("tr") || "";
   var lang = P.get("lang") === "en" ? "en" : "zh";
-  var via = TARGETS[P.get("via")] ? P.get("via") : "claude";
+  var via = TARGETS[P.get("via")] ? P.get("via") : "deepseek";
   var T = lang === "zh" ? {
-    head: "请精读下面这条内容，用中文回答：1. 核心观点；2. 关键事实和数字；3. 为什么重要；4. 有哪些疑点或反方观点。只依据原文，原文没有的不要编。",
-    source: "来源：", title: "标题：", link: "原文：", transcript: "全文转录：", text: "原文内容："
+    head: "请精读下面这期内容，用中文回答：1. 核心观点；2. 关键事实和数字；3. 为什么重要；4. 有哪些疑点或反方观点。只依据原文，原文没有的不要编。",
+    source: "来源：", title: "标题：", link: "原文：", transcript: "全文转录：", full: "以下是全文：\n",
+    copy: "复制精读内容，打开 ", prefill: "用 {n} 精读", copied: "已复制，在 {n} 里粘贴后发送。", stale: "这条内容已经不在最新 feed 里，下面只有原文链接。"
   } : {
     head: "Deep-read the item below: 1. core argument; 2. key facts and numbers; 3. why it matters; 4. open questions or counterpoints. Use only the source; do not invent anything it does not say.",
-    source: "Source: ", title: "Title: ", link: "Original: ", transcript: "Full transcript: ", text: "Text: "
+    source: "Source: ", title: "Title: ", link: "Original: ", transcript: "Full transcript: ", full: "Full text:\n",
+    copy: "Copy and open ", prefill: "Deep read in {n}", copied: "Copied. Paste it into {n} and send.", stale: "This item is no longer in the latest feed; only the original link is below."
   };
+  var $ = function (id) { return document.getElementById(id); };
 
-  function feed(name) {
-    return fetch(FEEDS + name, { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
+  function getJSON(name) {
+    return fetch(FEEDS + name).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
+  }
+  function getText(url) {
+    return fetch(url).then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; });
   }
 
   function lookup() {
-    if (kind === "x" && id) {
-      return feed("feed-x.json").then(function (d) {
-        var accounts = d.x || [];
-        for (var i = 0; i < accounts.length; i++) {
-          var tweets = accounts[i].tweets || [];
-          for (var j = 0; j < tweets.length; j++) {
-            if (String(tweets[j].id) === id) {
-              return { source: (accounts[i].name || accounts[i].handle) + " (X)", text: tweets[j].text, url: tweets[j].url };
-            }
-          }
-        }
-        return { source: "X" };
-      });
-    }
-    if (kind === "p") {
-      return feed("feed-podcasts.json").then(function (d) {
-        var eps = d.podcasts || [];
-        for (var i = 0; i < eps.length; i++) {
-          if (eps[i].link === src || eps[i].guid === src) return { source: eps[i].channel, title: eps[i].title };
-        }
-        return { source: "Podcast" };
-      });
-    }
-    if (kind === "b") {
-      return feed("feed-blogs.json").then(function (d) {
-        var arts = d.articles || [];
-        for (var i = 0; i < arts.length; i++) {
-          if (arts[i].url === src) return { source: arts[i].source_name || arts[i].source, title: arts[i].title };
-        }
-        return { source: "Blog" };
-      });
-    }
-    return Promise.resolve({});
+    var name = kind === "p" ? "feed-podcasts.json" : kind === "b" ? "feed-blogs.json" : null;
+    if (!name) return Promise.resolve({});
+    return getJSON(name).then(function (d) {
+      var rows = kind === "p" ? (d.podcasts || []) : (d.articles || []);
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (kind === "p" && (r.link === src || r.guid === src)) return { found: true, source: r.channel, title: r.title };
+        if (kind === "b" && r.url === src) return { found: true, source: r.source_name || r.source, title: r.title, summary: r.summary };
+      }
+      return {};
+    });
   }
 
-  lookup().then(function (item) {
+  var trUrl = tr && /^[A-Za-z0-9_-]+$/.test(tr) ? FEEDS + "transcripts/" + tr + ".txt" : "";
+  Promise.all([lookup(), trUrl ? getText(trUrl) : Promise.resolve("")]).then(function (res) {
+    var item = res[0], fullText = res[1];
+    if (item.title) $("title").textContent = item.title;
     var lines = [T.head];
     if (item.source) lines.push(T.source + item.source);
     if (item.title) lines.push(T.title + item.title);
-    if (item.text) lines.push(T.text + String(item.text).slice(0, 600));
-    if (tr && /^[A-Za-z0-9_-]+$/.test(tr)) lines.push(T.transcript + FEEDS + "transcripts/" + tr + ".txt");
-    var link = item.url || src;
-    if (/^https?:\/\//.test(link)) lines.push(T.link + link);
-    var prompt = lines.join("\n");
-    var q = encodeURIComponent(prompt);
-    document.getElementById("claude").href = TARGETS.claude + q;
-    document.getElementById("chatgpt").href = TARGETS.chatgpt + q;
-    document.getElementById("prompt").textContent = prompt;
-    if (lines.length <= 2) {
-      document.getElementById("status").textContent = "这条内容已经不在最新 feed 里，下面是能找到的信息。";
-      document.getElementById("actions").hidden = false;
-      return;
+    if (/^https?:\/\//.test(src)) lines.push(T.link + src);
+    var linkPrompt = lines.concat(trUrl ? [T.transcript + trUrl] : []).join("\n");
+    var pastePrompt = fullText ? lines.join("\n") + "\n\n" + T.full + fullText : linkPrompt;
+
+    function go(key) {
+      var t = TARGETS[key];
+      if (t.paste) {
+        $("prompt").value = pastePrompt;
+        var done = function () { $("status").textContent = T.copied.replace("{n}", t.name); location.href = t.url; };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(pastePrompt).then(done, function () { $("prompt").select(); document.execCommand("copy"); done(); });
+        } else { $("prompt").select(); document.execCommand("copy"); done(); }
+      } else {
+        location.href = t.url + encodeURIComponent(linkPrompt);
+      }
     }
-    document.getElementById("status").textContent = "正在打开 " + (via === "claude" ? "Claude" : "ChatGPT") + "…如果没有自动跳转，点下面的按钮。";
-    document.getElementById("actions").hidden = false;
-    location.replace(TARGETS[via] + q);
+    function label(key) {
+      var t = TARGETS[key];
+      return t.paste ? T.copy + t.name : T.prefill.replace("{n}", t.name);
+    }
+
+    $("main").textContent = label(via);
+    $("main").onclick = function () { go(via); };
+    Object.keys(TARGETS).forEach(function (key) {
+      if (key === via) return;
+      var b = document.createElement("button");
+      b.textContent = TARGETS[key].name;
+      b.onclick = function () { go(key); };
+      $("others").appendChild(b);
+    });
+    $("prompt").value = TARGETS[via].paste ? pastePrompt : linkPrompt;
+    $("status").textContent = item.found ? (fullText ? "已准备好全文（" + fullText.length + " 字）。" : "") : T.stale;
+    $("actions").hidden = false;
   });
 })();
 </script>

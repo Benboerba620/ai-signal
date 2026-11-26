@@ -129,6 +129,15 @@ Set `delivery.method` to `"stdout"`. Tell them:
 "AI Signal 每天会匿名报到一次（只下载一个小文件，不带任何个人信息），用来统计大约有多少人在用。不想要的话说一声'关掉匿名统计'就行。"
 If the user declines, save `"anonymous_ping": false`.
 
+**Deep-read model (ask):** Ask: "播客和文章旁边会有一个「🔍 一键精读」，点了用哪个模型？"
+- DeepSeek（推荐，默认）：点了会复制精读提示词和全文，打开 DeepSeek 后粘贴发送 → `"deep_read": "deepseek"`
+- Kimi：打开 Kimi，提示词已经填好 → `"kimi"`
+- Claude：打开 Claude，提示词已经填好 → `"claude"`
+- ChatGPT：打开 ChatGPT，提示词已经填好 → `"chatgpt"`
+- 不要这个链接 → `"off"`
+Tell the user the jump page also shows buttons for the other models, so the
+choice only sets the default.
+
 ### Step 7: Save Config & API Keys
 
 ```bash
@@ -154,7 +163,7 @@ cat > ~/.ai-signal/config.json << 'EOF'
     "email": "<email address, only if email>"
   },
   "anonymous_ping": true,
-  "deep_read": "claude",
+  "deep_read": "deepseek",
   "onboardingComplete": true
 }
 EOF
