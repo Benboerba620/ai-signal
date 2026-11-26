@@ -2,6 +2,10 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-11-26
+
+- Local transcript publication allowlist widened from 5 to 17 channels (every public channel the maintainer's local pipeline also subscribes to). The daily cloud producer cannot reach most podcast CDNs, so these channels previously got no transcripts. Preview matched 14 episodes in the 7-day window, versus 4 before.
+
 ## 2026-11-25
 
 ### 修复
