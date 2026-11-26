@@ -35,7 +35,7 @@
 // Builds a deep-read prompt for one podcast episode or article and hands it to
 // the reader's own chat model. Nothing is sent until the reader presses send.
 // Hash parameters: k = p | b, u = source URL, tr = transcript file id,
-// lang = zh | en, via = deepseek | kimi | claude | chatgpt.
+// lang = zh | en, via = kimi (default) | deepseek | claude | chatgpt.
 (function () {
   var FEEDS = "https://cdn.jsdelivr.net/gh/Benboerba620/ai-signal@main/feeds/";
   // prefill: the prompt goes into the URL (no full transcript, it is too long;
@@ -50,7 +50,7 @@
   var P = new URLSearchParams(location.hash.slice(1));
   var kind = P.get("k"), src = P.get("u") || "", tr = P.get("tr") || "";
   var lang = P.get("lang") === "en" ? "en" : "zh";
-  var via = TARGETS[P.get("via")] ? P.get("via") : "deepseek";
+  var via = TARGETS[P.get("via")] ? P.get("via") : "kimi";
   var T = lang === "zh" ? {
     head: "请精读下面这期内容，用中文回答：1. 核心观点；2. 关键事实和数字；3. 为什么重要；4. 有哪些疑点或反方观点。只依据原文，原文没有的不要编。",
     source: "来源：", title: "标题：", link: "原文：", transcript: "全文转录：", full: "以下是全文：\n",

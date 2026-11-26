@@ -83,7 +83,7 @@ section divider is `---`.
 `deep_read_url`; X posts never do. Copy it exactly as given; never build, shorten, or edit it.
 If the field is missing, leave out the 🔍 part. Opening the link starts a new
 page that hands a deep-read prompt (with the full transcript when there is one)
-to the reader's chosen model: DeepSeek by default, or Kimi, Claude, ChatGPT.
+to the reader's chosen model: Kimi by default, or DeepSeek, Claude, ChatGPT.
 The link is short on purpose; do not replace it with a longer prompt URL.
 
 **Telegram.** Telegram does not render `#` headings or `**`. Use

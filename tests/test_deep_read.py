@@ -38,11 +38,11 @@ class DeepReadTests(unittest.TestCase):
         x, _, _ = self.build()
         self.assertNotIn("deep_read_url", x[0]["tweets"][0])
 
-    def test_default_is_deepseek_without_via(self):
+    def test_default_is_kimi_without_via(self):
         _, eps, _ = self.build()
         self.assertNotIn("via=", eps[0]["deep_read_url"])
-        self.assertEqual(deep_read.target({}), "deepseek")
-        self.assertEqual(deep_read.target({"deep_read": "kimi"}), "kimi")
+        self.assertEqual(deep_read.target({}), "kimi")
+        self.assertEqual(deep_read.target({"deep_read": "deepseek"}), "deepseek")
 
     def test_chatgpt_and_english(self):
         _, _, arts = self.build({"deep_read": "chatgpt"}, language="en")

@@ -247,7 +247,7 @@ flowchart LR
 
 - 不采集个人数据：不收集配置、偏好、阅读记录，也不给你的安装分配编号
 - 匿名计数（2026-11-26 起）：每份安装每天最多从 jsDelivr 下载一次很小的 `feeds/ping.txt`，请求里不带任何参数。jsDelivr 公开的下载统计就是每天大约有多少份安装在用。和下载 feed 一样，jsDelivr 能看到请求的 IP。关闭方法：在 `~/.ai-signal/config.json` 里加 `"anonymous_ping": false`，或设置环境变量 `AI_SIGNAL_NO_PING=1`
-- 一键精读（2026-11-26 起）：播客和文章旁边有「🔍 一键精读」，推特没有。点开是本项目 GitHub Pages 上的跳转页，它从最新 feed 里查出这一条，拼好精读提示词，交给你选的模型，按发送才开始。默认 DeepSeek：DeepSeek 网页版不支持预填，跳转页会把提示词和转录全文一起复制，打开 DeepSeek 后粘贴发送。Kimi、Claude、ChatGPT 会直接填好提示词。安装时选；之后改：`~/.ai-signal/config.json` 里写 `"deep_read": "kimi"`、`"claude"`、`"chatgpt"` 或 `"off"`。已经不在最新 feed 里的内容只能给原文链接
+- 一键精读（2026-11-26 起）：播客和文章旁边有「🔍 一键精读」，推特没有。点开是本项目 GitHub Pages 上的跳转页，它从最新 feed 里查出这一条，拼好精读提示词，交给你选的模型，按发送才开始。默认 Kimi（免费版就能用），打开后提示词已经填好。也可以选 Claude、ChatGPT（同样直接填好）或 DeepSeek：DeepSeek 网页版不支持预填，跳转页会把提示词和转录全文一起复制，打开 DeepSeek 后粘贴发送。安装时选；之后改：`~/.ai-signal/config.json` 里写 `"deep_read": "deepseek"`、`"claude"`、`"chatgpt"` 或 `"off"`。已经不在最新 feed 里的内容只能给原文链接
 - 你的配置和偏好只存在你自己的机器上（`~/.ai-signal/`）
 - 只聚合公开内容（公开推文、公开播客、公开博客）
 

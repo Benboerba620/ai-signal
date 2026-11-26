@@ -11,14 +11,14 @@ they are short enough to read in the digest.
 The link stays short (about 100 characters) because chat apps and bots drop or
 truncate long URLs; a URL holding the whole prompt was about 900 characters.
 
-Config: "deep_read": "deepseek" (default) | "kimi" | "claude" | "chatgpt" | "off".
+Config: "deep_read": "kimi" (default) | "deepseek" | "claude" | "chatgpt" | "off".
 """
 from pathlib import PurePosixPath
 from urllib.parse import urlencode
 
 PAGE = "https://benboerba620.github.io/ai-signal/r.html"
 CHOICES = ("deepseek", "kimi", "claude", "chatgpt")
-DEFAULT = "deepseek"
+DEFAULT = "kimi"
 
 
 def target(config):
