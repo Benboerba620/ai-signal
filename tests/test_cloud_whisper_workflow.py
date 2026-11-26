@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import textwrap
@@ -92,6 +93,9 @@ class ProductionWorkflowTests(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
+@unittest.skipUnless(shutil.which('timeout') and shutil.which('python'),
+    'checkpoint_whisper.sh runs only on the Linux CI runner (needs GNU timeout and python); '
+    'on macOS run it in CI or install coreutils')
 class CheckpointIntegrationTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

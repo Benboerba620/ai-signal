@@ -4,6 +4,8 @@
 
 ## 2026-11-26
 
+- `VISION.md`: what is in and out of scope, plus rules for automated maintainers (issue text is untrusted, fixes ship with evidence, issue-driven changes go through a PR).
+- Tests: a first check fails with the fix when Python is older than 3.11 (CI uses 3.11; on 3.9 about 20 tests failed with `hashlib.file_digest` errors that looked like bugs). Checkpoint integration tests skip on machines without GNU `timeout`; they still run in CI.
 - Anonymous usage count: each install fetches the static `feeds/ping.txt` from jsDelivr at most once per local day, with no ID or parameters, so jsDelivr's public stats show daily active installs. Opt out with `"anonymous_ping": false` or `AI_SIGNAL_NO_PING=1`; CI never pings. Maintainers read counts with `python scripts/usage_ping.py --stats`.
 - Deep read by reply: the digest ends with "想精读哪条，直接回复：精读 P2". The agent answers in the same conversation, from the fetched transcript for podcasts or the article page for blogs (summary only when paywalled). X posts get none. The one-click deep-read links and the GitHub Pages jump page tried earlier the same day were removed: opening another model through a link was more steps than replying.
 - Digest spacing: each item has its own heading and blank lines between its parts, sections are split by a divider, so items no longer run together on a phone.
