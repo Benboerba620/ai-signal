@@ -52,7 +52,7 @@ class DeepReadTests(unittest.TestCase):
     def test_page_is_published(self):
         page = Path(__file__).resolve().parent.parent / "docs" / "r.html"
         text = page.read_text("utf-8")
-        for site in ("chat.deepseek.com", "kimi.moonshot.cn/_prefill_chat", "claude.ai/new?q=", "chatgpt.com/?q="):
+        for site in ("chat.deepseek.com", "www.kimi.com/_prefill_chat", "claude.ai/new?q=", "chatgpt.com/?q="):
             self.assertIn(site, text)
 
     def test_off_adds_nothing(self):
